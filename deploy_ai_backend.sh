@@ -6,7 +6,10 @@
 # ==========================================
 
 APP_NAME="sarfx-ai-backend"
-APP_DIR="/var/www/sarfx-enhanced/SarfX Backend"
+BASE_DIR="/var/www/sarfx-enhanced"
+# IMPORTANT: Renommer le dossier pour éviter les espaces (problème systemd)
+OLD_DIR="$BASE_DIR/SarfX Backend"
+APP_DIR="$BASE_DIR/sarfx-backend"
 INTERNAL_PORT=8087
 USER="root"
 GROUP="root"
@@ -19,6 +22,12 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${GREEN}=== DÉPLOIEMENT DU BACKEND IA SARFX (Port $INTERNAL_PORT) ===${NC}"
+
+# 0. Renommer le dossier si nécessaire (espaces non supportés par systemd)
+if [ -d "$OLD_DIR" ] && [ ! -d "$APP_DIR" ]; then
+    echo -e "${YELLOW}> Renommage du dossier (suppression des espaces)...${NC}"
+    mv "$OLD_DIR" "$APP_DIR"
+fi
 
 # 1. Vérification du répertoire
 if [ ! -d "$APP_DIR" ]; then
