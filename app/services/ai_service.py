@@ -3,8 +3,11 @@ Service pour l'intégration de l'IA de prévision
 """
 import os
 import requests
-from datetime import datetime
+import logging
+from datetime import datetime, timedelta
 from app.services.db_service import get_db
+
+logger = logging.getLogger(__name__)
 
 # URL par défaut: Cloud Run (production externe) ou localhost (si sur même serveur)
 DEFAULT_AI_URL = os.environ.get(
@@ -24,6 +27,53 @@ def get_ai_backend_url():
     if settings:
         return settings.get('ai_backend_url', DEFAULT_AI_URL)
     return DEFAULT_AI_URL
+
+
+def generate_fallback_prediction(pair):
+    """Génère une prédiction de simulation si tous les backends sont indisponibles"""
+    import random
+    
+    # Taux de base pour différentes paires
+    base_rates = {
+        'EURUSD': 1.08,
+        'USDMAD': 10.05,
+        'EURMAD': 10.85,
+        'GBPUSD': 1.27,
+        'GBPMAD': 12.75,
+    }
+    
+    # Extraire la paire sans le =X
+    clean_pair = pair.replace('=X', '')
+    base_rate = base_rates.get(clean_pair, 1.0)
+    
+    # Générer des dates pour les 7 prochains jours
+    dates = [(datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(1, 8)]
+    
+    # Générer des prédictions simulées avec une légère tendance
+    trend = random.uniform(-0.02, 0.02)  # -2% à +2%
+    predictions = [base_rate * (1 + trend * (i/7) + random.uniform(-0.005, 0.005)) for i in range(7)]
+    
+    # Historique simulé
+    history = []
+    for i in range(30, 0, -1):
+        date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        close = base_rate * (1 + random.uniform(-0.01, 0.01))
+        history.append({"Date": date, "Close": close})
+    
+    return {
+        "pair": pair,
+        "current_rate": base_rate,
+        "dates": dates,
+        "predictions": {
+            "Ensemble_Mean": predictions,
+            "ARIMA": [p * 0.998 for p in predictions],
+            "Prophet": [p * 1.002 for p in predictions],
+            "LSTM": predictions
+        },
+        "history": history,
+        "_simulation": True,
+        "_message": "Données simulées - Backend IA indisponible"
+    }
 
 
 def fetch_prediction(pair='EURUSD=X', timeout=30):
@@ -48,6 +98,7 @@ def fetch_prediction(pair='EURUSD=X', timeout=30):
                 'User-Agent': 'SarfX-App/1.0'
             }
             
+            logger.info(f"Trying AI backend: {url}")
             response = requests.get(
                 f"{url}/predict/{pair}",
                 headers=headers,
@@ -56,6 +107,7 @@ def fetch_prediction(pair='EURUSD=X', timeout=30):
             
             if response.status_code == 200:
                 data = response.json()
+                logger.info(f"AI backend {url} responded successfully")
                 
                 # Cache the result
                 cache_prediction(pair, data)
@@ -67,16 +119,22 @@ def fetch_prediction(pair='EURUSD=X', timeout=30):
                     'timestamp': datetime.utcnow().isoformat(),
                     'source': url
                 }
-        except requests.exceptions.Timeout:
+            else:
+                logger.warning(f"AI backend {url} returned status {response.status_code}")
+        except requests.exceptions.Timeout as e:
+            logger.warning(f"Timeout connecting to {url}: {e}")
             continue  # Try next URL
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            logger.warning(f"Connection error to {url}: {e}")
             continue  # Try next URL
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error with {url}: {e}")
             continue  # Try next URL
     
     # All URLs failed, try cache
     cached = get_cached_prediction(pair)
     if cached:
+        logger.info(f"Using cached prediction for {pair}")
         return {
             'success': True,
             'data': cached['data'],
@@ -84,10 +142,15 @@ def fetch_prediction(pair='EURUSD=X', timeout=30):
             'timestamp': cached['timestamp']
         }
     
+    # Ultimate fallback: generate simulated data
+    logger.warning(f"All backends failed for {pair}, using simulation")
+    simulated_data = generate_fallback_prediction(pair)
     return {
-        'success': False,
-        'error': "All AI backends unavailable",
-        'cached': False
+        'success': True,
+        'data': simulated_data,
+        'cached': False,
+        'simulated': True,
+        'timestamp': datetime.utcnow().isoformat()
     }
 
 
