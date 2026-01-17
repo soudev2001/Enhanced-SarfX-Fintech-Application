@@ -1,0 +1,240 @@
+{% extends "app_base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="pt-4 flex justify-between items-center">
+        <span class="font-extrabold text-2xl tracking-tighter logo-text">
+            Sarf<span class="logo-x">X</span>
+        </span>
+        <div class="bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/20">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse mr-1"></span>
+            Live Market
+        </div>
+    </div>
+    
+    <!-- Currency Input -->
+    <div class="glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden group">
+        <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-adaptive-muted uppercase tracking-wide">Vous envoyez</label>
+            <span class="text-[10px] text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded font-bold border border-emerald-500/20 hidden" id="savings-badge">Économie: $--</span>
+        </div>
+        <div class="flex items-center gap-4 relative z-10">
+            <div class="relative flex-1">
+                <input type="number" id="smart-amount" value="1000" min="0" class="w-full text-4xl font-bold text-adaptive focus:outline-none bg-transparent placeholder-slate-400 font-mono tracking-tight" placeholder="0.00">
+            </div>
+            <select id="from-currency" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl transition cursor-pointer border-none">
+                <option value="USD" selected>🇺🇸 USD</option>
+                <option value="EUR">🇪🇺 EUR</option>
+                <option value="GBP">🇬🇧 GBP</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Breakdown -->
+    <div id="exchange-results" class="hidden-opacity relative pl-6 ml-4 space-y-8 border-l-2 border-slate-200 dark:border-slate-700">
+        <!-- Fee -->
+        <div class="relative">
+            <div class="absolute -left-[25px] top-0 bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-adaptive-muted">
+                <i data-lucide="minus" class="w-4 h-4"></i>
+            </div>
+            <div class="flex justify-between items-center">
+                <p class="text-xs text-adaptive-muted">Frais SarfX (1%)</p>
+                <p class="text-sm font-bold text-adaptive" id="smart-fee-display">--</p>
+            </div>
+        </div>
+        <!-- Convert -->
+        <div class="relative">
+            <div class="absolute -left-[25px] top-0 bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-adaptive-muted">
+                <i data-lucide="arrow-down" class="w-4 h-4"></i>
+            </div>
+            <div class="flex justify-between items-center">
+                <p class="text-xs text-adaptive-muted">Montant converti</p>
+                <p class="text-sm font-bold text-adaptive" id="smart-convert-amount">--</p>
+            </div>
+        </div>
+        <!-- Rate & Suppliers -->
+        <div class="relative">
+            <div class="absolute -left-[25px] top-0 bg-[rgb(224,90,3)]/10 border-2 border-white dark:border-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-[rgb(224,90,3)] animate-pulse">
+                <i data-lucide="percent" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1">
+                <div class="flex justify-between items-center">
+                    <p class="text-xs text-adaptive-muted font-bold uppercase">Meilleur Taux (IA)</p>
+                    <p class="text-sm font-bold text-emerald-500 font-mono" id="smart-rate-display">--</p>
+                </div>
+                <!-- Suppliers List -->
+                <div id="suppliers-list" class="space-y-2 mt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipient Section -->
+    <div id="recipient-section" class="hidden-opacity glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-bl-full -mr-4 -mt-4"></div>
+        <div class="flex items-center gap-3 mb-2 relative z-10">
+            <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 border border-blue-500/30">
+                <i data-lucide="user-check" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-adaptive text-sm">Bénéficiaire</h3>
+                <p class="text-[10px] text-adaptive-muted">Détails du compte</p>
+            </div>
+        </div>
+        <div class="space-y-3 relative z-10">
+            <input type="text" id="recipient-name" placeholder="Nom complet" class="w-full glass-input rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder-slate-500">
+            <input type="text" id="recipient-account" placeholder="IBAN / Numéro de compte" class="w-full glass-input rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder-slate-500">
+        </div>
+    </div>
+
+    <!-- Final Result -->
+    <div id="summary-section" class="hidden-opacity bg-gradient-to-r from-blue-600 to-[rgb(224,90,3)] rounded-2xl p-6 text-white shadow-xl shadow-blue-900/20">
+        <div class="flex justify-between items-end mb-4">
+            <div>
+                <p class="text-white/80 text-xs font-bold uppercase mb-1">Le bénéficiaire reçoit</p>
+                <h2 class="text-4xl font-extrabold tracking-tight" id="smart-final-amount">--</h2>
+            </div>
+            <div class="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg backdrop-blur-md">
+                <span class="text-xl">🇲🇦</span>
+                <span class="font-bold text-sm">MAD</span>
+            </div>
+        </div>
+        <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
+            <input type="hidden" name="amount" id="form-amount">
+            <input type="hidden" name="from_currency" id="form-from-currency">
+            <input type="hidden" name="to_currency" value="MAD">
+            <input type="hidden" name="rate" id="form-rate">
+            <input type="hidden" name="final_amount" id="form-final-amount">
+            <input type="hidden" name="supplier_id" id="form-supplier-id">
+            <button type="submit" class="w-full bg-white text-blue-900 font-bold py-3 rounded-xl shadow-sm hover:bg-blue-50 transition flex items-center justify-center gap-2">
+                Confirmer l'échange <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </button>
+        </form>
+    </div>
+    
+    <div class="h-6"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Suppliers data from server
+    const suppliers = {{ suppliers | tojson | safe }};
+    const SARFX_FEE_PCT = 0.01;
+    let bestSupplier = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('smart-amount').addEventListener('input', calculateSmartExchange);
+        document.getElementById('from-currency').addEventListener('change', calculateSmartExchange);
+        calculateSmartExchange();
+    });
+
+    function calculateSmartExchange() {
+        const amountInput = document.getElementById('smart-amount');
+        const amount = parseFloat(amountInput.value) || 0;
+        const fromCurrency = document.getElementById('from-currency').value;
+        
+        const resSection = document.getElementById('exchange-results');
+        const sumSection = document.getElementById('summary-section');
+        const recSection = document.getElementById('recipient-section');
+
+        if (amount <= 0) {
+            resSection.classList.add('hidden-opacity');
+            resSection.classList.remove('visible-opacity');
+            sumSection.classList.add('hidden-opacity');
+            sumSection.classList.remove('visible-opacity');
+            recSection.classList.add('hidden-opacity');
+            recSection.classList.remove('visible-opacity');
+            return;
+        }
+
+        resSection.classList.remove('hidden-opacity');
+        resSection.classList.add('visible-opacity');
+        sumSection.classList.remove('hidden-opacity');
+        sumSection.classList.add('visible-opacity');
+        recSection.classList.remove('hidden-opacity');
+        recSection.classList.add('visible-opacity');
+
+        const sarfxFee = amount * SARFX_FEE_PCT;
+        const amountToConvert = amount - sarfxFee;
+        
+        // Calculate rates for each supplier
+        const providers = suppliers.map(s => ({
+            ...s,
+            rate: s.rate * (1 + (Math.random() * 0.02 - 0.01)) // Small variation
+        }));
+        providers.sort((a, b) => b.rate - a.rate);
+        
+        bestSupplier = providers[0];
+        const finalAmount = amountToConvert * bestSupplier.rate;
+
+        // Update UI
+        document.getElementById('smart-fee-display').textContent = `-${sarfxFee.toFixed(2)} ${fromCurrency}`;
+        document.getElementById('smart-convert-amount').textContent = `${amountToConvert.toFixed(2)} ${fromCurrency}`;
+        document.getElementById('smart-rate-display').textContent = bestSupplier.rate.toFixed(4);
+        document.getElementById('smart-final-amount').textContent = new Intl.NumberFormat('fr-MA', { 
+            style: 'currency', 
+            currency: 'MAD' 
+        }).format(finalAmount);
+
+        // Update form fields
+        document.getElementById('form-amount').value = amount;
+        document.getElementById('form-from-currency').value = fromCurrency;
+        document.getElementById('form-rate').value = bestSupplier.rate;
+        document.getElementById('form-final-amount').value = finalAmount.toFixed(2);
+        document.getElementById('form-supplier-id').value = bestSupplier._id || bestSupplier.id;
+
+        // Render suppliers list
+        const list = document.getElementById('suppliers-list');
+        list.innerHTML = '';
+        
+        providers.forEach((s, i) => {
+            const isBest = i === 0;
+            const div = document.createElement('div');
+            div.className = `flex justify-between items-center p-3 rounded-lg border transition-all ${isBest ? 'bg-emerald-500/10 border-emerald-500/30' : 'glass-panel border-white/5 opacity-80'}`;
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-white p-1 flex items-center justify-center">
+                        <img src="${s.logo || 'https://cdn-icons-png.flaticon.com/512/1175/1175239.png'}" 
+                             class="w-full h-full object-contain" 
+                             onerror="this.src='https://cdn-icons-png.flaticon.com/512/1175/1175239.png'">
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-adaptive">${s.name}</p>
+                        <p class="text-[10px] text-slate-400">1 ${fromCurrency} = ${s.rate.toFixed(4)} MAD</p>
+                    </div>
+                </div>
+                ${isBest ? '<span class="text-[10px] font-bold bg-emerald-500 text-white px-2 py-1 rounded-full shadow-lg">Meilleur</span>' : ''}
+            `;
+            list.appendChild(div);
+        });
+
+        lucide.createIcons();
+    }
+
+    // Form submission
+    document.getElementById('exchange-form').addEventListener('submit', function(e) {
+        const name = document.getElementById('recipient-name').value;
+        const account = document.getElementById('recipient-account').value;
+        
+        if (!name || !account) {
+            e.preventDefault();
+            showNotification('Veuillez remplir les informations du bénéficiaire', 'error');
+            return;
+        }
+        
+        // Add recipient info to form
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'recipient_name';
+        nameInput.value = name;
+        this.appendChild(nameInput);
+        
+        const accountInput = document.createElement('input');
+        accountInput.type = 'hidden';
+        accountInput.name = 'recipient_account';
+        accountInput.value = account;
+        this.appendChild(accountInput);
+    });
+</script>
+{% endblock %}

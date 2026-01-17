@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}SarfX - Le Futur du Change{% endblock %}</title>
+    
+    <!-- STACK TECHNIQUE -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    
+    <!-- PWA Meta -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="h-screen flex flex-col overflow-hidden relative selection:bg-orange-500/30" id="app-body">
+
+    <!-- Background Blobs (Décoration) -->
+    <div class="blob bg-blue-600 w-80 h-80 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="blob bg-[rgb(224,90,3)] w-64 h-64 rounded-full bottom-0 right-0 translate-x-1/2 translate-y-1/2"></div>
+
+    <!-- Notifications System -->
+    <div id="notification-container" class="fixed top-4 left-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    {% for category, message in messages %}
+                        showNotification('{{ message }}', '{{ category }}');
+                    {% endfor %}
+                });
+            </script>
+        {% endif %}
+    {% endwith %}
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="main-content" class="flex-1 overflow-y-auto pb-24 relative z-10 p-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- NAVIGATION BAR -->
+    <nav class="fixed bottom-0 w-full nav-bar pb-6 pt-3 px-2 flex justify-around z-50">
+        <a href="{{ url_for('app.home') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'home' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Accueil</span>
+        </a>
+        <a href="{{ url_for('app.converter') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'converter' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
+            <i data-lucide="repeat" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Exchange</span>
+        </a>
+        <a href="{{ url_for('app.ai_forecast') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'ai' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
+            <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">IA</span>
+        </a>
+        <a href="{{ url_for('app.profile') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'profile' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
+            <i data-lucide="user" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Profil</span>
+        </a>
+        <a href="{{ url_for('app.settings') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'settings' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Réglages</span>
+        </a>
+    </nav>
+
+    <!-- Global JavaScript -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Theme Management
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('theme-light');
+            const isDark = !body.classList.contains('theme-light');
+            localStorage.setItem('sarfx_theme', isDark ? 'dark' : 'light');
+            updateThemeToggleUI(isDark);
+            
+            // Sync with server
+            fetch('/api/theme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme: isDark ? 'dark' : 'light' })
+            });
+        }
+
+        function updateThemeToggleUI(isDark) {
+            const dot = document.getElementById('theme-toggle-dot');
+            const btn = document.getElementById('theme-toggle-btn');
+            if (dot && btn) {
+                if (isDark) {
+                    dot.style.transform = 'translateX(0)';
+                    btn.classList.replace('bg-blue-200', 'bg-slate-700');
+                } else {
+                    dot.style.transform = 'translateX(24px)';
+                    btn.classList.replace('bg-slate-700', 'bg-blue-200');
+                }
+            }
+        }
+
+        // Notifications
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            toast.className = `notification-toast ${type}`;
+            
+            const icons = {
+                success: 'check-circle',
+                error: 'x-circle',
+                info: 'info'
+            };
+            
+            toast.innerHTML = `
+                <i data-lucide="${icons[type] || 'info'}" class="w-5 h-5"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Init Theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('sarfx_theme') || '{{ user_theme | default("dark") }}';
+            if (savedTheme === 'light') {
+                document.body.classList.add('theme-light');
+            }
+            updateThemeToggleUI(savedTheme !== 'light');
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

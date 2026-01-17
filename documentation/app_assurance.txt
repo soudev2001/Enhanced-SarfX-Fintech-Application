@@ -1,0 +1,44 @@
+SARFX ADMIN APP - ASSURANCE & RELIABILITY PROTOCOL
+
+ERROR HANDLING STRATEGY
+
+Global 404 Handler: A custom 404.html template catches all undefined routes, ensuring the user never sees a raw server error.
+
+Database Fail-Safe: The get_db() function in db_service.py wraps the MongoDB connection in a try/except block. If MongoDB is down, the app logs the error to the console but does not crash immediately, allowing the UI to render graceful error messages.
+
+Route Protection: The @login_required decorator ensures sensitive admin routes are inaccessible without a valid session.
+
+UPTIME & SCALABILITY
+
+Blueprints: The application is split into blueprints (Auth, Admin, Suppliers), preventing a monolithic file structure that is hard to debug.
+
+Environment Variables: All credentials (SMTP, Mongo) are loaded from os.environ, preventing hardcoded secrets from breaking production deployments.
+
+Stateless Sessions: The app uses Flask's signed cookie sessions, making it ready for horizontal scaling across multiple workers (e.g., Gunicorn).
+
+TESTING STEPS
+A. Authentication
+
+Run app. Navigate to /auth/login.
+
+Click "Create new Admin account". Register with a valid email.
+
+Check console/logs for the SMTP success message (or actual inbox if credentials valid).
+
+Log in with new credentials. Verify redirection to Dashboard.
+
+B. Admin Actions
+
+Navigate to "Suppliers" tab.
+
+Click "+" to add a supplier. Fill form. Save.
+
+Verify supplier appears in the list.
+
+Check Dashboard "Recent Activity" to ensure the action was logged.
+
+C. Reliability
+
+Stop the MongoDB service/disconnect internet.
+
+Refresh the page. The app should catch the connection error and log it, rather than crashing with a 500 error page.

@@ -1,0 +1,9 @@
+flask
+pymongo
+dnspython
+requests
+python-dotenv
+email-validator
+werkzeug
+flask-wtf
+gunicorn

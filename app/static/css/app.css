@@ -1,0 +1,502 @@
+/* ============================================
+   SarfX Mobile App Styles
+   Inspired by Wise - Mobile First Design
+   ============================================ */
+
+/* --- TYPOGRAPHIE & BASE --- */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --brand-orange: rgb(224, 90, 3);
+    --brand-blue: #3b82f6;
+    --dark-bg: #0f172a;
+    --dark-surface: rgba(30, 41, 59, 0.7);
+    --light-bg: #f8fafc;
+    --light-surface: rgba(255, 255, 255, 0.85);
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--dark-bg);
+    color: #f8fafc;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- THEME CLAIR (Light Mode) --- */
+body.theme-light {
+    background-color: var(--light-bg);
+    color: #0f172a;
+}
+
+/* --- COMPOSANTS UI --- */
+
+/* Glassmorphism Adaptatif */
+.glass-panel {
+    background: var(--dark-surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.theme-light .glass-panel {
+    background: var(--light-surface);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+/* Inputs Adaptatifs */
+.glass-input {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.theme-light .glass-input {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+}
+
+.theme-light .glass-input::placeholder {
+    color: #94a3b8;
+}
+
+/* Navigation Bar */
+.nav-bar {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.theme-light .nav-bar {
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Text Colors for Theme Switching */
+.text-adaptive {
+    color: white;
+}
+
+.theme-light .text-adaptive {
+    color: #0f172a;
+}
+
+.text-adaptive-muted {
+    color: #94a3b8;
+}
+
+.theme-light .text-adaptive-muted {
+    color: #64748b;
+}
+
+/* SarfX Logo Colors */
+.logo-text {
+    color: white;
+}
+
+.theme-light .logo-text {
+    color: #0f172a;
+}
+
+.logo-x {
+    color: var(--brand-orange);
+}
+
+/* --- ANIMATIONS & UTILITAIRES --- */
+::-webkit-scrollbar {
+    width: 0;
+}
+
+.screen {
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.blob {
+    position: absolute;
+    filter: blur(90px);
+    z-index: -1;
+    opacity: 0.4;
+    transition: opacity 0.5s ease;
+}
+
+.theme-light .blob {
+    opacity: 0.15;
+}
+
+.loader {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--brand-orange);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+.theme-light .loader {
+    border-color: rgba(0, 0, 0, 0.1);
+    border-left-color: var(--brand-orange);
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.skeleton {
+    background: rgba(30, 41, 59, 0.5);
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.theme-light .skeleton {
+    background: #e2e8f0;
+}
+
+/* Transition Classes for JS Logic */
+.hidden-opacity {
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+    overflow: hidden;
+    transition: all 0.3s;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.visible-opacity {
+    opacity: 1;
+    pointer-events: auto;
+    height: auto;
+    transition: all 0.3s;
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+    background: linear-gradient(to right, var(--brand-blue), var(--brand-orange));
+    color: white;
+    font-weight: bold;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transform: scale(1);
+    transition: transform 0.2s ease;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+}
+
+.btn-secondary {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--brand-blue);
+    font-weight: bold;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+/* --- CARDS --- */
+.feature-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+
+.feature-icon {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.feature-icon.blue {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--brand-blue);
+}
+
+.feature-icon.orange {
+    background: rgba(224, 90, 3, 0.1);
+    color: var(--brand-orange);
+}
+
+/* --- WALLET CARD --- */
+.wallet-card {
+    background: linear-gradient(135deg, var(--brand-blue), var(--brand-orange));
+    border-radius: 1rem;
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+}
+
+/* --- SUPPLIER BADGE --- */
+.supplier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.supplier-badge.best {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.supplier-badge.bank {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--brand-blue);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.supplier-badge.crypto {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* --- STATUS INDICATORS --- */
+.status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+    background: #10b981;
+}
+
+.status-dot.offline {
+    background: #ef4444;
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* --- ADMIN STYLES --- */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.theme-light .admin-table th,
+.theme-light .admin-table td {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-table th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* --- NOTIFICATION TOAST --- */
+.notification-toast {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: slideIn 0.3s ease;
+    pointer-events: auto;
+}
+
+.notification-toast.success {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+.notification-toast.error {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+}
+
+.notification-toast.info {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* --- FORM STYLES --- */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    color: #94a3b8;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    ring: 2px;
+    ring-color: var(--brand-blue);
+}
+
+/* --- MOBILE SAFE AREA --- */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .nav-bar {
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* --- TRANSACTION HISTORY --- */
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    transition: background 0.2s ease;
+}
+
+.transaction-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.theme-light .transaction-item:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.transaction-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.transaction-icon.send {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.transaction-icon.receive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+/* --- LOGIN PAGE --- */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* --- CHART CONTAINER --- */
+.chart-container {
+    position: relative;
+    height: 16rem;
+    width: 100%;
+}
+
+/* --- RESPONSIVE ADJUSTMENTS --- */
+@media (min-width: 768px) {
+    .nav-bar {
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 1rem 1rem 0 0;
+    }
+}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="center-screen" style="background: #F2F2F7; height: 100vh;">
+    <div style="width: 100%; max-width: 400px;">
+        <h1 style="text-align: center; margin-bottom: 40px;">SarfX Admin</h1>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">{{ 'Register' if request.args.get('mode') == 'register' else 'Login' }}</h2>
+            
+            <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}">
+                <input type="email" name="email" class="ios-input" placeholder="Email Address" required value="starkxgroup@gmail.com">
+                <input type="password" name="password" class="ios-input" placeholder="Password" required value="admin">
+                
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Sign Up' if request.args.get('mode') == 'register' else 'Sign In' }}
+                </button>
+            </form>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            {% if request.args.get('mode') == 'register' %}
+                <a href="{{ url_for('auth.login') }}" class="btn-ghost">Already have an account? Login</a>
+            {% else %}
+                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-ghost">Create new Admin account</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

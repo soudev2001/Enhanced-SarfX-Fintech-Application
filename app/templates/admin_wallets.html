@@ -1,0 +1,73 @@
+{% extends "app_base.html" %}
+
+{% block title %}Portefeuilles - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center pt-4">
+        <h2 class="text-2xl font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="wallet" class="w-6 h-6 text-amber-500"></i>
+            Gestion des Portefeuilles
+        </h2>
+        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-xs font-bold">
+            {{ wallets | length }} portefeuilles
+        </span>
+    </div>
+
+    <!-- Wallets List -->
+    <div class="space-y-3">
+        {% for wallet in wallets %}
+        <div class="glass-panel p-4 rounded-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-adaptive">{{ wallet.user_email }}</p>
+                    <p class="text-xs text-adaptive-muted font-mono">{{ wallet.wallet_id[:16] }}...</p>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full {{ 'bg-emerald-500/10 text-emerald-500' if wallet.get('is_active', True) else 'bg-rose-500/10 text-rose-500' }}">
+                    {{ 'Actif' if wallet.get('is_active', True) else 'Inactif' }}
+                </span>
+            </div>
+            
+            <!-- Balances -->
+            <div class="grid grid-cols-2 gap-2">
+                {% for currency, balance in wallet.get('balances', {}).items() %}
+                <div class="bg-slate-800/50 p-2 rounded-lg flex justify-between items-center">
+                    <span class="text-xs text-adaptive-muted">{{ currency }}</span>
+                    <span class="text-sm font-bold text-adaptive font-mono">{{ "{:,.2f}".format(balance) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Adjust Form -->
+            <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.wallet_id) }}" method="POST" class="space-y-2">
+                <div class="flex gap-2">
+                    <select name="currency" class="glass-input rounded-lg px-2 py-2 text-xs flex-1">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="MAD">MAD</option>
+                        <option value="GBP">GBP</option>
+                    </select>
+                    <input type="number" name="amount" step="0.01" placeholder="+/- Montant" class="glass-input rounded-lg px-2 py-2 text-xs flex-1" required>
+                </div>
+                <input type="text" name="reason" placeholder="Raison de l'ajustement" class="w-full glass-input rounded-lg px-2 py-2 text-xs">
+                <button type="submit" class="w-full bg-amber-500/20 text-amber-500 font-bold py-2 rounded-lg text-xs hover:bg-amber-500/30 transition">
+                    Ajuster le solde
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="glass-panel p-8 rounded-xl text-center">
+            <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                <i data-lucide="wallet" class="w-8 h-8 text-slate-500"></i>
+            </div>
+            <p class="text-adaptive-muted">Aucun portefeuille</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Back Link -->
+    <a href="{{ url_for('app.settings') }}" class="block glass-panel p-4 rounded-xl text-center text-blue-500 font-bold">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i> Retour aux réglages
+    </a>
+</div>
+{% endblock %}

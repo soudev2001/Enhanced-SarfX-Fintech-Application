@@ -1,0 +1,84 @@
+{% extends "app_base.html" %}
+
+{% block title %}Utilisateurs - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center pt-4">
+        <h2 class="text-2xl font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="users" class="w-6 h-6 text-purple-500"></i>
+            Gestion des Utilisateurs
+        </h2>
+        <span class="bg-purple-500/10 text-purple-500 px-3 py-1 rounded-full text-xs font-bold">
+            {{ users | length }} utilisateurs
+        </span>
+    </div>
+
+    <!-- Users List -->
+    <div class="space-y-3">
+        {% for user in users %}
+        <div class="glass-panel p-4 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ user.email[0] | upper }}
+                    </div>
+                    <div>
+                        <p class="font-bold text-adaptive">{{ user.email }}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full 
+                                {{ 'bg-amber-500/10 text-amber-500 border border-amber-500/20' if user.role == 'admin' else 'bg-slate-500/10 text-slate-400 border border-slate-500/20' }}">
+                                {{ user.role | default('user') | upper }}
+                            </span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full 
+                                {{ 'bg-emerald-500/10 text-emerald-500' if user.get('is_active', True) else 'bg-rose-500/10 text-rose-500' }}">
+                                {{ 'Actif' if user.get('is_active', True) else 'Inactif' }}
+                            </span>
+                            {% if user.verified %}
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
+                                ✓ Vérifié
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-2">
+                    <!-- Toggle Status -->
+                    <form action="{{ url_for('admin.toggle_user', user_id=user._id) }}" method="POST">
+                        <button type="submit" class="p-2 rounded-lg {{ 'bg-emerald-500/10 text-emerald-500' if user.get('is_active', True) else 'bg-rose-500/10 text-rose-500' }} hover:opacity-80 transition" 
+                                title="{{ 'Désactiver' if user.get('is_active', True) else 'Activer' }}">
+                            <i data-lucide="{{ 'toggle-right' if user.get('is_active', True) else 'toggle-left' }}" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                    
+                    <!-- Change Role -->
+                    <form action="{{ url_for('admin.change_role', user_id=user._id) }}" method="POST" class="inline">
+                        <select name="role" onchange="this.form.submit()" class="glass-input rounded-lg px-2 py-1 text-xs">
+                            <option value="user" {{ 'selected' if user.role != 'admin' else '' }}>User</option>
+                            <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>
+                        </select>
+                    </form>
+                    
+                    <!-- Delete -->
+                    {% if user._id != session.user_id %}
+                    <form action="{{ url_for('admin.delete_user', user_id=user._id) }}" method="POST" 
+                          onsubmit="return confirm('Supprimer cet utilisateur ?')">
+                        <button type="submit" class="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Back Link -->
+    <a href="{{ url_for('app.settings') }}" class="block glass-panel p-4 rounded-xl text-center text-blue-500 font-bold">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i> Retour aux réglages
+    </a>
+</div>
+{% endblock %}

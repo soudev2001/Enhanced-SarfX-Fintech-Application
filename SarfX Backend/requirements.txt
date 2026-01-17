@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+gunicorn
+requests
+yfinance
+pandas
+numpy
+pymongo
+statsmodels
+prophet
+scikit-learn
+tensorflow

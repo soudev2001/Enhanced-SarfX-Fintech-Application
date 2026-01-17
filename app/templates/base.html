@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin SarfX</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- Messages Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-msg fade-in" style="background-color: {{ '#34C759' if category=='success' else '#FF3B30' }};">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Contenu Principal -->
+    <div class="fade-in">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Navigation (Seulement si connecté) -->
+    {% if session.get('user_id') %}
+    <nav class="bottom-nav">
+        <a href="{{ url_for('admin.dashboard') }}" class="nav-item {{ 'active' if 'dashboard' in request.endpoint }}">
+            <i data-lucide="layout-dashboard"></i>
+            Dashboard
+        </a>
+        <a href="{{ url_for('suppliers.list_suppliers') }}" class="nav-item {{ 'active' if 'suppliers' in request.endpoint }}">
+            <i data-lucide="users"></i>
+            Fournisseurs
+        </a>
+        <a href="#" class="nav-item">
+            <i data-lucide="file-check"></i>
+            KYC
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-item">
+            <i data-lucide="log-out"></i>
+            Sortie
+        </a>
+    </nav>
+    {% endif %}
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

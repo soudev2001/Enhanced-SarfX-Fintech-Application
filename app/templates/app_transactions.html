@@ -1,0 +1,180 @@
+{% extends "app_base.html" %}
+
+{% block title %}Transactions - SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-adaptive">Historique</h2>
+            <p class="text-xs text-adaptive-muted">Toutes vos transactions</p>
+        </div>
+        <a href="{{ url_for('app.home') }}" class="glass-panel p-2 rounded-xl">
+            <i data-lucide="x" class="w-5 h-5 text-adaptive"></i>
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button onclick="filterTransactions('all')" class="filter-btn active flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="all">
+            Toutes
+        </button>
+        <button onclick="filterTransactions('completed')" class="filter-btn flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="completed">
+            Complétées
+        </button>
+        <button onclick="filterTransactions('pending')" class="filter-btn flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="pending">
+            En attente
+        </button>
+        <button onclick="filterTransactions('failed')" class="filter-btn flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="failed">
+            Échouées
+        </button>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="space-y-3" id="transactions-list">
+        {% if transactions %}
+            {% for tx in transactions %}
+            <div class="transaction-item glass-panel p-4 rounded-xl" data-status="{{ tx.status }}">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center
+                        {% if tx.status == 'completed' %}bg-emerald-500/20 text-emerald-500
+                        {% elif tx.status == 'pending' %}bg-yellow-500/20 text-yellow-500
+                        {% else %}bg-red-500/20 text-red-500{% endif %}">
+                        <i data-lucide="{% if tx.status == 'completed' %}check{% elif tx.status == 'pending' %}clock{% else %}x{% endif %}" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline justify-between">
+                            <p class="font-medium text-adaptive truncate">{{ tx.recipient_name or 'Transfert' }}</p>
+                            <p class="text-sm font-bold
+                                {% if tx.type == 'send' %}text-red-500{% else %}text-emerald-500{% endif %}">
+                                {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount_sent }} {{ tx.from_currency }}
+                            </p>
+                        </div>
+                        <div class="flex items-center justify-between mt-1">
+                            <span class="text-xs text-adaptive-muted">{{ tx.from_currency }} → {{ tx.to_currency }}</span>
+                            <span class="text-xs text-adaptive-muted">{{ tx.created_at.strftime('%d/%m %H:%M') if tx.created_at else '' }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transaction Details (Expandable) -->
+                <div class="transaction-details hidden mt-4 pt-4 border-t border-white/10 space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-adaptive-muted">Montant reçu</span>
+                        <span class="text-adaptive font-medium">{{ tx.amount_received }} {{ tx.to_currency }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-adaptive-muted">Taux</span>
+                        <span class="text-adaptive font-medium">1 {{ tx.from_currency }} = {{ tx.rate }} {{ tx.to_currency }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-adaptive-muted">Fournisseur</span>
+                        <span class="text-adaptive font-medium">{{ tx.supplier_name or 'SarfX' }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-adaptive-muted">ID Transaction</span>
+                        <span class="text-adaptive font-mono text-[10px]">{{ tx._id | string | truncate(16) }}</span>
+                    </div>
+                    {% if tx.recipient_iban %}
+                    <div class="flex justify-between text-xs">
+                        <span class="text-adaptive-muted">IBAN</span>
+                        <span class="text-adaptive font-mono text-[10px]">{{ tx.recipient_iban | truncate(20) }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="glass-panel p-8 rounded-2xl text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4">
+                    <i data-lucide="receipt" class="w-8 h-8 text-blue-500"></i>
+                </div>
+                <h3 class="font-bold text-adaptive mb-2">Aucune transaction</h3>
+                <p class="text-sm text-adaptive-muted mb-4">Effectuez votre première conversion pour voir l'historique</p>
+                <a href="{{ url_for('app.converter') }}" class="btn-primary inline-flex">
+                    Convertir
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Load More -->
+    {% if transactions and transactions | length >= 20 %}
+    <button onclick="loadMore()" class="w-full glass-panel p-3 rounded-xl text-sm text-adaptive-muted hover:text-adaptive transition">
+        Charger plus
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Make transaction items expandable
+    document.querySelectorAll('.transaction-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const details = item.querySelector('.transaction-details');
+            if (details) {
+                details.classList.toggle('hidden');
+            }
+        });
+    });
+
+    // Filter transactions
+    function filterTransactions(status) {
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.filter === status) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Filter items
+        document.querySelectorAll('.transaction-item').forEach(item => {
+            if (status === 'all' || item.dataset.status === status) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // Load more transactions
+    let page = 1;
+    function loadMore() {
+        page++;
+        fetch(`/api/transactions?page=${page}`)
+            .then(r => r.json())
+            .then(data => {
+                // Append new transactions
+                if (data.transactions && data.transactions.length > 0) {
+                    // Implementation for appending transactions
+                }
+            });
+    }
+</script>
+
+<style>
+    .filter-btn {
+        background: var(--glass-bg);
+        color: var(--text-muted);
+    }
+    .filter-btn.active {
+        background: linear-gradient(135deg, #3b82f6, rgb(224, 90, 3));
+        color: white;
+    }
+    .filter-btn:not(.active):hover {
+        background: var(--glass-hover);
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+{% endblock %}

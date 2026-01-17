@@ -1,0 +1,161 @@
+{% extends "app_base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <h2 class="text-2xl font-bold pt-4 text-adaptive">Réglages</h2>
+    
+    <!-- Theme Toggle -->
+    <div class="glass-panel p-4 rounded-xl flex items-center justify-between">
+        <span class="text-sm font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="moon" class="w-4 h-4"></i> Mode Sombre
+        </span>
+        <button onclick="toggleTheme()" class="w-12 h-6 bg-slate-700 rounded-full relative transition-colors" id="theme-toggle-btn">
+            <div class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform" id="theme-toggle-dot"></div>
+        </button>
+    </div>
+
+    <!-- Account Settings -->
+    <div class="glass-panel p-4 rounded-xl space-y-4">
+        <h3 class="text-sm font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="user-cog" class="w-4 h-4 text-blue-400"></i> Compte
+        </h3>
+        
+        <div class="space-y-3">
+            <div class="flex justify-between items-center py-2 border-b border-white/5">
+                <span class="text-sm text-adaptive-muted">Email</span>
+                <span class="text-sm text-adaptive font-mono">{{ user.email if user else '--' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-white/5">
+                <span class="text-sm text-adaptive-muted">Rôle</span>
+                <span class="text-sm text-adaptive">{{ user.role | default('user') | capitalize }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+                <span class="text-sm text-adaptive-muted">Statut</span>
+                <span class="inline-flex items-center gap-1 text-sm {{ 'text-emerald-500' if user and user.verified else 'text-amber-500' }}">
+                    <span class="status-dot {{ 'online' if user and user.verified else 'offline' }}"></span>
+                    {{ 'Vérifié' if user and user.verified else 'Non vérifié' }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {% if user and user.role == 'admin' %}
+    <!-- Admin Section -->
+    <div class="space-y-4 border-t border-slate-700/50 pt-4">
+        <h3 class="text-lg font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-[rgb(224,90,3)]"></i>
+            Administration
+        </h3>
+        
+        <!-- Admin Links -->
+        <div class="grid grid-cols-1 gap-3">
+            <a href="{{ url_for('admin.dashboard') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3">
+                <div class="bg-blue-500/10 p-2 rounded-lg text-blue-500">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-adaptive text-sm">Dashboard Admin</h4>
+                    <p class="text-xs text-adaptive-muted">Vue d'ensemble et statistiques</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-adaptive-muted"></i>
+            </a>
+            
+            <a href="{{ url_for('admin.users') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3">
+                <div class="bg-purple-500/10 p-2 rounded-lg text-purple-500">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-adaptive text-sm">Utilisateurs</h4>
+                    <p class="text-xs text-adaptive-muted">Gérer les comptes</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-adaptive-muted"></i>
+            </a>
+            
+            <a href="{{ url_for('suppliers.list_suppliers') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3">
+                <div class="bg-emerald-500/10 p-2 rounded-lg text-emerald-500">
+                    <i data-lucide="building-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-adaptive text-sm">Fournisseurs</h4>
+                    <p class="text-xs text-adaptive-muted">Taux et partenaires</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-adaptive-muted"></i>
+            </a>
+            
+            <a href="{{ url_for('admin.wallets') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3">
+                <div class="bg-amber-500/10 p-2 rounded-lg text-amber-500">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-adaptive text-sm">Portefeuilles</h4>
+                    <p class="text-xs text-adaptive-muted">Soldes et ajustements</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-adaptive-muted"></i>
+            </a>
+            
+            <a href="{{ url_for('admin.transactions') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3">
+                <div class="bg-rose-500/10 p-2 rounded-lg text-rose-500">
+                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-adaptive text-sm">Transactions</h4>
+                    <p class="text-xs text-adaptive-muted">Historique complet</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-adaptive-muted"></i>
+            </a>
+        </div>
+
+        <!-- Admin: API Config -->
+        <div class="glass-panel p-4 rounded-xl space-y-4">
+            <h4 class="text-sm font-semibold text-adaptive-muted uppercase flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4"></i> Configuration API IA
+            </h4>
+            <form action="{{ url_for('api.save_settings') }}" method="POST">
+                <div class="space-y-2">
+                    <label class="text-xs text-adaptive-muted">URL Backend</label>
+                    <input type="text" name="ai_backend_url" value="{{ settings.ai_backend_url | default('https://sarfx-backend-ai-618432953337.europe-west1.run.app') }}" 
+                           class="w-full glass-input rounded-lg px-3 py-3 text-sm font-mono text-blue-400">
+                </div>
+                <button type="submit" class="w-full mt-4 bg-gradient-to-r from-blue-600 to-[rgb(224,90,3)] text-white font-bold py-3 rounded-xl hover:shadow-lg transition active:scale-95">
+                    Sauvegarder
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- App Info -->
+    <div class="glass-panel p-4 rounded-xl">
+        <h3 class="text-sm font-bold text-adaptive mb-3 flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-slate-400"></i> À propos
+        </h3>
+        <div class="space-y-2 text-xs text-adaptive-muted">
+            <div class="flex justify-between">
+                <span>Version</span>
+                <span class="font-mono">1.0.0</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Build</span>
+                <span class="font-mono">2026.01</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Links -->
+    <div class="grid grid-cols-2 gap-3">
+        <a href="#" class="glass-panel p-4 rounded-xl text-center">
+            <i data-lucide="help-circle" class="w-6 h-6 mx-auto mb-2 text-blue-500"></i>
+            <span class="text-sm font-bold text-adaptive">Aide</span>
+        </a>
+        <a href="#" class="glass-panel p-4 rounded-xl text-center">
+            <i data-lucide="message-circle" class="w-6 h-6 mx-auto mb-2 text-emerald-500"></i>
+            <span class="text-sm font-bold text-adaptive">Contact</span>
+        </a>
+    </div>
+
+    <!-- Logout -->
+    <a href="{{ url_for('auth.logout') }}" class="block glass-panel p-4 rounded-xl text-center text-rose-500 font-bold">
+        <i data-lucide="log-out" class="w-4 h-4 inline mr-2"></i> Déconnexion
+    </a>
+</div>
+{% endblock %}

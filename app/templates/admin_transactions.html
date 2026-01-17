@@ -1,0 +1,105 @@
+{% extends "app_base.html" %}
+
+{% block title %}Transactions - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center pt-4">
+        <h2 class="text-2xl font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="receipt" class="w-6 h-6 text-rose-500"></i>
+            Historique des Transactions
+        </h2>
+        <span class="bg-rose-500/10 text-rose-500 px-3 py-1 rounded-full text-xs font-bold">
+            {{ transactions | length }} transactions
+        </span>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-2 overflow-x-auto pb-2">
+        <a href="{{ url_for('admin.transactions') }}" 
+           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'bg-blue-500 text-white' if not request.args.get('status') else 'glass-panel text-adaptive-muted' }}">
+            Toutes
+        </a>
+        <a href="{{ url_for('admin.transactions', status='completed') }}" 
+           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'bg-emerald-500 text-white' if request.args.get('status') == 'completed' else 'glass-panel text-adaptive-muted' }}">
+            Complétées
+        </a>
+        <a href="{{ url_for('admin.transactions', status='pending') }}" 
+           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'bg-amber-500 text-white' if request.args.get('status') == 'pending' else 'glass-panel text-adaptive-muted' }}">
+            En attente
+        </a>
+        <a href="{{ url_for('admin.transactions', status='failed') }}" 
+           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'bg-rose-500 text-white' if request.args.get('status') == 'failed' else 'glass-panel text-adaptive-muted' }}">
+            Échouées
+        </a>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="space-y-3">
+        {% for tx in transactions %}
+        <div class="glass-panel p-4 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full {{ 'bg-emerald-500/20 text-emerald-500' if tx.type == 'receive' else 'bg-rose-500/20 text-rose-500' }} flex items-center justify-center">
+                        <i data-lucide="{{ 'arrow-down-left' if tx.type == 'receive' else 'arrow-up-right' }}" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-adaptive">{{ tx.user_email }}</p>
+                        <p class="text-[10px] text-adaptive-muted font-mono">{{ tx.transaction_id[:16] }}...</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-adaptive">{{ "{:,.2f}".format(tx.amount) }} {{ tx.from_currency }}</p>
+                    <p class="text-xs text-adaptive-muted">→ {{ "{:,.2f}".format(tx.final_amount) }} {{ tx.to_currency }}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-full 
+                        {% if tx.status == 'completed' %}bg-emerald-500/10 text-emerald-500
+                        {% elif tx.status == 'pending' %}bg-amber-500/10 text-amber-500
+                        {% else %}bg-rose-500/10 text-rose-500{% endif %}">
+                        {{ tx.status | upper }}
+                    </span>
+                    <span class="text-adaptive-muted">
+                        {{ tx.created_at.strftime('%d/%m/%Y %H:%M') if tx.created_at else '--' }}
+                    </span>
+                </div>
+                
+                <!-- Status Update -->
+                <form action="{{ url_for('admin.update_transaction_status', tx_id=tx.transaction_id) }}" method="POST" class="inline">
+                    <select name="status" onchange="this.form.submit()" class="glass-input rounded px-2 py-1 text-xs">
+                        <option value="pending" {{ 'selected' if tx.status == 'pending' else '' }}>En attente</option>
+                        <option value="completed" {{ 'selected' if tx.status == 'completed' else '' }}>Complétée</option>
+                        <option value="failed" {{ 'selected' if tx.status == 'failed' else '' }}>Échouée</option>
+                    </select>
+                </form>
+            </div>
+            
+            {% if tx.recipient_name %}
+            <div class="bg-slate-800/30 p-2 rounded-lg text-xs">
+                <span class="text-adaptive-muted">Bénéficiaire:</span>
+                <span class="text-adaptive font-medium">{{ tx.recipient_name }}</span>
+                {% if tx.recipient_account %}
+                <span class="text-adaptive-muted ml-2">{{ tx.recipient_account }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="glass-panel p-8 rounded-xl text-center">
+            <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                <i data-lucide="inbox" class="w-8 h-8 text-slate-500"></i>
+            </div>
+            <p class="text-adaptive-muted">Aucune transaction</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Back Link -->
+    <a href="{{ url_for('app.settings') }}" class="block glass-panel p-4 rounded-xl text-center text-blue-500 font-bold">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i> Retour aux réglages
+    </a>
+</div>
+{% endblock %}
