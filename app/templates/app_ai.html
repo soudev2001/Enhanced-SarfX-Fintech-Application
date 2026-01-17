@@ -1,237 +1,751 @@
 {% extends "app_base.html" %}
 
 {% block content %}
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex justify-between items-start pt-4">
-        <h2 class="text-xl font-bold flex items-center gap-2 text-adaptive">
-            <i data-lucide="brain-circuit" class="w-5 h-5 text-purple-500"></i>
-            SarfX IA
-        </h2>
-        <button onclick="document.getElementById('ai-config').classList.toggle('hidden')" class="p-2 glass-panel rounded-full text-adaptive-muted">
-            <i data-lucide="settings-2" class="w-4 h-4"></i>
+<div class="space-y-5">
+    <!-- Header with Tabs -->
+    <div class="flex justify-between items-center pt-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="brain-circuit" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-adaptive">SarfX IA</h2>
+                <p class="text-xs text-adaptive-muted">Taux & Prévisions</p>
+            </div>
+        </div>
+        <button onclick="toggleSettings()" class="p-2 glass-panel rounded-full text-adaptive-muted hover:text-adaptive transition-colors">
+            <i data-lucide="sliders" class="w-5 h-5"></i>
         </button>
     </div>
-    
-    <!-- Config Panel -->
-    <div id="ai-config" class="hidden glass-panel p-4 rounded-xl space-y-2">
-        <label class="text-xs text-adaptive-muted">URL Backend IA</label>
-        <input type="text" id="ai-url" value="{{ ai_backend_url | default('https://sarfx-backend-ai-618432953337.europe-west1.run.app') }}" class="w-full glass-input rounded-lg p-2 text-xs font-mono">
-        <div class="flex gap-2">
-            <select id="ai-pair" class="flex-1 glass-input rounded-lg p-2 text-xs">
-                <option value="EURUSD=X">EUR/USD</option>
-                <option value="USDMAD=X">USD/MAD</option>
-                <option value="EURMAD=X">EUR/MAD</option>
-                <option value="GBPUSD=X">GBP/USD</option>
+
+    <!-- Tab Navigation -->
+    <div class="flex gap-2 bg-black/20 p-1 rounded-xl">
+        <button onclick="switchTab('converter')" id="tab-converter" class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all tab-active">
+            <i data-lucide="repeat" class="w-3 h-3 inline mr-1"></i>Convertir
+        </button>
+        <button onclick="switchTab('chart')" id="tab-chart" class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all text-adaptive-muted">
+            <i data-lucide="line-chart" class="w-3 h-3 inline mr-1"></i>Graphique
+        </button>
+        <button onclick="switchTab('forecast')" id="tab-forecast" class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all text-adaptive-muted">
+            <i data-lucide="sparkles" class="w-3 h-3 inline mr-1"></i>IA
+        </button>
+    </div>
+
+    <!-- Settings Panel (Hidden by default) -->
+    <div id="settings-panel" class="hidden glass-panel p-4 rounded-xl space-y-4 border-l-4 border-purple-500">
+        <h3 class="text-sm font-bold text-adaptive flex items-center gap-2">
+            <i data-lucide="settings" class="w-4 h-4 text-purple-500"></i> Paramètres
+        </h3>
+        <div class="space-y-3">
+            <div>
+                <label class="text-xs text-adaptive-muted block mb-1">Source des taux</label>
+                <select id="rate-source" class="w-full glass-input rounded-lg p-2 text-sm" onchange="saveSettings()">
+                    <option value="auto">Auto (Fallback)</option>
+                    <option value="frankfurter">Frankfurter (BCE)</option>
+                    <option value="exchangerate">ExchangeRate-API</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-adaptive-muted block mb-1">Rafraîchissement cache</label>
+                <select id="cache-duration" class="w-full glass-input rounded-lg p-2 text-sm" onchange="saveSettings()">
+                    <option value="1">1 minute</option>
+                    <option value="5">5 minutes</option>
+                    <option value="15">15 minutes</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-adaptive-muted block mb-1">URL Backend IA</label>
+                <input type="text" id="ai-backend-url" value="{{ ai_backend_url | default('http://localhost:8087') }}" 
+                       class="w-full glass-input rounded-lg p-2 text-xs font-mono">
+            </div>
+            <div class="flex items-center gap-2 text-xs text-adaptive-muted">
+                <i data-lucide="info" class="w-3 h-3"></i>
+                <span>Sources: Frankfurter (BCE - illimité), ExchangeRate-API (1500/mois)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CONVERTER TAB ==================== -->
+    <div id="content-converter" class="space-y-4">
+        <!-- Live Rate Display -->
+        <div class="glass-panel p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs text-adaptive-muted font-bold uppercase">Taux en direct</span>
+                <div class="flex items-center gap-2">
+                    <span id="rate-source-badge" class="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full">BCE</span>
+                    <span id="rate-timestamp" class="text-[10px] text-adaptive-muted">--:--</span>
+                </div>
+            </div>
+            <div class="text-center">
+                <div class="flex items-center justify-center gap-3 mb-2">
+                    <span id="live-from-flag" class="text-2xl">🇪🇺</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-adaptive-muted"></i>
+                    <span id="live-to-flag" class="text-2xl">🇺🇸</span>
+                </div>
+                <h1 id="live-rate" class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-[rgb(224,90,3)] tracking-tight">
+                    --
+                </h1>
+                <p class="text-xs text-adaptive-muted mt-1">
+                    1 <span id="live-base">EUR</span> = <span id="live-rate-text">--</span> <span id="live-quote">USD</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Wise-Style Converter -->
+        <div class="glass-panel p-5 rounded-xl space-y-4">
+            <h3 class="text-sm font-bold text-adaptive flex items-center gap-2">
+                <i data-lucide="calculator" class="w-4 h-4 text-blue-500"></i> Convertisseur
+            </h3>
+            
+            <!-- FROM -->
+            <div class="relative">
+                <label class="text-xs text-adaptive-muted block mb-1">De</label>
+                <div class="flex items-center gap-2 glass-input rounded-xl p-3">
+                    <select id="convert-from" class="bg-transparent text-sm font-bold text-adaptive focus:outline-none cursor-pointer" onchange="updateConversion()">
+                        <!-- Populated by JS -->
+                    </select>
+                    <input type="number" id="convert-amount" value="1000" step="0.01" 
+                           class="flex-1 bg-transparent text-right text-xl font-bold text-adaptive focus:outline-none"
+                           oninput="updateConversion()">
+                </div>
+            </div>
+            
+            <!-- Swap Button -->
+            <div class="flex justify-center">
+                <button onclick="swapCurrencies()" class="p-3 bg-blue-600 hover:bg-blue-500 rounded-full shadow-lg transition-transform hover:rotate-180 duration-300">
+                    <i data-lucide="arrow-up-down" class="w-4 h-4 text-white"></i>
+                </button>
+            </div>
+            
+            <!-- TO -->
+            <div class="relative">
+                <label class="text-xs text-adaptive-muted block mb-1">Vers</label>
+                <div class="flex items-center gap-2 glass-input rounded-xl p-3">
+                    <select id="convert-to" class="bg-transparent text-sm font-bold text-adaptive focus:outline-none cursor-pointer" onchange="updateConversion()">
+                        <!-- Populated by JS -->
+                    </select>
+                    <div class="flex-1 text-right">
+                        <span id="convert-result" class="text-xl font-bold text-emerald-500">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rate Info -->
+            <div class="flex items-center justify-between text-xs text-adaptive-muted pt-2 border-t border-white/5">
+                <span>Taux: <span id="convert-rate" class="font-mono text-adaptive">--</span></span>
+                <span id="convert-source" class="text-emerald-400">--</span>
+            </div>
+        </div>
+
+        <!-- Popular Pairs Quick Access -->
+        <div class="glass-panel p-4 rounded-xl">
+            <h3 class="text-xs font-bold text-adaptive-muted uppercase mb-3">Paires populaires</h3>
+            <div class="grid grid-cols-3 gap-2" id="popular-pairs">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CHART TAB ==================== -->
+    <div id="content-chart" class="hidden space-y-4">
+        <!-- Timeframe Selector -->
+        <div class="flex gap-2 justify-center">
+            <button onclick="setTimeframe(7)" class="timeframe-btn active" data-days="7">7J</button>
+            <button onclick="setTimeframe(30)" class="timeframe-btn" data-days="30">1M</button>
+            <button onclick="setTimeframe(90)" class="timeframe-btn" data-days="90">3M</button>
+            <button onclick="setTimeframe(365)" class="timeframe-btn" data-days="365">1A</button>
+        </div>
+
+        <!-- Pair Selector -->
+        <div class="flex items-center justify-center gap-3">
+            <select id="chart-from" class="glass-input rounded-lg p-2 text-sm font-bold" onchange="loadChartData()">
+                <!-- Populated by JS -->
             </select>
-            <button onclick="fetchAiData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
-                Analyser
+            <i data-lucide="arrow-right" class="w-4 h-4 text-adaptive-muted"></i>
+            <select id="chart-to" class="glass-input rounded-lg p-2 text-sm font-bold" onchange="loadChartData()">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-4 gap-2 text-center">
+            <div class="glass-panel p-2 rounded-lg">
+                <span class="text-[10px] text-adaptive-muted block">Min</span>
+                <span id="stat-min" class="text-xs font-bold text-rose-400 font-mono">--</span>
+            </div>
+            <div class="glass-panel p-2 rounded-lg">
+                <span class="text-[10px] text-adaptive-muted block">Max</span>
+                <span id="stat-max" class="text-xs font-bold text-emerald-400 font-mono">--</span>
+            </div>
+            <div class="glass-panel p-2 rounded-lg">
+                <span class="text-[10px] text-adaptive-muted block">Moy</span>
+                <span id="stat-avg" class="text-xs font-bold text-blue-400 font-mono">--</span>
+            </div>
+            <div class="glass-panel p-2 rounded-lg">
+                <span class="text-[10px] text-adaptive-muted block">Δ%</span>
+                <span id="stat-change" class="text-xs font-bold font-mono">--</span>
+            </div>
+        </div>
+
+        <!-- Interactive Chart -->
+        <div class="glass-panel p-3 rounded-2xl">
+            <div id="history-chart" class="w-full h-72"></div>
+        </div>
+
+        <!-- Chart Info -->
+        <div class="flex items-center justify-between text-xs text-adaptive-muted px-2">
+            <span><i data-lucide="database" class="w-3 h-3 inline"></i> <span id="chart-points">0</span> points</span>
+            <span id="chart-source">Source: --</span>
+        </div>
+    </div>
+
+    <!-- ==================== FORECAST TAB ==================== -->
+    <div id="content-forecast" class="hidden space-y-4">
+        <!-- Pair Selector for Forecast -->
+        <div class="glass-panel p-4 rounded-xl">
+            <div class="flex items-center gap-3">
+                <select id="ai-pair" class="flex-1 glass-input rounded-lg p-2 text-sm font-bold" onchange="fetchForecast()">
+                    <option value="EURUSD=X">EUR/USD</option>
+                    <option value="USDMAD=X">USD/MAD</option>
+                    <option value="EURMAD=X">EUR/MAD</option>
+                    <option value="GBPUSD=X">GBP/USD</option>
+                    <option value="GBPMAD=X">GBP/MAD</option>
+                </select>
+                <button onclick="fetchForecast()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                    <i data-lucide="sparkles" class="w-4 h-4 inline"></i> Analyser
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="forecast-loading" class="hidden animate-pulse space-y-4">
+            <div class="h-32 skeleton rounded-xl"></div>
+            <div class="h-64 skeleton rounded-xl"></div>
+        </div>
+
+        <!-- Error State -->
+        <div id="forecast-error" class="hidden bg-rose-500/10 text-rose-400 p-4 rounded-xl text-sm border border-rose-500/20"></div>
+
+        <!-- Forecast Dashboard -->
+        <div id="forecast-dashboard" class="hidden space-y-4">
+            <!-- Main Prediction -->
+            <div class="glass-panel p-5 rounded-xl text-center">
+                <h3 id="forecast-pair-display" class="text-adaptive-muted text-sm font-bold tracking-widest uppercase mb-2">EUR / USD</h3>
+                <div class="relative inline-block">
+                    <h1 id="forecast-prediction" class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-[rgb(224,90,3)] tracking-tight">
+                        --
+                    </h1>
+                    <span id="forecast-trend-badge" class="absolute -right-16 top-2 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-slate-800 text-slate-400">--</span>
+                </div>
+                <p class="text-xs text-adaptive-muted mt-2">Prévision Ensemble à J+7</p>
+            </div>
+
+            <!-- Forecast Chart -->
+            <div class="glass-panel p-3 rounded-2xl">
+                <div id="forecast-chart" class="w-full h-64"></div>
+            </div>
+
+            <!-- Model Results Grid -->
+            <div class="grid grid-cols-4 gap-2">
+                <div class="glass-panel p-3 rounded-xl text-center border-t-2 border-blue-500">
+                    <span class="text-blue-500 text-[10px] font-bold block mb-1">ENSEMBLE</span>
+                    <span id="model-ensemble" class="font-mono text-sm text-adaptive font-bold">--</span>
+                </div>
+                <div class="glass-panel p-3 rounded-xl text-center border-t-2 border-emerald-500">
+                    <span class="text-emerald-500 text-[10px] font-bold block mb-1">ARIMA</span>
+                    <span id="model-arima" class="font-mono text-sm text-adaptive">--</span>
+                </div>
+                <div class="glass-panel p-3 rounded-xl text-center border-t-2 border-amber-500">
+                    <span class="text-amber-500 text-[10px] font-bold block mb-1">PROPHET</span>
+                    <span id="model-prophet" class="font-mono text-sm text-adaptive">--</span>
+                </div>
+                <div class="glass-panel p-3 rounded-xl text-center border-t-2 border-pink-500">
+                    <span class="text-pink-500 text-[10px] font-bold block mb-1">LSTM</span>
+                    <span id="model-lstm" class="font-mono text-sm text-adaptive">--</span>
+                </div>
+            </div>
+
+            <!-- AI Converter -->
+            <div class="glass-panel p-4 rounded-xl space-y-3">
+                <label class="text-xs font-bold text-adaptive-muted uppercase flex items-center gap-2">
+                    <i data-lucide="calculator" class="w-3 h-3"></i> Simulateur J+7
+                </label>
+                <div class="flex items-center gap-4">
+                    <input type="number" id="ai-sim-amount" value="1000" 
+                           class="flex-1 bg-transparent text-xl font-bold text-adaptive focus:outline-none border-b border-slate-700 pb-2"
+                           oninput="updateAiSimulation()">
+                    <div class="text-right">
+                        <p id="ai-sim-result" class="text-xl font-bold text-purple-500 font-mono">--</p>
+                        <span class="text-xs text-adaptive-muted" id="ai-sim-target">USD</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insight -->
+            <div class="glass-panel p-4 rounded-xl">
+                <h3 class="text-sm font-bold text-adaptive mb-2 flex items-center gap-2">
+                    <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i> Analyse IA
+                </h3>
+                <p id="ai-insight" class="text-xs text-adaptive-muted leading-relaxed">
+                    Sélectionnez une paire et lancez l'analyse pour obtenir des insights.
+                </p>
+            </div>
+        </div>
+
+        <!-- Initial State -->
+        <div id="forecast-initial" class="text-center py-8 space-y-4">
+            <div class="w-16 h-16 bg-purple-500/10 rounded-full mx-auto flex items-center justify-center">
+                <i data-lucide="sparkles" class="w-8 h-8 text-purple-500"></i>
+            </div>
+            <h3 class="text-lg font-bold text-adaptive">Prévisions IA</h3>
+            <p class="text-sm text-adaptive-muted max-w-xs mx-auto">
+                Analysez les tendances avec ARIMA, Prophet et LSTM
+            </p>
+            <button onclick="fetchForecast()" class="btn-primary max-w-xs mx-auto">
+                <i data-lucide="play" class="w-5 h-5"></i> Lancer l'analyse
             </button>
         </div>
     </div>
-
-    <!-- Error -->
-    <div id="ai-error" class="hidden bg-rose-500/10 text-rose-500 p-4 rounded-xl text-sm border border-rose-500/20"></div>
-    
-    <!-- Skeleton -->
-    <div id="ai-skeleton" class="hidden space-y-8 animate-pulse w-full">
-        <div class="w-full h-56 skeleton rounded-2xl"></div>
-        <div class="h-16 skeleton rounded-xl"></div>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="ai-dashboard" class="space-y-6 hidden">
-        <div class="text-center">
-            <h3 class="text-adaptive-muted text-sm font-bold tracking-widest uppercase mb-1" id="pair-display">EUR / USD</h3>
-            <div class="relative inline-block">
-                <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-[rgb(224,90,3)] tracking-tighter" id="stat-pred">--</h1>
-                <span id="trend-badge" class="absolute -right-16 top-1 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase bg-slate-800 border border-slate-700 text-slate-400">--</span>
-            </div>
-            <p class="text-xs text-adaptive-muted font-medium">Prévision IA à J+7</p>
-        </div>
-        
-        <!-- Chart -->
-        <div class="glass-panel p-2 rounded-2xl relative h-64 border-t border-white/5">
-            <div id="chart-container" class="w-full h-full"></div>
-        </div>
-        
-        <!-- Model Results -->
-        <div class="grid grid-cols-3 gap-2 text-center text-xs">
-            <div class="glass-panel p-3 rounded-xl border-t border-emerald-500/20">
-                <span class="text-emerald-500 font-bold block mb-1">ARIMA</span>
-                <span id="res-arima" class="font-mono text-adaptive">--</span>
-            </div>
-            <div class="glass-panel p-3 rounded-xl border-t border-amber-500/20">
-                <span class="text-amber-500 font-bold block mb-1">Prophet</span>
-                <span id="res-prophet" class="font-mono text-adaptive">--</span>
-            </div>
-            <div class="glass-panel p-3 rounded-xl border-t border-pink-500/20">
-                <span class="text-pink-500 font-bold block mb-1">LSTM</span>
-                <span id="res-lstm" class="font-mono text-adaptive">--</span>
-            </div>
-        </div>
-
-        <!-- AI Converter -->
-        <div class="glass-panel p-5 rounded-xl space-y-2">
-            <label class="text-xs font-bold text-adaptive-muted uppercase flex items-center gap-2">
-                <i data-lucide="calculator" class="w-3 h-3"></i> Simulateur IA (J+7)
-            </label>
-            <div class="flex items-center gap-4">
-                <input type="number" id="ai-input-amount" value="1000" class="flex-1 w-full bg-transparent text-xl font-bold text-adaptive focus:outline-none border-b border-slate-700 pb-2">
-                <div class="text-right">
-                    <p id="res-mean" class="text-xl font-bold text-blue-500 font-mono">--</p>
-                    <span class="text-xs text-adaptive-muted font-bold" id="target-currency">USD</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Insights -->
-        <div class="glass-panel p-4 rounded-xl">
-            <h3 class="text-sm font-bold text-adaptive mb-3 flex items-center gap-2">
-                <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i> Analyse IA
-            </h3>
-            <p class="text-xs text-adaptive-muted" id="ai-insight">
-                Les prévisions sont basées sur l'analyse de données historiques utilisant des modèles ARIMA, Prophet et LSTM.
-            </p>
-        </div>
-    </div>
-
-    <!-- Initial State -->
-    <div id="ai-initial" class="text-center py-12 space-y-4">
-        <div class="w-20 h-20 bg-purple-500/10 rounded-full mx-auto flex items-center justify-center">
-            <i data-lucide="brain-circuit" class="w-10 h-10 text-purple-500"></i>
-        </div>
-        <h3 class="text-xl font-bold text-adaptive">Prévisions IA</h3>
-        <p class="text-sm text-adaptive-muted max-w-xs mx-auto">
-            Analysez les tendances du marché des devises avec nos modèles d'intelligence artificielle.
-        </p>
-        <button onclick="fetchAiData()" class="btn-primary max-w-xs mx-auto">
-            <i data-lucide="play" class="w-5 h-5"></i> Lancer l'analyse
-        </button>
-    </div>
 </div>
+
+<style>
+.tab-active {
+    background: linear-gradient(135deg, rgb(59, 130, 246), rgb(147, 51, 234));
+    color: white;
+}
+.timeframe-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+    background: rgba(0,0,0,0.2);
+    color: #94a3b8;
+    transition: all 0.2s;
+}
+.timeframe-btn.active {
+    background: linear-gradient(135deg, rgb(59, 130, 246), rgb(147, 51, 234));
+    color: white;
+}
+.timeframe-btn:hover:not(.active) {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    let chartInstance = null;
-    let currentPredictions = null;
+// ==================== STATE ====================
+let currencies = [];
+let currentRate = null;
+let historyChart = null;
+let forecastChart = null;
+let currentForecast = null;
+let currentTimeframe = 30;
 
-    async function fetchAiData() {
-        const pair = document.getElementById('ai-pair').value;
-        
-        // Use Flask API endpoint (acts as proxy to AI backend - no CORS issues)
-        const apiUrl = `/api/forecast/${pair}`;
-        
-        // Hide initial, show skeleton
-        document.getElementById('ai-initial').classList.add('hidden');
-        document.getElementById('ai-dashboard').classList.add('hidden');
-        document.getElementById('ai-error').classList.add('hidden');
-        document.getElementById('ai-skeleton').classList.remove('hidden');
+const FLAGS = {
+    'EUR': '🇪🇺', 'USD': '🇺🇸', 'MAD': '🇲🇦', 'GBP': '🇬🇧', 'CHF': '🇨🇭',
+    'CAD': '🇨🇦', 'AUD': '🇦🇺', 'JPY': '🇯🇵', 'CNY': '🇨🇳', 'INR': '🇮🇳',
+    'SAR': '🇸🇦', 'AED': '🇦🇪', 'TRY': '🇹🇷', 'EGP': '🇪🇬', 'TND': '🇹🇳', 'DZD': '🇩🇿'
+};
 
-        try {
-            const res = await fetch(apiUrl);
-            if (!res.ok) throw new Error(`Erreur API: ${res.status}`);
-            const response = await res.json();
-            
-            // Check if the response was successful
-            if (!response.success) {
-                throw new Error(response.error || 'Erreur inconnue');
-            }
-            
-            const data = response.data;
-            
-            document.getElementById('ai-skeleton').classList.add('hidden');
-            document.getElementById('ai-dashboard').classList.remove('hidden');
+// ==================== TAB MANAGEMENT ====================
+function switchTab(tab) {
+    ['converter', 'chart', 'forecast'].forEach(t => {
+        document.getElementById(`content-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('tab-active');
+        document.getElementById(`tab-${t}`).classList.add('text-adaptive-muted');
+    });
+    document.getElementById(`content-${tab}`).classList.remove('hidden');
+    document.getElementById(`tab-${tab}`).classList.add('tab-active');
+    document.getElementById(`tab-${tab}`).classList.remove('text-adaptive-muted');
+    
+    if (tab === 'chart' && !historyChart) loadChartData();
+}
 
-            // Update pair display
-            const pairName = pair.replace('=X', '').replace(/(.{3})(.{3})/, '$1 / $2');
-            document.getElementById('pair-display').textContent = pairName;
-            document.getElementById('target-currency').textContent = pair.substring(3, 6);
+function toggleSettings() {
+    document.getElementById('settings-panel').classList.toggle('hidden');
+}
 
-            // Calculate stats
-            const last = data.history[data.history.length - 1].Close;
-            const pred = data.predictions.Ensemble_Mean[6];
-            const pct = ((pred - last) / last) * 100;
-            
-            document.getElementById('stat-pred').textContent = pred.toFixed(4);
-            
-            const badge = document.getElementById('trend-badge');
-            badge.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-            badge.className = `absolute -right-16 top-1 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${
-                pct >= 0 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-            }`;
+function saveSettings() {
+    localStorage.setItem('sarfx-rate-source', document.getElementById('rate-source').value);
+    localStorage.setItem('sarfx-cache-duration', document.getElementById('cache-duration').value);
+}
 
-            // Store predictions
-            currentPredictions = {
-                mean: pred,
-                arima: data.predictions.ARIMA[6],
-                prophet: data.predictions.Prophet[6],
-                lstm: data.predictions.LSTM[6]
-            };
-            
-            document.getElementById('res-arima').textContent = currentPredictions.arima.toFixed(4);
-            document.getElementById('res-prophet').textContent = currentPredictions.prophet.toFixed(4);
-            document.getElementById('res-lstm').textContent = currentPredictions.lstm.toFixed(4);
-            
-            // Update insight
-            const insight = pct >= 0 
-                ? `La tendance prévue est à la hausse (+${pct.toFixed(2)}%). Le modèle Ensemble suggère un taux de ${pred.toFixed(4)} dans 7 jours.`
-                : `La tendance prévue est à la baisse (${pct.toFixed(2)}%). Le modèle Ensemble suggère un taux de ${pred.toFixed(4)} dans 7 jours.`;
-            document.getElementById('ai-insight').textContent = insight;
-            
-            updateAiConversion();
-
-            // Render Chart
-            if (chartInstance) chartInstance.destroy();
-            
-            const options = {
-                series: [
-                    { name: 'Ensemble', data: data.predictions.Ensemble_Mean },
-                    { name: 'ARIMA', data: data.predictions.ARIMA },
-                    { name: 'Prophet', data: data.predictions.Prophet }
-                ],
-                chart: { 
-                    type: 'area', 
-                    height: 230, 
-                    toolbar: { show: false }, 
-                    background: 'transparent' 
-                },
-                theme: { mode: 'dark' },
-                stroke: { curve: 'smooth', width: 2 },
-                xaxis: { 
-                    categories: data.dates, 
-                    labels: { show: false }, 
-                    axisBorder: { show: false }, 
-                    axisTicks: { show: false } 
-                },
-                yaxis: { labels: { formatter: val => val.toFixed(4) } },
-                grid: { borderColor: '#334155', strokeDashArray: 4 },
-                colors: ['#3b82f6', '#10b981', '#f59e0b'],
-                legend: { show: true, position: 'top', labels: { colors: '#94a3b8' } },
-                fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.1 } }
-            };
-            
-            chartInstance = new ApexCharts(document.querySelector("#chart-container"), options);
-            chartInstance.render();
-
-        } catch (e) {
-            console.error(e);
-            document.getElementById('ai-skeleton').classList.add('hidden');
-            document.getElementById('ai-error').textContent = `Erreur: ${e.message}. Vérifiez l'URL du backend IA.`;
-            document.getElementById('ai-error').classList.remove('hidden');
-            document.getElementById('ai-initial').classList.remove('hidden');
+// ==================== INIT ====================
+async function init() {
+    // Load currencies
+    try {
+        const res = await fetch('/api/currencies');
+        const data = await res.json();
+        if (data.success) {
+            currencies = data.currencies;
+            populateCurrencySelects();
+            renderPopularPairs(data.popular_pairs);
         }
+    } catch (e) {
+        console.error('Error loading currencies:', e);
+        // Fallback
+        currencies = [
+            {code: 'EUR', name: 'Euro', flag: '🇪🇺'},
+            {code: 'USD', name: 'US Dollar', flag: '🇺🇸'},
+            {code: 'MAD', name: 'Dirham Marocain', flag: '🇲🇦'},
+            {code: 'GBP', name: 'British Pound', flag: '🇬🇧'}
+        ];
+        populateCurrencySelects();
     }
+    
+    // Load settings
+    const savedSource = localStorage.getItem('sarfx-rate-source');
+    if (savedSource) document.getElementById('rate-source').value = savedSource;
+    const savedCache = localStorage.getItem('sarfx-cache-duration');
+    if (savedCache) document.getElementById('cache-duration').value = savedCache;
+    
+    // Initial conversion
+    updateConversion();
+}
 
-    function updateAiConversion() {
-        if (!currentPredictions) return;
-        const amount = parseFloat(document.getElementById('ai-input-amount').value) || 0;
-        document.getElementById('res-mean').textContent = (amount * currentPredictions.mean).toFixed(2);
+function populateCurrencySelects() {
+    const selects = ['convert-from', 'convert-to', 'chart-from', 'chart-to'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = currencies.map(c => 
+            `<option value="${c.code}" ${id.includes('from') && c.code === 'EUR' ? 'selected' : ''} ${id.includes('to') && c.code === 'USD' ? 'selected' : ''}>
+                ${FLAGS[c.code] || '🏳️'} ${c.code}
+            </option>`
+        ).join('');
+    });
+}
+
+function renderPopularPairs(pairs) {
+    const container = document.getElementById('popular-pairs');
+    if (!container || !pairs) return;
+    
+    const defaultPairs = [
+        {from: 'EUR', to: 'USD'}, {from: 'USD', to: 'MAD'}, {from: 'EUR', to: 'MAD'},
+        {from: 'GBP', to: 'USD'}, {from: 'EUR', to: 'GBP'}, {from: 'USD', to: 'JPY'}
+    ];
+    const displayPairs = pairs || defaultPairs;
+    
+    container.innerHTML = displayPairs.slice(0, 6).map(p => `
+        <button onclick="quickConvert('${p.from}', '${p.to}')" 
+                class="glass-panel p-2 rounded-lg text-xs font-bold text-adaptive hover:bg-blue-500/20 transition-colors">
+            ${FLAGS[p.from] || '🏳️'}→${FLAGS[p.to] || '🏳️'} ${p.from}/${p.to}
+        </button>
+    `).join('');
+}
+
+function quickConvert(from, to) {
+    document.getElementById('convert-from').value = from;
+    document.getElementById('convert-to').value = to;
+    updateConversion();
+}
+
+// ==================== CONVERTER ====================
+async function updateConversion() {
+    const from = document.getElementById('convert-from').value;
+    const to = document.getElementById('convert-to').value;
+    const amount = parseFloat(document.getElementById('convert-amount').value) || 0;
+    
+    // Update flags
+    document.getElementById('live-from-flag').textContent = FLAGS[from] || '🏳️';
+    document.getElementById('live-to-flag').textContent = FLAGS[to] || '🏳️';
+    document.getElementById('live-base').textContent = from;
+    document.getElementById('live-quote').textContent = to;
+    
+    try {
+        const res = await fetch(`/api/convert?amount=${amount}&from=${from}&to=${to}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            currentRate = data.rate;
+            
+            // Update live rate display (4 decimals)
+            document.getElementById('live-rate').textContent = data.rate_formatted;
+            document.getElementById('live-rate-text').textContent = data.rate_formatted;
+            
+            // Update conversion result (4 decimals)
+            document.getElementById('convert-result').textContent = data.result_formatted;
+            document.getElementById('convert-rate').textContent = data.rate_formatted;
+            document.getElementById('convert-source').textContent = data.source;
+            
+            // Update source badge
+            const badge = document.getElementById('rate-source-badge');
+            badge.textContent = data.source.includes('BCE') ? 'BCE' : data.source.split(' ')[0];
+            badge.className = `text-[10px] px-2 py-0.5 rounded-full ${data.cached ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'}`;
+            
+            // Timestamp
+            const now = new Date();
+            document.getElementById('rate-timestamp').textContent = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+        } else {
+            document.getElementById('convert-result').textContent = 'Erreur';
+            document.getElementById('convert-rate').textContent = data.error || 'N/A';
+        }
+    } catch (e) {
+        console.error('Conversion error:', e);
+        document.getElementById('convert-result').textContent = 'Erreur';
     }
+}
 
-    document.getElementById('ai-input-amount').addEventListener('input', updateAiConversion);
+function swapCurrencies() {
+    const fromSelect = document.getElementById('convert-from');
+    const toSelect = document.getElementById('convert-to');
+    const temp = fromSelect.value;
+    fromSelect.value = toSelect.value;
+    toSelect.value = temp;
+    updateConversion();
+}
+
+// ==================== CHART ====================
+function setTimeframe(days) {
+    currentTimeframe = days;
+    document.querySelectorAll('.timeframe-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.days) === days);
+    });
+    loadChartData();
+}
+
+async function loadChartData() {
+    const from = document.getElementById('chart-from').value;
+    const to = document.getElementById('chart-to').value;
+    
+    try {
+        const res = await fetch(`/api/rates/history/${from}/${to}?days=${currentTimeframe}`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+            // Update stats (4 decimals)
+            document.getElementById('stat-min').textContent = data.stats.min.toFixed(4);
+            document.getElementById('stat-max').textContent = data.stats.max.toFixed(4);
+            document.getElementById('stat-avg').textContent = data.stats.avg.toFixed(4);
+            
+            const changeEl = document.getElementById('stat-change');
+            const change = data.stats.change;
+            changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            changeEl.className = `text-xs font-bold font-mono ${change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            
+            document.getElementById('chart-points').textContent = data.count;
+            document.getElementById('chart-source').textContent = `Source: ${data.source}`;
+            
+            // Render chart
+            renderHistoryChart(data.data, from, to);
+        }
+    } catch (e) {
+        console.error('Chart data error:', e);
+    }
+}
+
+function renderHistoryChart(data, from, to) {
+    if (historyChart) historyChart.destroy();
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    const options = {
+        series: [{
+            name: `${from}/${to}`,
+            data: data.map(d => ({
+                x: new Date(d.date).getTime(),
+                y: parseFloat(d.rate.toFixed(4))
+            }))
+        }],
+        chart: {
+            type: 'area',
+            height: 280,
+            background: 'transparent',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: false,
+                    selection: true,
+                    zoom: true,
+                    zoomin: true,
+                    zoomout: true,
+                    pan: true,
+                    reset: true
+                }
+            },
+            zoom: { enabled: true },
+            animations: { enabled: true, easing: 'easeinout', speed: 800 }
+        },
+        theme: { mode: isDark ? 'dark' : 'light' },
+        stroke: { curve: 'smooth', width: 2 },
+        colors: ['#3b82f6'],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.5,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                datetimeUTC: false,
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '10px' }
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                formatter: val => val.toFixed(4),
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '10px' }
+            },
+            decimalsInFloat: 4
+        },
+        grid: {
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            strokeDashArray: 4
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            x: { format: 'dd MMM yyyy' },
+            y: { formatter: val => val.toFixed(4) }
+        },
+        markers: {
+            size: 0,
+            hover: { size: 6 }
+        },
+        dataLabels: { enabled: false }
+    };
+    
+    historyChart = new ApexCharts(document.getElementById('history-chart'), options);
+    historyChart.render();
+}
+
+// ==================== FORECAST ====================
+async function fetchForecast() {
+    const pair = document.getElementById('ai-pair').value;
+    
+    document.getElementById('forecast-initial').classList.add('hidden');
+    document.getElementById('forecast-dashboard').classList.add('hidden');
+    document.getElementById('forecast-error').classList.add('hidden');
+    document.getElementById('forecast-loading').classList.remove('hidden');
+    
+    try {
+        const res = await fetch(`/api/forecast/${pair}`);
+        const response = await res.json();
+        
+        if (!response.success) throw new Error(response.error || 'Erreur inconnue');
+        
+        const data = response.data;
+        document.getElementById('forecast-loading').classList.add('hidden');
+        document.getElementById('forecast-dashboard').classList.remove('hidden');
+        
+        // Update display
+        const pairName = pair.replace('=X', '').replace(/(.{3})(.{3})/, '$1 / $2');
+        document.getElementById('forecast-pair-display').textContent = pairName;
+        document.getElementById('ai-sim-target').textContent = pair.substring(3, 6);
+        
+        // Calculate prediction (4 decimals)
+        const last = data.history[data.history.length - 1].Close;
+        const pred = data.predictions.Ensemble_Mean[6];
+        const pct = ((pred - last) / last) * 100;
+        
+        document.getElementById('forecast-prediction').textContent = pred.toFixed(4);
+        
+        const badge = document.getElementById('forecast-trend-badge');
+        badge.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+        badge.className = `absolute -right-16 top-2 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${
+            pct >= 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+        }`;
+        
+        // Store forecast data
+        currentForecast = {
+            ensemble: pred,
+            arima: data.predictions.ARIMA[6],
+            prophet: data.predictions.Prophet[6],
+            lstm: data.predictions.LSTM[6]
+        };
+        
+        // Update model results (4 decimals)
+        document.getElementById('model-ensemble').textContent = currentForecast.ensemble.toFixed(4);
+        document.getElementById('model-arima').textContent = currentForecast.arima.toFixed(4);
+        document.getElementById('model-prophet').textContent = currentForecast.prophet.toFixed(4);
+        document.getElementById('model-lstm').textContent = currentForecast.lstm.toFixed(4);
+        
+        // Update insight
+        const insight = pct >= 0
+            ? `📈 Tendance haussière prévue (+${pct.toFixed(2)}%). Le modèle Ensemble suggère un taux de ${pred.toFixed(4)} dans 7 jours. Confiance: ${Math.abs(100 - Math.abs(pct) * 5).toFixed(0)}%`
+            : `📉 Tendance baissière prévue (${pct.toFixed(2)}%). Le modèle Ensemble suggère un taux de ${pred.toFixed(4)} dans 7 jours. Vigilance recommandée.`;
+        document.getElementById('ai-insight').textContent = insight;
+        
+        updateAiSimulation();
+        renderForecastChart(data);
+        
+    } catch (e) {
+        console.error('Forecast error:', e);
+        document.getElementById('forecast-loading').classList.add('hidden');
+        document.getElementById('forecast-error').textContent = `Erreur: ${e.message}`;
+        document.getElementById('forecast-error').classList.remove('hidden');
+        document.getElementById('forecast-initial').classList.remove('hidden');
+    }
+}
+
+function renderForecastChart(data) {
+    if (forecastChart) forecastChart.destroy();
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    const options = {
+        series: [
+            { name: 'Ensemble', data: data.predictions.Ensemble_Mean },
+            { name: 'ARIMA', data: data.predictions.ARIMA },
+            { name: 'Prophet', data: data.predictions.Prophet },
+            { name: 'LSTM', data: data.predictions.LSTM }
+        ],
+        chart: {
+            type: 'line',
+            height: 250,
+            background: 'transparent',
+            toolbar: { show: true, tools: { download: false, zoom: true, pan: true, reset: true } },
+            zoom: { enabled: true },
+            animations: { enabled: true }
+        },
+        theme: { mode: isDark ? 'dark' : 'light' },
+        stroke: { curve: 'smooth', width: [3, 2, 2, 2] },
+        colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899'],
+        xaxis: {
+            categories: data.dates,
+            labels: {
+                rotate: -45,
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '9px' }
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: val => val.toFixed(4),
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '10px' }
+            },
+            decimalsInFloat: 4
+        },
+        grid: { borderColor: isDark ? '#334155' : '#e2e8f0', strokeDashArray: 4 },
+        legend: {
+            show: true,
+            position: 'top',
+            labels: { colors: isDark ? '#94a3b8' : '#64748b' }
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            y: { formatter: val => val.toFixed(4) }
+        },
+        markers: { size: 0, hover: { size: 5 } }
+    };
+    
+    forecastChart = new ApexCharts(document.getElementById('forecast-chart'), options);
+    forecastChart.render();
+}
+
+function updateAiSimulation() {
+    if (!currentForecast) return;
+    const amount = parseFloat(document.getElementById('ai-sim-amount').value) || 0;
+    document.getElementById('ai-sim-result').textContent = (amount * currentForecast.ensemble).toFixed(4);
+}
+
+// ==================== START ====================
+document.addEventListener('DOMContentLoaded', init);
 </script>
 {% endblock %}

@@ -275,3 +275,101 @@ def get_forecast(pair):
     
     result = fetch_prediction(pair)
     return jsonify(result)
+
+
+# ==================== EXCHANGE RATES (Multi-Source) ====================
+
+@api_bp.route('/rates/live')
+def get_live_rate():
+    """
+    Get live exchange rate between two currencies.
+    Query params: from (base currency), to (quote currency)
+    Returns rate with 4 decimals precision.
+    """
+    from app.services.exchange_service import get_live_rate as fetch_live_rate
+    
+    base = request.args.get('from', 'EUR').upper()
+    quote = request.args.get('to', 'USD').upper()
+    use_cache = request.args.get('cache', 'true').lower() == 'true'
+    
+    result = fetch_live_rate(base, quote, use_cache=use_cache)
+    return jsonify(result)
+
+
+@api_bp.route('/rates/all')
+def get_all_rates():
+    """
+    Get all exchange rates from a base currency.
+    Query params: base (default EUR)
+    """
+    from app.services.exchange_service import get_all_rates as fetch_all_rates
+    
+    base = request.args.get('base', 'EUR').upper()
+    result = fetch_all_rates(base)
+    return jsonify(result)
+
+
+@api_bp.route('/convert')
+def convert_currency():
+    """
+    Convert amount between currencies.
+    Query params: amount, from, to
+    Returns result with 4 decimals.
+    """
+    from app.services.exchange_service import convert_currency as do_convert
+    
+    try:
+        amount = float(request.args.get('amount', 1))
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid amount'}), 400
+    
+    from_currency = request.args.get('from', 'EUR').upper()
+    to_currency = request.args.get('to', 'USD').upper()
+    
+    result = do_convert(amount, from_currency, to_currency)
+    return jsonify(result)
+
+
+@api_bp.route('/rates/history/<base>/<quote>')
+def get_rate_history(base, quote):
+    """
+    Get historical rates for a currency pair.
+    Query params: days (default 30)
+    Data stored in MongoDB for analytics.
+    """
+    from app.services.exchange_service import get_rate_history as fetch_history
+    
+    try:
+        days = int(request.args.get('days', 30))
+        days = min(days, 365)  # Max 1 year
+    except ValueError:
+        days = 30
+    
+    result = fetch_history(base.upper(), quote.upper(), days)
+    return jsonify(result)
+
+
+@api_bp.route('/rates/analytics/<base>/<quote>')
+def get_rate_analytics(base, quote):
+    """
+    Get analytics summary for a currency pair from MongoDB stored data.
+    Query params: days (default 30)
+    """
+    from app.services.exchange_service import get_analytics_summary
+    
+    try:
+        days = int(request.args.get('days', 30))
+    except ValueError:
+        days = 30
+    
+    result = get_analytics_summary(base.upper(), quote.upper(), days)
+    return jsonify(result)
+
+
+@api_bp.route('/currencies')
+def get_currencies():
+    """Get list of supported currencies with metadata"""
+    from app.services.exchange_service import get_supported_currencies
+    
+    result = get_supported_currencies()
+    return jsonify(result)
