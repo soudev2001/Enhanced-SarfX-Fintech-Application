@@ -118,13 +118,10 @@
     let currentPredictions = null;
 
     async function fetchAiData() {
-        const url = document.getElementById('ai-url').value.replace(/\/$/, "");
         const pair = document.getElementById('ai-pair').value;
         
-        if (!url) {
-            showNotification('Veuillez configurer l\'URL du backend IA', 'error');
-            return;
-        }
+        // Use Flask API endpoint (acts as proxy to AI backend - no CORS issues)
+        const apiUrl = `/api/forecast/${pair}`;
         
         // Hide initial, show skeleton
         document.getElementById('ai-initial').classList.add('hidden');
@@ -133,14 +130,16 @@
         document.getElementById('ai-skeleton').classList.remove('hidden');
 
         try {
-            const headers = {
-                'ngrok-skip-browser-warning': 'true',
-                'Bypass-Tunnel-Reminder': 'true'
-            };
-            
-            const res = await fetch(`${url}/predict/${pair}`, { headers });
+            const res = await fetch(apiUrl);
             if (!res.ok) throw new Error(`Erreur API: ${res.status}`);
-            const data = await res.json();
+            const response = await res.json();
+            
+            // Check if the response was successful
+            if (!response.success) {
+                throw new Error(response.error || 'Erreur inconnue');
+            }
+            
+            const data = response.data;
             
             document.getElementById('ai-skeleton').classList.add('hidden');
             document.getElementById('ai-dashboard').classList.remove('hidden');

@@ -270,18 +270,8 @@ def save_settings():
 
 @api_bp.route('/forecast/<pair>')
 def get_forecast(pair):
-    """Proxy vers le backend IA pour les prévisions"""
-    db = get_db()
-    settings = db.settings.find_one({"type": "app"}) if db else {}
-    ai_url = settings.get('ai_backend_url', 'https://sarfx-backend-ai-618432953337.europe-west1.run.app')
+    """Proxy vers le backend IA pour les prévisions - utilise le service ai_service avec fallback"""
+    from app.services.ai_service import fetch_prediction
     
-    import requests
-    try:
-        headers = {
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true'
-        }
-        response = requests.get(f"{ai_url}/predict/{pair}", headers=headers, timeout=30)
-        return jsonify(response.json())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    result = fetch_prediction(pair)
+    return jsonify(result)
