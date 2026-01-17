@@ -9,12 +9,11 @@ from app.services.db_service import get_db
 
 logger = logging.getLogger(__name__)
 
-# URL par défaut: Cloud Run (production externe) ou localhost (si sur même serveur)
+# URL du backend IA local uniquement (port 8087)
 DEFAULT_AI_URL = os.environ.get(
     "AI_BACKEND_URL", 
     "http://127.0.0.1:8087"  # Backend local sur le même serveur (port 8087)
 )
-CLOUD_AI_URL = "https://sarfx-backend-ai-618432953337.europe-west1.run.app"  # Fallback Cloud Run
 
 
 def get_ai_backend_url():
@@ -78,60 +77,53 @@ def generate_fallback_prediction(pair):
 
 def fetch_prediction(pair='EURUSD=X', timeout=30):
     """
-    Récupère les prévisions IA pour une paire de devises
-    Essaie d'abord le backend local, puis Cloud Run en fallback.
+    Récupère les prévisions IA pour une paire de devises depuis le backend local.
     
     Args:
         pair: Paire de devises (ex: 'EURUSD=X', 'USDMAD=X')
         timeout: Timeout en secondes
     
     Returns:
-        dict avec les prévisions ou None si erreur
+        dict avec les prévisions ou données simulées si erreur
     """
-    urls_to_try = [get_ai_backend_url(), CLOUD_AI_URL]
+    url = get_ai_backend_url()
     
-    for url in urls_to_try:
-        try:
-            headers = {
-                'ngrok-skip-browser-warning': 'true',
-                'Bypass-Tunnel-Reminder': 'true',
-                'User-Agent': 'SarfX-App/1.0'
+    try:
+        headers = {
+            'User-Agent': 'SarfX-App/1.0'
+        }
+        
+        logger.info(f"Calling AI backend: {url}")
+        response = requests.get(
+            f"{url}/predict/{pair}",
+            headers=headers,
+            timeout=timeout
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            logger.info(f"AI backend {url} responded successfully")
+            
+            # Cache the result
+            cache_prediction(pair, data)
+            
+            return {
+                'success': True,
+                'data': data,
+                'cached': False,
+                'timestamp': datetime.utcnow().isoformat(),
+                'source': url
             }
-            
-            logger.info(f"Trying AI backend: {url}")
-            response = requests.get(
-                f"{url}/predict/{pair}",
-                headers=headers,
-                timeout=timeout
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                logger.info(f"AI backend {url} responded successfully")
-                
-                # Cache the result
-                cache_prediction(pair, data)
-                
-                return {
-                    'success': True,
-                    'data': data,
-                    'cached': False,
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'source': url
-                }
-            else:
-                logger.warning(f"AI backend {url} returned status {response.status_code}")
-        except requests.exceptions.Timeout as e:
-            logger.warning(f"Timeout connecting to {url}: {e}")
-            continue  # Try next URL
-        except requests.exceptions.ConnectionError as e:
-            logger.warning(f"Connection error to {url}: {e}")
-            continue  # Try next URL
-        except Exception as e:
-            logger.warning(f"Error with {url}: {e}")
-            continue  # Try next URL
+        else:
+            logger.warning(f"AI backend {url} returned status {response.status_code}")
+    except requests.exceptions.Timeout as e:
+        logger.warning(f"Timeout connecting to {url}: {e}")
+    except requests.exceptions.ConnectionError as e:
+        logger.warning(f"Connection error to {url}: {e}")
+    except Exception as e:
+        logger.warning(f"Error with {url}: {e}")
     
-    # All URLs failed, try cache
+    # Backend failed, try cache
     cached = get_cached_prediction(pair)
     if cached:
         logger.info(f"Using cached prediction for {pair}")
@@ -143,7 +135,7 @@ def fetch_prediction(pair='EURUSD=X', timeout=30):
         }
     
     # Ultimate fallback: generate simulated data
-    logger.warning(f"All backends failed for {pair}, using simulation")
+    logger.warning(f"Backend failed for {pair}, using simulation")
     simulated_data = generate_fallback_prediction(pair)
     return {
         'success': True,
