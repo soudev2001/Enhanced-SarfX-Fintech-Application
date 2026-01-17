@@ -7,3 +7,4 @@ email-validator
 werkzeug
 flask-wtf
 gunicorn
+certifi

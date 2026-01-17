@@ -6,6 +6,8 @@ yfinance
 pandas
 numpy
 pymongo
+certifi
+dnspython
 statsmodels
 prophet
 scikit-learn

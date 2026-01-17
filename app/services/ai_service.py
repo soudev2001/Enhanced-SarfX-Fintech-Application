@@ -1,12 +1,17 @@
 """
 Service pour l'intégration de l'IA de prévision
 """
+import os
 import requests
 from datetime import datetime
 from app.services.db_service import get_db
 
-
-DEFAULT_AI_URL = "https://sarfx-backend-ai-618432953337.europe-west1.run.app"
+# URL par défaut: Cloud Run (production externe) ou localhost (si sur même serveur)
+DEFAULT_AI_URL = os.environ.get(
+    "AI_BACKEND_URL", 
+    "http://127.0.0.1:8087"  # Backend local sur le même serveur (port 8087)
+)
+CLOUD_AI_URL = "https://sarfx-backend-ai-618432953337.europe-west1.run.app"  # Fallback Cloud Run
 
 
 def get_ai_backend_url():
@@ -24,6 +29,7 @@ def get_ai_backend_url():
 def fetch_prediction(pair='EURUSD=X', timeout=30):
     """
     Récupère les prévisions IA pour une paire de devises
+    Essaie d'abord le backend local, puis Cloud Run en fallback.
     
     Args:
         pair: Paire de devises (ex: 'EURUSD=X', 'USDMAD=X')
@@ -32,69 +38,57 @@ def fetch_prediction(pair='EURUSD=X', timeout=30):
     Returns:
         dict avec les prévisions ou None si erreur
     """
-    url = get_ai_backend_url()
+    urls_to_try = [get_ai_backend_url(), CLOUD_AI_URL]
     
-    try:
-        headers = {
-            'ngrok-skip-browser-warning': 'true',
-            'Bypass-Tunnel-Reminder': 'true',
-            'User-Agent': 'SarfX-App/1.0'
-        }
-        
-        response = requests.get(
-            f"{url}/predict/{pair}",
-            headers=headers,
-            timeout=timeout
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Cache the result
-            cache_prediction(pair, data)
-            
-            return {
-                'success': True,
-                'data': data,
-                'cached': False,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-        else:
-            return {
-                'success': False,
-                'error': f"API Error: {response.status_code}",
-                'cached': False
+    for url in urls_to_try:
+        try:
+            headers = {
+                'ngrok-skip-browser-warning': 'true',
+                'Bypass-Tunnel-Reminder': 'true',
+                'User-Agent': 'SarfX-App/1.0'
             }
             
-    except requests.exceptions.Timeout:
-        # Try to get cached data
-        cached = get_cached_prediction(pair)
-        if cached:
-            return {
-                'success': True,
-                'data': cached['data'],
-                'cached': True,
-                'timestamp': cached['timestamp']
-            }
+            response = requests.get(
+                f"{url}/predict/{pair}",
+                headers=headers,
+                timeout=timeout
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Cache the result
+                cache_prediction(pair, data)
+                
+                return {
+                    'success': True,
+                    'data': data,
+                    'cached': False,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'source': url
+                }
+        except requests.exceptions.Timeout:
+            continue  # Try next URL
+        except requests.exceptions.ConnectionError:
+            continue  # Try next URL
+        except Exception:
+            continue  # Try next URL
+    
+    # All URLs failed, try cache
+    cached = get_cached_prediction(pair)
+    if cached:
         return {
-            'success': False,
-            'error': "Timeout - Backend IA indisponible"
+            'success': True,
+            'data': cached['data'],
+            'cached': True,
+            'timestamp': cached['timestamp']
         }
-        
-    except Exception as e:
-        # Try to get cached data
-        cached = get_cached_prediction(pair)
-        if cached:
-            return {
-                'success': True,
-                'data': cached['data'],
-                'cached': True,
-                'timestamp': cached['timestamp']
-            }
-        return {
-            'success': False,
-            'error': str(e)
-        }
+    
+    return {
+        'success': False,
+        'error': "All AI backends unavailable",
+        'cached': False
+    }
 
 
 def cache_prediction(pair, data):

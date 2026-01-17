@@ -16,14 +16,22 @@ import warnings
 # --- CONFIGURATION (PROD) ---
 warnings.filterwarnings("ignore")
 
+# Certificat SSL pour MongoDB Atlas (Linux servers)
+try:
+    import certifi
+    CA_BUNDLE = certifi.where()
+except ImportError:
+    CA_BUNDLE = None
+
 # Identifiants (Dans une vraie prod, utilisez des variables d'environnement)
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://soufiane:gogo@cluster0.05omqhe.mongodb.net/SarfX_Landing")
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://soufiane:gogo@cluster0.05omqhe.mongodb.net/SarfX_Enhanced")
 SMTP_EMAIL = "starkxgroup@gmail.com"
 SMTP_PASSWORD = "mpnkmpqeypjsvern"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 ADMIN_EMAIL = "starkxgroup@gmail.com"
 COINAPI_KEY = os.environ.get("COINAPI_KEY", "VOTRE_API_KEY_ICI") # Placeholder
+AI_PORT = int(os.environ.get("AI_PORT", 8087))
 
 # --- INITIALISATION ---
 app = FastAPI(title="SarfX Core Engine", description="Moteur Fintech d'Arbitrage & IA")
@@ -38,13 +46,25 @@ app.add_middleware(
 
 # Connexion Base de Données (Persistance)
 try:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
-    db = client.get_database("SarfX_DB")
+    # Configuration avec certificat SSL pour serveurs Linux
+    mongo_options = {
+        "serverSelectionTimeoutMS": 5000,
+        "connectTimeoutMS": 10000,
+        "retryWrites": True
+    }
+    if CA_BUNDLE:
+        mongo_options["tlsCAFile"] = CA_BUNDLE
+    
+    client = MongoClient(MONGO_URI, **mongo_options)
+    # Test de connexion
+    client.admin.command('ping')
+    db = client.get_database("SarfX_Enhanced")
     rates_collection = db.rates_history
-    print("✅ [MongoDB] Connecté avec succès.")
+    print("✅ [MongoDB] Connecté à SarfX_Enhanced avec succès.")
 except Exception as e:
     print(f"⚠️ [MongoDB] Mode hors-ligne activé: {e}")
     rates_collection = None
+    db = None
 
 # --- COUCHE D'ACQUISITION (INPUT LAYER) ---
 
@@ -226,5 +246,6 @@ def predict_endpoint(pair: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", AI_PORT))
+    print(f"🚀 [SarfX AI] Démarrage sur le port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port)

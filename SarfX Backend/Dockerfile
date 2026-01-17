@@ -19,9 +19,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie du code source
 COPY . .
 
-# Exposition du port (8080 pour Cloud Run par défaut, ou autre)
-ENV PORT 8080
-EXPOSE 8080
+# Exposition du port (8087 pour le backend IA SarfX)
+ENV PORT 8087
+ENV AI_PORT 8087
+EXPOSE 8087
 
-# Lancement avec Gunicorn (Serveur de prod)
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 run:app
+# Lancement avec Uvicorn (Serveur ASGI pour FastAPI)
+CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
