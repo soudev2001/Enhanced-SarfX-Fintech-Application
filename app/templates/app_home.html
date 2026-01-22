@@ -80,6 +80,50 @@
         </div>
     </div>
 
+    <!-- Bank Partners Section -->
+    <div class="glass-panel p-5 rounded-xl">
+        <h3 class="text-sm font-bold text-adaptive mb-4 flex items-center gap-2">
+            <i data-lucide="landmark" class="w-4 h-4 text-blue-400"></i> Nos Banques Partenaires
+        </h3>
+        <div class="relative">
+            <!-- Partners Carousel -->
+            <div id="partners-carousel" class="overflow-hidden">
+                <div class="flex gap-4 transition-transform duration-500 ease-out" id="partners-track" style="transform: translateX(0)">
+                    <div class="partner-card flex-shrink-0">
+                        <img src="{{ url_for('static', filename='images/banks/attijariwafa.svg') }}" alt="Attijariwafa Bank" class="w-full h-full object-contain">
+                    </div>
+                    <div class="partner-card flex-shrink-0">
+                        <img src="{{ url_for('static', filename='images/banks/boa.svg') }}" alt="Bank of Africa" class="w-full h-full object-contain">
+                    </div>
+                    <div class="partner-card flex-shrink-0">
+                        <img src="{{ url_for('static', filename='images/banks/banque-populaire.svg') }}" alt="Banque Populaire" class="w-full h-full object-contain">
+                    </div>
+                    <div class="partner-card flex-shrink-0">
+                        <img src="{{ url_for('static', filename='images/banks/cih.svg') }}" alt="CIH Bank" class="w-full h-full object-contain">
+                    </div>
+                    <div class="partner-card flex-shrink-0">
+                        <img src="{{ url_for('static', filename='images/banks/albarid.svg') }}" alt="Al Barid Bank" class="w-full h-full object-contain">
+                    </div>
+                    <div class="partner-card flex-shrink-0">
+                        <img src="{{ url_for('static', filename='images/banks/bmci.svg') }}" alt="BMCI" class="w-full h-full object-contain">
+                    </div>
+                </div>
+            </div>
+            <!-- Carousel Indicators -->
+            <div class="flex justify-center gap-2 mt-4">
+                <button onclick="scrollCarousel(-1)" class="bg-adaptive/20 backdrop-blur-sm p-2 rounded-full hover:bg-adaptive/30 transition">
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-adaptive"></i>
+                </button>
+                <button onclick="scrollCarousel(1)" class="bg-adaptive/20 backdrop-blur-sm p-2 rounded-full hover:bg-adaptive/30 transition">
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-adaptive"></i>
+                </button>
+            </div>
+        </div>
+        <p class="text-xs text-adaptive-muted text-center mt-3">
+            Plus de <span class="font-bold text-blue-400">250 distributeurs</span> répartis dans tout le Maroc
+        </p>
+    </div>
+
     <!-- Recent Transactions -->
     {% if transactions %}
     <div class="glass-panel p-4 rounded-xl">
@@ -112,4 +156,116 @@
         Commencer maintenant <i data-lucide="arrow-right" class="w-5 h-5"></i>
     </a>
 </div>
+
+<style>
+/* Partner Cards Styling */
+.partner-card {
+    width: 140px;
+    height: 70px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.partner-card:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+}
+
+.partner-card img {
+    filter: brightness(1.1) contrast(1.1);
+    transition: filter 0.3s ease;
+}
+
+body.theme-light .partner-card img {
+    filter: brightness(0.95) contrast(1.05);
+}
+
+/* Carousel Container */
+#partners-carousel {
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+#partners-track {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Animation for infinite scroll effect */
+@keyframes scroll-partners {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.partner-card-animate {
+    animation: scroll-partners 20s linear infinite;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .partner-card {
+        width: 160px;
+        height: 80px;
+    }
+}
+</style>
+
+<script>
+// Carousel functionality for bank partners
+let currentPartnerIndex = 0;
+const partnersTrack = document.getElementById('partners-track');
+const partnerCards = document.querySelectorAll('.partner-card');
+const totalPartners = partnerCards.length;
+const cardsToShow = window.innerWidth >= 768 ? 3 : 2;
+const maxIndex = Math.max(0, totalPartners - cardsToShow);
+
+function scrollCarousel(direction) {
+    currentPartnerIndex += direction;
+    
+    // Loop back
+    if (currentPartnerIndex < 0) {
+        currentPartnerIndex = maxIndex;
+    } else if (currentPartnerIndex > maxIndex) {
+        currentPartnerIndex = 0;
+    }
+    
+    const cardWidth = partnerCards[0].offsetWidth;
+    const gap = 16; // 1rem gap
+    const offset = currentPartnerIndex * (cardWidth + gap);
+    
+    partnersTrack.style.transform = `translateX(-${offset}px)`;
+}
+
+// Auto-scroll every 3 seconds
+let autoScrollInterval = setInterval(() => {
+    scrollCarousel(1);
+}, 3000);
+
+// Pause auto-scroll on hover
+const carouselContainer = document.getElementById('partners-carousel');
+carouselContainer.addEventListener('mouseenter', () => {
+    clearInterval(autoScrollInterval);
+});
+
+carouselContainer.addEventListener('mouseleave', () => {
+    autoScrollInterval = setInterval(() => {
+        scrollCarousel(1);
+    }, 3000);
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    currentPartnerIndex = 0;
+    partnersTrack.style.transform = 'translateX(0)';
+});
+</script>
 {% endblock %}

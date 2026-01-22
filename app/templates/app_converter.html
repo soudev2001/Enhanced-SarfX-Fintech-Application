@@ -87,6 +87,46 @@
         </div>
     </div>
 
+    <!-- Bank Selection Section -->
+    <div id="bank-selection-section" class="hidden-opacity glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 border border-purple-500/30">
+                <i data-lucide="landmark" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-adaptive text-sm">Banque de Retrait</h3>
+                <p class="text-[10px] text-adaptive-muted">Choisissez votre banque préférée</p>
+            </div>
+        </div>
+        <div id="banks-grid" class="grid grid-cols-2 gap-3">
+            <!-- Banks will be loaded here via JS -->
+        </div>
+    </div>
+
+    <!-- ATM Locations Section -->
+    <div id="atm-section" class="hidden-opacity glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-adaptive text-sm">Distributeurs Proches</h3>
+                    <p class="text-[10px] text-adaptive-muted" id="atm-subtitle">Détectez votre position</p>
+                </div>
+            </div>
+            <button onclick="getUserLocation()" id="location-btn" class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 border border-blue-500/30">
+                <i data-lucide="crosshair" class="w-4 h-4"></i> Ma Position
+            </button>
+        </div>
+        <div id="atm-list" class="space-y-2 max-h-96 overflow-y-auto">
+            <div class="text-center text-adaptive-muted text-sm py-8">
+                <i data-lucide="navigation" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                <p>Sélectionnez une banque et activez votre position</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Final Result -->
     <div id="summary-section" class="hidden-opacity bg-gradient-to-r from-blue-600 to-[rgb(224,90,3)] rounded-2xl p-6 text-white shadow-xl shadow-blue-900/20">
         <div class="flex justify-between items-end mb-4">
@@ -122,11 +162,14 @@
     const suppliers = {{ suppliers | tojson | safe }};
     const SARFX_FEE_PCT = 0.01;
     let bestSupplier = null;
+    let selectedBank = null;
+    let userLocation = null;
 
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('smart-amount').addEventListener('input', calculateSmartExchange);
         document.getElementById('from-currency').addEventListener('change', calculateSmartExchange);
         calculateSmartExchange();
+        loadBanks();
     });
 
     function calculateSmartExchange() {
@@ -137,23 +180,32 @@
         const resSection = document.getElementById('exchange-results');
         const sumSection = document.getElementById('summary-section');
         const recSection = document.getElementById('recipient-section');
+        const bankSection = document.getElementById('bank-selection-section');
+        const atmSection = document.getElementById('atm-section');
 
         if (amount <= 0) {
-            resSection.classList.add('hidden-opacity');
-            resSection.classList.remove('visible-opacity');
-            sumSection.classList.add('hidden-opacity');
-            sumSection.classList.remove('visible-opacity');
-            recSection.classList.add('hidden-opacity');
-            recSection.classList.remove('visible-opacity');
+            [resSection, sumSection, recSection, bankSection, atmSection].forEach(sec => {
+                sec.classList.add('hidden-opacity');
+                sec.classList.remove('visible-opacity');
+            });
             return;
         }
 
+        // Show all sections progressively
         resSection.classList.remove('hidden-opacity');
         resSection.classList.add('visible-opacity');
         sumSection.classList.remove('hidden-opacity');
         sumSection.classList.add('visible-opacity');
         recSection.classList.remove('hidden-opacity');
         recSection.classList.add('visible-opacity');
+        bankSection.classList.remove('hidden-opacity');
+        bankSection.classList.add('visible-opacity');
+        
+        // Show ATM section only if bank is selected
+        if (selectedBank) {
+            atmSection.classList.remove('hidden-opacity');
+            atmSection.classList.add('visible-opacity');
+        }
 
         const sarfxFee = amount * SARFX_FEE_PCT;
         const amountToConvert = amount - sarfxFee;
@@ -235,6 +287,228 @@
         accountInput.name = 'recipient_account';
         accountInput.value = account;
         this.appendChild(accountInput);
+        
+        // Add bank selection
+        if (selectedBank) {
+            const bankInput = document.createElement('input');
+            bankInput.type = 'hidden';
+            bankInput.name = 'bank_code';
+            bankInput.value = selectedBank.code;
+            this.appendChild(bankInput);
+        }
     });
+
+    // Load banks from API
+    async function loadBanks() {
+        try {
+            const response = await fetch('/api/banks');
+            const data = await response.json();
+            
+            if (data.success) {
+                const banksGrid = document.getElementById('banks-grid');
+                banksGrid.innerHTML = '';
+                
+                data.banks.forEach(bank => {
+                    const bankCard = document.createElement('div');
+                    bankCard.className = 'bank-card glass-panel p-4 rounded-xl cursor-pointer hover:scale-105 transition-all border-2 border-transparent';
+                    bankCard.innerHTML = `
+                        <img src="${bank.logo}" alt="${bank.name}" class="w-full h-12 object-contain mb-2">
+                        <p class="text-xs text-center text-adaptive-muted">${bank.atm_count} ATM</p>
+                    `;
+                    bankCard.onclick = () => selectBank(bank, bankCard);
+                    banksGrid.appendChild(bankCard);
+                });
+                
+                lucide.createIcons();
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement des banques:', error);
+        }
+    }
+
+    // Select a bank
+    function selectBank(bank, cardElement) {
+        selectedBank = bank;
+        
+        // Update UI - highlight selected bank
+        document.querySelectorAll('.bank-card').forEach(card => {
+            card.classList.remove('border-blue-500', 'bg-blue-500/10');
+        });
+        cardElement.classList.add('border-blue-500', 'bg-blue-500/10');
+        
+        // Show ATM section
+        const atmSection = document.getElementById('atm-section');
+        atmSection.classList.remove('hidden-opacity');
+        atmSection.classList.add('visible-opacity');
+        
+        // Load ATMs for this bank
+        loadATMsForBank(bank.code);
+        
+        showNotification(`Banque sélectionnée: ${bank.name}`, 'success');
+    }
+
+    // Load ATMs for selected bank
+    async function loadATMsForBank(bankCode) {
+        const atmList = document.getElementById('atm-list');
+        atmList.innerHTML = '<div class="text-center text-adaptive-muted py-4"><i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin"></i><p class="mt-2">Chargement...</p></div>';
+        lucide.createIcons();
+        
+        try {
+            let url = `/api/atms?bank_code=${bankCode}&limit=20`;
+            
+            // If we have user location, use nearest ATMs
+            if (userLocation) {
+                const response = await fetch('/api/atms/nearest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        latitude: userLocation.latitude,
+                        longitude: userLocation.longitude,
+                        bank_code: bankCode,
+                        max_distance_km: 20,
+                        limit: 10
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.atms.length > 0) {
+                    displayATMs(data.atms, true);
+                    return;
+                }
+            }
+            
+            // Otherwise, just show all ATMs for this bank
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.success) {
+                displayATMs(data.atms, false);
+            } else {
+                atmList.innerHTML = '<div class="text-center text-red-500 py-4">Erreur lors du chargement</div>';
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            atmList.innerHTML = '<div class="text-center text-red-500 py-4">Erreur de connexion</div>';
+        }
+    }
+
+    // Display ATMs
+    function displayATMs(atms, withDistance) {
+        const atmList = document.getElementById('atm-list');
+        
+        if (atms.length === 0) {
+            atmList.innerHTML = '<div class="text-center text-adaptive-muted py-4">Aucun distributeur trouvé</div>';
+            return;
+        }
+        
+        atmList.innerHTML = '';
+        
+        atms.forEach(atm => {
+            const atmCard = document.createElement('div');
+            atmCard.className = 'glass-panel p-4 rounded-xl hover:bg-white/5 transition cursor-pointer';
+            
+            const distanceHTML = withDistance && atm.distance_km 
+                ? `<span class="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                    <i data-lucide="navigation" class="w-3 h-3"></i> ${atm.distance_km} km
+                   </span>
+                   <span class="text-[10px] text-adaptive-muted">~${atm.walk_time_min} min à pied</span>`
+                : '';
+            
+            const servicesHTML = atm.services && atm.services.length > 0
+                ? `<div class="flex gap-1 mt-2 flex-wrap">
+                    ${atm.services.map(s => `<span class="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full">${s}</span>`).join('')}
+                   </div>`
+                : '';
+            
+            const hours = atm.available_24h 
+                ? '<span class="text-[10px] text-emerald-400 font-bold">🕐 24/7</span>'
+                : `<span class="text-[10px] text-adaptive-muted">${atm.hours || 'Horaires non disponibles'}</span>`;
+            
+            atmCard.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex-1">
+                        <h4 class="font-bold text-sm text-adaptive mb-1">${atm.name}</h4>
+                        <p class="text-xs text-adaptive-muted flex items-start gap-1">
+                            <i data-lucide="map-pin" class="w-3 h-3 mt-0.5 flex-shrink-0"></i>
+                            <span>${atm.address}, ${atm.city}</span>
+                        </p>
+                    </div>
+                    ${withDistance ? `<div class="text-right ml-2">${distanceHTML}</div>` : ''}
+                </div>
+                <div class="flex items-center justify-between">
+                    ${hours}
+                    ${atm.has_wheelchair_access ? '<span class="text-[10px] text-blue-400">♿ Accessible</span>' : ''}
+                </div>
+                ${servicesHTML}
+            `;
+            
+            // Add click to open maps
+            atmCard.onclick = () => openInMaps(atm);
+            
+            atmList.appendChild(atmCard);
+        });
+        
+        lucide.createIcons();
+    }
+
+    // Get user location
+    function getUserLocation() {
+        const btn = document.getElementById('location-btn');
+        const subtitle = document.getElementById('atm-subtitle');
+        
+        if (!navigator.geolocation) {
+            showNotification('Géolocalisation non supportée', 'error');
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Détection...';
+        lucide.createIcons();
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+                
+                btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Position OK';
+                btn.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
+                btn.classList.remove('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
+                subtitle.textContent = `Distributeurs triés par distance`;
+                
+                lucide.createIcons();
+                
+                // Reload ATMs with location
+                if (selectedBank) {
+                    loadATMsForBank(selectedBank.code);
+                }
+                
+                showNotification('Position détectée !', 'success');
+            },
+            (error) => {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="crosshair" class="w-4 h-4"></i> Ma Position';
+                lucide.createIcons();
+                
+                let message = 'Erreur de géolocalisation';
+                if (error.code === error.PERMISSION_DENIED) {
+                    message = 'Permission de géolocalisation refusée';
+                }
+                showNotification(message, 'error');
+            }
+        );
+    }
+
+    // Open ATM location in maps
+    function openInMaps(atm) {
+        if (atm.location && atm.location.coordinates) {
+            const [lng, lat] = atm.location.coordinates;
+            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+    }
 </script>
 {% endblock %}

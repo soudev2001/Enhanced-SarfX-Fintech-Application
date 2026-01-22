@@ -491,6 +491,79 @@ body.theme-light {
     width: 100%;
 }
 
+/* --- BANK SELECTION CARDS --- */
+.bank-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bank-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(59, 130, 246, 0.15);
+}
+
+.bank-card img {
+    transition: transform 0.3s ease;
+}
+
+.bank-card:hover img {
+    transform: scale(1.05);
+}
+
+.bank-card.selected {
+    border-color: rgb(59, 130, 246) !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* --- ATM CARDS --- */
+.atm-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.atm-card:hover {
+    background: rgba(var(--glass-bg-rgb, 255, 255, 255), 0.08);
+    transform: translateX(4px);
+}
+
+.atm-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, rgb(16, 185, 129), rgb(59, 130, 246));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.atm-card:hover::before {
+    opacity: 1;
+}
+
+/* --- LOCATION BUTTON ANIMATIONS --- */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(0.95);
+        opacity: 1;
+    }
+}
+
+.location-active {
+    animation: pulse-ring 2s ease-in-out infinite;
+}
+
 /* --- RESPONSIVE ADJUSTMENTS --- */
 @media (min-width: 768px) {
     .nav-bar {
@@ -498,5 +571,9 @@ body.theme-light {
         left: 50%;
         transform: translateX(-50%);
         border-radius: 1rem 1rem 0 0;
+    }
+    
+    .bank-card {
+        min-height: 100px;
     }
 }

@@ -373,3 +373,208 @@ def get_currencies():
     
     result = get_supported_currencies()
     return jsonify(result)
+
+
+# ==================== ATM & BANKS ====================
+
+@api_bp.route('/banks')
+def get_banks():
+    """Récupère la liste de toutes les banques partenaires avec le nombre d'ATM"""
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        atm_service = ATMService(db)
+        banks = atm_service.get_all_banks()
+        
+        return jsonify({
+            "success": True,
+            "banks": banks,
+            "total": len(banks)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/banks/<bank_code>')
+def get_bank_details(bank_code):
+    """Récupère les détails d'une banque spécifique"""
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        atm_service = ATMService(db)
+        bank = atm_service.get_bank_by_code(bank_code)
+        
+        if not bank:
+            return jsonify({"success": False, "error": "Banque non trouvée"}), 404
+        
+        return jsonify({
+            "success": True,
+            "bank": bank
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/atms')
+def get_atms():
+    """
+    Récupère les ATM avec filtres optionnels
+    Query params: bank_code, city, limit
+    """
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        atm_service = ATMService(db)
+        
+        bank_code = request.args.get('bank_code')
+        city = request.args.get('city')
+        limit = int(request.args.get('limit', 50))
+        
+        if city:
+            atms = atm_service.get_atms_by_city(city, bank_code)
+        elif bank_code:
+            atms = atm_service.get_atms_by_bank(bank_code, limit)
+        else:
+            # Retourner tous les ATM (limité)
+            atms = list(db.atm_locations.find({"status": "active"}, {"_id": 0}).limit(limit))
+        
+        return jsonify({
+            "success": True,
+            "atms": atms,
+            "total": len(atms)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/atms/nearest', methods=['POST'])
+def get_nearest_atms():
+    """
+    Trouve les ATM les plus proches d'une position GPS
+    Body: { "latitude": float, "longitude": float, "bank_code": str (optional), "max_distance_km": int (optional), "limit": int (optional) }
+    """
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        data = request.get_json()
+        
+        if not data or 'latitude' not in data or 'longitude' not in data:
+            return jsonify({
+                "success": False,
+                "error": "Latitude et longitude requis"
+            }), 400
+        
+        latitude = float(data['latitude'])
+        longitude = float(data['longitude'])
+        bank_code = data.get('bank_code')
+        max_distance_km = int(data.get('max_distance_km', 10))
+        limit = int(data.get('limit', 10))
+        
+        atm_service = ATMService(db)
+        atms = atm_service.get_nearest_atms(
+            latitude, longitude, bank_code, max_distance_km, limit
+        )
+        
+        return jsonify({
+            "success": True,
+            "atms": atms,
+            "total": len(atms),
+            "user_location": {
+                "latitude": latitude,
+                "longitude": longitude
+            }
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/atms/search')
+def search_atms():
+    """
+    Recherche d'ATM par terme de recherche
+    Query params: q (search term), bank_code (optional)
+    """
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        search_term = request.args.get('q', '')
+        bank_code = request.args.get('bank_code')
+        
+        if not search_term:
+            return jsonify({
+                "success": False,
+                "error": "Terme de recherche requis"
+            }), 400
+        
+        atm_service = ATMService(db)
+        atms = atm_service.search_atms(search_term, bank_code)
+        
+        return jsonify({
+            "success": True,
+            "atms": atms,
+            "total": len(atms),
+            "search_term": search_term
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/atms/<atm_id>')
+def get_atm_details(atm_id):
+    """Récupère les détails d'un ATM spécifique"""
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        atm_service = ATMService(db)
+        atm = atm_service.get_atm_by_id(atm_id)
+        
+        if not atm:
+            return jsonify({"success": False, "error": "ATM non trouvé"}), 404
+        
+        return jsonify({
+            "success": True,
+            "atm": atm
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/cities')
+def get_cities():
+    """Récupère la liste des villes avec des ATM"""
+    try:
+        from app.services.atm_service import ATMService
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        bank_code = request.args.get('bank_code')
+        
+        atm_service = ATMService(db)
+        cities = atm_service.get_cities_with_atms(bank_code)
+        
+        return jsonify({
+            "success": True,
+            "cities": cities,
+            "total": len(cities)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
