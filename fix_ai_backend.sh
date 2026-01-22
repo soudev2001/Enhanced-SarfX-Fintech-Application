@@ -65,7 +65,15 @@ python3 -m venv venv
 echo -e "${YELLOW}> Installation des dépendances...${NC}"
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
-pip install fastapi uvicorn pymongo certifi python-dotenv requests
+
+# Installer depuis requirements.txt
+if [ -f "requirements.txt" ]; then
+    echo -e "${YELLOW}> Installation depuis requirements.txt...${NC}"
+    pip install -r requirements.txt
+else
+    echo -e "${YELLOW}> Installation manuelle des dépendances...${NC}"
+    pip install fastapi uvicorn pymongo certifi dnspython python-dotenv requests yfinance pandas numpy statsmodels prophet scikit-learn tensorflow gunicorn
+fi
 
 # 7. Vérifier que uvicorn est bien installé
 if [ ! -f "venv/bin/uvicorn" ]; then
