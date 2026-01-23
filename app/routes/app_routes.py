@@ -30,6 +30,45 @@ def get_user_wallet(user_id):
         return None
     return db.wallets.find_one({"user_id": str(user_id)})
 
+def get_user_total_balance(user_id):
+    """Récupère le solde total de tous les wallets de l'utilisateur (converti en USD)"""
+    db = get_db()
+    if db is None:
+        return {"total_usd": 0, "wallets": []}
+    
+    # Récupérer tous les wallets de l'utilisateur
+    wallets = list(db.wallets.find({"user_id": str(user_id)}))
+    
+    # Taux de change approximatifs (devrait venir de l'API en production)
+    exchange_rates = {
+        "USD": 1.0,
+        "EUR": 1.08,
+        "MAD": 0.10,
+        "GBP": 1.27,
+        "CHF": 1.13
+    }
+    
+    total_usd = 0
+    wallet_details = []
+    
+    for wallet in wallets:
+        currency = wallet.get('currency', 'USD')
+        balance = float(wallet.get('balance', 0))
+        rate = exchange_rates.get(currency, 1.0)
+        usd_value = balance * rate
+        total_usd += usd_value
+        
+        wallet_details.append({
+            "currency": currency,
+            "balance": balance,
+            "usd_value": usd_value
+        })
+    
+    return {
+        "total_usd": round(total_usd, 2),
+        "wallets": wallet_details
+    }
+
 def get_user_transactions(user_id, limit=10):
     """Récupère les transactions de l'utilisateur"""
     db = get_db()
@@ -65,6 +104,9 @@ def home():
     wallet = get_user_wallet(session['user_id'])
     transactions = get_user_transactions(session['user_id'], limit=3)
     
+    # Calculer le solde total de tous les wallets
+    total_balance = get_user_total_balance(session['user_id'])
+    
     db = get_db()
     suppliers_count = db.suppliers.count_documents({"is_active": True}) if db is not None else 0
     
@@ -72,6 +114,7 @@ def home():
         active_tab='home',
         user=user,
         wallet=wallet,
+        total_balance=total_balance,
         transactions=transactions,
         suppliers_count=suppliers_count
     )

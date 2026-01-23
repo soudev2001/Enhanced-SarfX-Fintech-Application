@@ -14,6 +14,10 @@ cd /var/www/sarfx-enhanced
 source venv/bin/activate
 python3 seed_atm_data.py
 
+# 1.5. Seed les données des banques
+echo -e "\n${YELLOW}> Insertion des données des banques partenaires...${NC}"
+python3 seed_banks.py
+
 # 2. Redémarrer Flask
 echo -e "\n${YELLOW}> Redémarrage de Flask...${NC}"
 systemctl restart sarfx-enhanced

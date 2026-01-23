@@ -381,13 +381,26 @@ def get_currencies():
 def get_banks():
     """Récupère la liste de toutes les banques partenaires avec le nombre d'ATM"""
     try:
-        from app.services.atm_service import ATMService
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
         
-        atm_service = ATMService(db)
-        banks = atm_service.get_all_banks()
+        # Récupérer toutes les banques actives depuis la collection banks
+        banks_data = list(db.banks.find({"is_active": True}))
+        
+        banks = []
+        for bank in banks_data:
+            # Compter les ATM pour cette banque
+            atm_count = db.atm_locations.count_documents({"bank_code": bank['code']})
+            
+            banks.append({
+                "code": bank['code'],
+                "name": bank['name'],
+                "logo": bank.get('logo', ''),
+                "website": bank.get('website', ''),
+                "description": bank.get('description', ''),
+                "atm_count": atm_count
+            })
         
         return jsonify({
             "success": True,

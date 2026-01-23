@@ -30,13 +30,22 @@
     </div>
 
     <!-- Wallet Card -->
-    {% if wallet %}
     <div class="wallet-card">
         <div class="relative z-10">
-            <p class="text-white/70 text-xs font-bold uppercase mb-1">Votre Solde</p>
+            <p class="text-white/70 text-xs font-bold uppercase mb-1">Votre Solde Total</p>
             <h2 class="text-3xl font-extrabold tracking-tight">
-                {{ wallet.balance | default(0) | round(2) }} {{ wallet.currency | default('USD') }}
+                {{ total_balance.total_usd | default(0) | round(2) }} USD
             </h2>
+            {% if total_balance.wallets and total_balance.wallets|length > 1 %}
+            <div class="mt-3 space-y-1">
+                {% for w in total_balance.wallets %}
+                <div class="flex justify-between text-white/60 text-xs">
+                    <span>{{ w.currency }}</span>
+                    <span>{{ w.balance | round(2) }} (≈ ${{ w.usd_value | round(2) }})</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
             <div class="flex gap-4 mt-4">
                 <a href="{{ url_for('app.converter') }}" class="flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-2 rounded-lg text-sm font-bold">
                     <i data-lucide="arrow-up-right" class="w-4 h-4"></i> Envoyer
@@ -47,7 +56,6 @@
             </div>
         </div>
     </div>
-    {% endif %}
 
     <!-- Features Cards -->
     <div class="grid grid-cols-1 gap-3">

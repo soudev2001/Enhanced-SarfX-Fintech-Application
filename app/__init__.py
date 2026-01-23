@@ -19,12 +19,14 @@ def create_app():
     from .routes.supplier_routes import supplier_bp
     from .routes.app_routes import app_bp
     from .routes.api_routes import api_bp
+    from .routes.admin_bank_routes import admin_banks_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(supplier_bp) # Préfixe géré dans le blueprint
     app.register_blueprint(app_bp, url_prefix='/app')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(admin_banks_bp) # /admin/banks
 
     # Route Racine
     @app.route('/')

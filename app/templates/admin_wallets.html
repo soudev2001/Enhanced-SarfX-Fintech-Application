@@ -3,25 +3,44 @@
 {% block title %}Portefeuilles - Admin SarfX{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <div class="flex justify-between items-center pt-4">
-        <h2 class="text-2xl font-bold text-adaptive flex items-center gap-2">
-            <i data-lucide="wallet" class="w-6 h-6 text-amber-500"></i>
-            Gestion des Portefeuilles
-        </h2>
-        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-xs font-bold">
-            {{ wallets | length }} portefeuilles
-        </span>
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="text-adaptive-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour
+            </a>
+            <h1 class="text-2xl font-bold text-adaptive flex items-center gap-2">
+                <i data-lucide="wallet" class="w-6 h-6 text-amber-500"></i>
+                Portefeuilles
+            </h1>
+            <p class="text-adaptive-muted text-sm">{{ wallets | length }} portefeuilles actifs</p>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="glass-panel p-4 rounded-xl">
+        <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-adaptive-muted"></i>
+            <input type="text" id="search-input" onkeyup="filterWallets()" placeholder="Rechercher par email..." 
+                   class="glass-input w-full rounded-xl pl-10 pr-4 py-2 text-sm">
+        </div>
     </div>
 
     <!-- Wallets List -->
     <div class="space-y-3">
         {% for wallet in wallets %}
-        <div class="glass-panel p-4 rounded-xl space-y-4">
+        <div class="glass-panel p-4 rounded-xl space-y-4 wallet-card" data-email="{{ wallet.user_email | lower }}">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="font-bold text-adaptive">{{ wallet.user_email }}</p>
-                    <p class="text-xs text-adaptive-muted font-mono">{{ wallet.wallet_id[:16] }}...</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ wallet.user_email[0] | upper }}
+                    </div>
+                    <div>
+                        <p class="font-bold text-adaptive">{{ wallet.user_email }}</p>
+                        <p class="text-xs text-adaptive-muted font-mono">{{ wallet.wallet_id[:16] }}...</p>
+                    </div>
                 </div>
                 <span class="text-[10px] px-2 py-0.5 rounded-full {{ 'bg-emerald-500/10 text-emerald-500' if wallet.get('is_active', True) else 'bg-rose-500/10 text-rose-500' }}">
                     {{ 'Actif' if wallet.get('is_active', True) else 'Inactif' }}
@@ -31,8 +50,8 @@
             <!-- Balances -->
             <div class="grid grid-cols-2 gap-2">
                 {% for currency, balance in wallet.get('balances', {}).items() %}
-                <div class="bg-slate-800/50 p-2 rounded-lg flex justify-between items-center">
-                    <span class="text-xs text-adaptive-muted">{{ currency }}</span>
+                <div class="bg-slate-800/50 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-xs text-adaptive-muted font-medium">{{ currency }}</span>
                     <span class="text-sm font-bold text-adaptive font-mono">{{ "{:,.2f}".format(balance) }}</span>
                 </div>
                 {% endfor %}
@@ -41,16 +60,17 @@
             <!-- Adjust Form -->
             <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.wallet_id) }}" method="POST" class="space-y-2">
                 <div class="flex gap-2">
-                    <select name="currency" class="glass-input rounded-lg px-2 py-2 text-xs flex-1">
+                    <select name="currency" class="glass-input rounded-lg px-3 py-2 text-xs flex-1 bg-transparent">
                         <option value="USD">USD</option>
                         <option value="EUR">EUR</option>
                         <option value="MAD">MAD</option>
                         <option value="GBP">GBP</option>
                     </select>
-                    <input type="number" name="amount" step="0.01" placeholder="+/- Montant" class="glass-input rounded-lg px-2 py-2 text-xs flex-1" required>
+                    <input type="number" name="amount" step="0.01" placeholder="+/- Montant" class="glass-input rounded-lg px-3 py-2 text-xs flex-1" required>
                 </div>
-                <input type="text" name="reason" placeholder="Raison de l'ajustement" class="w-full glass-input rounded-lg px-2 py-2 text-xs">
+                <input type="text" name="reason" placeholder="Raison de l'ajustement" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
                 <button type="submit" class="w-full bg-amber-500/20 text-amber-500 font-bold py-2 rounded-lg text-xs hover:bg-amber-500/30 transition">
+                    <i data-lucide="plus-minus" class="w-4 h-4 inline mr-1"></i>
                     Ajuster le solde
                 </button>
             </form>
@@ -64,10 +84,43 @@
         </div>
         {% endfor %}
     </div>
-
-    <!-- Back Link -->
-    <a href="{{ url_for('app.settings') }}" class="block glass-panel p-4 rounded-xl text-center text-blue-500 font-bold">
-        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i> Retour aux réglages
-    </a>
 </div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-white/10 px-6 py-3 z-40">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Txns</span>
+        </a>
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+            <span class="text-xs">Banques</span>
+        </a>
+        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-xs">App</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+function filterWallets() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.wallet-card');
+    
+    cards.forEach(card => {
+        const email = card.dataset.email || '';
+        card.style.display = email.includes(search) ? 'block' : 'none';
+    });
+}
+</script>
 {% endblock %}
