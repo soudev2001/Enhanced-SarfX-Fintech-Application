@@ -1,30 +1,76 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>{{ 'Register' if request.args.get('mode') == 'register' else 'Login' }} - SarfX Admin</title>
+    
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-primary); color: var(--text-primary);">
 
-{% block content %}
-<div class="center-screen" style="background: #F2F2F7; height: 100vh;">
-    <div style="width: 100%; max-width: 400px;">
-        <h1 style="text-align: center; margin-bottom: 40px;">SarfX Admin</h1>
+    <!-- Background Blobs -->
+    <div class="blob rounded-full" style="background: var(--brand-secondary); width: 320px; height: 320px; top: 0; left: 0; transform: translate(-50%, -50%); opacity: 0.3;"></div>
+    <div class="blob rounded-full" style="background: var(--brand-primary); width: 256px; height: 256px; bottom: 0; right: 0; transform: translate(50%, 50%); opacity: 0.3;"></div>
+
+    <div style="width: 100%; max-width: 400px; padding: 24px; position: relative; z-index: 10;">
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 32px;">
+            <h1 class="logo" style="justify-content: center; font-size: 36px; margin-bottom: 8px;">
+                <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+            </h1>
+            <span class="badge badge-error">Admin</span>
+        </div>
         
-        <div class="card">
-            <h2 style="margin-bottom: 20px;">{{ 'Register' if request.args.get('mode') == 'register' else 'Login' }}</h2>
+        <div class="card card-lg">
+            <h2 style="margin-bottom: 20px; text-align: center; color: var(--text-primary);">
+                {{ 'Créer un compte' if request.args.get('mode') == 'register' else 'Connexion' }}
+            </h2>
             
-            <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}">
-                <input type="email" name="email" class="ios-input" placeholder="Email Address" required value="starkxgroup@gmail.com">
-                <input type="password" name="password" class="ios-input" placeholder="Password" required value="admin">
+            <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="input-group">
+                    <div style="position: relative;">
+                        <i data-lucide="mail" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
+                        <input type="email" name="email" class="input" style="padding-left: 48px;" placeholder="Adresse email" required value="starkxgroup@gmail.com">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div style="position: relative;">
+                        <i data-lucide="lock" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
+                        <input type="password" name="password" class="input" style="padding-left: 48px;" placeholder="Mot de passe" required value="admin">
+                    </div>
+                </div>
                 
-                <button type="submit" class="btn btn-primary">
-                    {{ 'Sign Up' if request.args.get('mode') == 'register' else 'Sign In' }}
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                    {{ 'Créer le compte' if request.args.get('mode') == 'register' else 'Se connecter' }}
                 </button>
             </form>
         </div>
 
         <div style="text-align: center; margin-top: 20px;">
             {% if request.args.get('mode') == 'register' %}
-                <a href="{{ url_for('auth.login') }}" class="btn-ghost">Already have an account? Login</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Déjà un compte ? Connexion</a>
             {% else %}
-                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-ghost">Create new Admin account</a>
+                <a href="{{ url_for('auth.login', mode='register') }}" class="btn btn-ghost">Créer un compte Admin</a>
             {% endif %}
         </div>
     </div>
-</div>
-{% endblock %}
+    
+    <script>
+        // Theme detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        });
+        
+        lucide.createIcons();
+    </script>
+</body>
+</html>

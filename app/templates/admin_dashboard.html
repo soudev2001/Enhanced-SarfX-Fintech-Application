@@ -6,94 +6,94 @@
     <div class="flex justify-between items-center pt-2">
         <div>
             <div class="flex items-center gap-2">
-                <span class="font-extrabold text-2xl tracking-tighter logo-text">
-                    Sarf<span class="logo-x">X</span>
-                </span>
-                <span class="px-2 py-1 rounded-full bg-red-500/20 text-red-500 text-xs font-bold uppercase">Admin</span>
+                <div class="logo">
+                    <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+                </div>
+                <span class="badge badge-error">Admin</span>
             </div>
-            <p class="text-adaptive-muted text-sm mt-1">Tableau de bord administrateur</p>
+            <p class="text-muted text-sm mt-1">Tableau de bord administrateur</p>
         </div>
         <div class="flex items-center gap-2">
             <!-- Notification Bell -->
-            <button id="notification-btn" class="glass-panel w-10 h-10 rounded-full flex items-center justify-center text-adaptive-muted hover:text-adaptive transition relative">
+            <button id="notification-btn" class="btn btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-muted hover:text-default transition relative">
                 <i data-lucide="bell" class="w-5 h-5"></i>
-                <span id="notification-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+                <span id="notification-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-error text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
             </button>
-            <a href="{{ url_for('app.settings') }}" class="glass-panel w-10 h-10 rounded-full flex items-center justify-center text-adaptive-muted hover:text-adaptive transition">
+            <a href="{{ url_for('app.settings') }}" class="btn btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-muted hover:text-default transition">
                 <i data-lucide="settings" class="w-5 h-5"></i>
             </a>
         </div>
     </div>
 
     <!-- Notifications Panel (Hidden by default) -->
-    <div id="notifications-panel" class="glass-panel p-4 rounded-xl hidden">
+    <div id="notifications-panel" class="card p-4 hidden">
         <div class="flex justify-between items-center mb-3">
-            <h4 class="font-bold text-adaptive">Notifications</h4>
-            <button onclick="clearNotifications()" class="text-xs text-adaptive-muted hover:text-red-500">Tout effacer</button>
+            <h4 class="font-bold text-default">Notifications</h4>
+            <button onclick="clearNotifications()" class="text-xs text-muted hover:text-error">Tout effacer</button>
         </div>
         <div id="notifications-list" class="space-y-2 max-h-48 overflow-y-auto">
-            <p class="text-adaptive-muted text-sm text-center py-4">Aucune notification</p>
+            <p class="text-muted text-sm text-center py-4">Aucune notification</p>
         </div>
     </div>
 
     <!-- KPI Cards -->
     <div class="grid grid-cols-2 gap-4">
         <!-- Users -->
-        <div class="glass-panel p-4 rounded-xl">
+        <div class="card p-4">
             <div class="flex items-center justify-between mb-2">
-                <div class="bg-blue-500/10 p-2 rounded-lg">
-                    <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+                <div class="bg-secondary/10 p-2 rounded-lg">
+                    <i data-lucide="users" class="w-5 h-5 text-secondary"></i>
                 </div>
-                <span class="text-xs text-green-500 font-bold">+{{ new_users_today | default(0) }} aujourd'hui</span>
+                <span class="badge badge-success text-xs">+{{ new_users_today | default(0) }} aujourd'hui</span>
             </div>
-            <p class="text-2xl font-bold text-adaptive">{{ user_count | default(0) }}</p>
-            <p class="text-xs text-adaptive-muted">Utilisateurs</p>
+            <p class="text-2xl font-bold text-default">{{ user_count | default(0) }}</p>
+            <p class="text-xs text-muted">Utilisateurs</p>
         </div>
 
         <!-- Wallets -->
-        <div class="glass-panel p-4 rounded-xl">
+        <div class="card p-4">
             <div class="flex items-center justify-between mb-2">
-                <div class="bg-purple-500/10 p-2 rounded-lg">
-                    <i data-lucide="wallet" class="w-5 h-5 text-purple-500"></i>
+                <div class="bg-accent/10 p-2 rounded-lg">
+                    <i data-lucide="wallet" class="w-5 h-5 text-accent"></i>
                 </div>
-                <span class="text-xs text-adaptive-muted">Actifs</span>
+                <span class="text-xs text-muted">Actifs</span>
             </div>
-            <p class="text-2xl font-bold text-adaptive">{{ wallet_count | default(0) }}</p>
-            <p class="text-xs text-adaptive-muted">Portefeuilles</p>
+            <p class="text-2xl font-bold text-default">{{ wallet_count | default(0) }}</p>
+            <p class="text-xs text-muted">Portefeuilles</p>
         </div>
 
         <!-- Transactions -->
-        <div class="glass-panel p-4 rounded-xl">
+        <div class="card p-4">
             <div class="flex items-center justify-between mb-2">
-                <div class="bg-[rgb(224,90,3)]/10 p-2 rounded-lg">
-                    <i data-lucide="arrow-left-right" class="w-5 h-5 text-[rgb(224,90,3)]"></i>
+                <div class="bg-primary/10 p-2 rounded-lg">
+                    <i data-lucide="arrow-left-right" class="w-5 h-5 text-primary"></i>
                 </div>
-                <span class="text-xs text-green-500 font-bold">+{{ today_transactions | default(0) }} aujourd'hui</span>
+                <span class="badge badge-success text-xs">+{{ today_transactions | default(0) }} aujourd'hui</span>
             </div>
-            <p class="text-2xl font-bold text-adaptive">{{ transaction_count | default(0) }}</p>
-            <p class="text-xs text-adaptive-muted">Transactions</p>
+            <p class="text-2xl font-bold text-default">{{ transaction_count | default(0) }}</p>
+            <p class="text-xs text-muted">Transactions</p>
         </div>
 
         <!-- Volume -->
-        <div class="glass-panel p-4 rounded-xl">
+        <div class="card p-4">
             <div class="flex items-center justify-between mb-2">
-                <div class="bg-green-500/10 p-2 rounded-lg">
-                    <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                <div class="bg-success/10 p-2 rounded-lg">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-success"></i>
                 </div>
-                <span class="text-xs text-adaptive-muted">MAD</span>
+                <span class="text-xs text-muted">MAD</span>
             </div>
-            <p class="text-2xl font-bold text-adaptive">{{ "{:,.0f}".format(total_volume | default(0)) }}</p>
-            <p class="text-xs text-adaptive-muted">Volume Total</p>
+            <p class="text-2xl font-bold text-default">{{ "{:,.0f}".format(total_volume | default(0)) }}</p>
+            <p class="text-xs text-muted">Volume Total</p>
         </div>
     </div>
 
     <!-- Charts Row -->
     <div class="grid grid-cols-1 gap-4">
         <!-- Volume Chart -->
-        <div class="glass-panel p-4 rounded-xl">
+        <div class="card p-4">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-adaptive">Volume des Transactions</h3>
-                <select id="chart-period" onchange="updateVolumeChart()" class="glass-input text-xs px-2 py-1 rounded-lg bg-transparent">
+                <h3 class="font-bold text-default">Volume des Transactions</h3>
+                <select id="chart-period" onchange="updateVolumeChart()" class="input text-xs px-2 py-1" style="width: auto;">
                     <option value="7">7 jours</option>
                     <option value="30">30 jours</option>
                 </select>
@@ -102,87 +102,87 @@
         </div>
 
         <!-- Currency Distribution -->
-        <div class="glass-panel p-4 rounded-xl">
-            <h3 class="font-bold text-adaptive mb-4">Répartition par Devise</h3>
+        <div class="card p-4">
+            <h3 class="font-bold text-default mb-4">Répartition par Devise</h3>
             <div id="currency-chart" class="h-48"></div>
         </div>
     </div>
 
     <!-- Quick Actions -->
     <div class="space-y-3">
-        <h3 class="font-bold text-adaptive">Gestion</h3>
+        <h3 class="font-bold text-default">Gestion</h3>
         <div class="grid grid-cols-2 gap-3">
-            <a href="{{ url_for('admin.users') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/10 dark:hover:bg-white/5 transition">
-                <div class="bg-blue-500/10 p-3 rounded-lg">
-                    <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+            <a href="{{ url_for('admin.users') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition">
+                <div class="bg-secondary/10 p-3 rounded-lg">
+                    <i data-lucide="users" class="w-5 h-5 text-secondary"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-adaptive text-sm">Utilisateurs</p>
-                    <p class="text-xs text-adaptive-muted">{{ user_count }} comptes</p>
+                    <p class="font-bold text-default text-sm">Utilisateurs</p>
+                    <p class="text-xs text-muted">{{ user_count }} comptes</p>
                 </div>
             </a>
             
-            <a href="{{ url_for('admin.wallets') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/10 dark:hover:bg-white/5 transition">
-                <div class="bg-purple-500/10 p-3 rounded-lg">
-                    <i data-lucide="wallet" class="w-5 h-5 text-purple-500"></i>
+            <a href="{{ url_for('admin.wallets') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition">
+                <div class="bg-accent/10 p-3 rounded-lg">
+                    <i data-lucide="wallet" class="w-5 h-5 text-accent"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-adaptive text-sm">Portefeuilles</p>
-                    <p class="text-xs text-adaptive-muted">{{ wallet_count }} wallets</p>
+                    <p class="font-bold text-default text-sm">Portefeuilles</p>
+                    <p class="text-xs text-muted">{{ wallet_count }} wallets</p>
                 </div>
             </a>
             
-            <a href="{{ url_for('admin.transactions') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/10 dark:hover:bg-white/5 transition">
-                <div class="bg-[rgb(224,90,3)]/10 p-3 rounded-lg">
-                    <i data-lucide="receipt" class="w-5 h-5 text-[rgb(224,90,3)]"></i>
+            <a href="{{ url_for('admin.transactions') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition">
+                <div class="bg-primary/10 p-3 rounded-lg">
+                    <i data-lucide="receipt" class="w-5 h-5 text-primary"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-adaptive text-sm">Transactions</p>
-                    <p class="text-xs text-adaptive-muted">Historique complet</p>
+                    <p class="font-bold text-default text-sm">Transactions</p>
+                    <p class="text-xs text-muted">Historique complet</p>
                 </div>
             </a>
             
-            <a href="{{ url_for('admin_banks.list_banks') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/10 dark:hover:bg-white/5 transition">
-                <div class="bg-green-500/10 p-3 rounded-lg">
-                    <i data-lucide="building-2" class="w-5 h-5 text-green-500"></i>
+            <a href="{{ url_for('admin_banks.list_banks') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition">
+                <div class="bg-success/10 p-3 rounded-lg">
+                    <i data-lucide="building-2" class="w-5 h-5 text-success"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-adaptive text-sm">Banques</p>
-                    <p class="text-xs text-adaptive-muted">Partenaires</p>
+                    <p class="font-bold text-default text-sm">Banques</p>
+                    <p class="text-xs text-muted">Partenaires</p>
                 </div>
             </a>
             
-            <a href="{{ url_for('suppliers.list_suppliers') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/10 dark:hover:bg-white/5 transition">
-                <div class="bg-cyan-500/10 p-3 rounded-lg">
-                    <i data-lucide="store" class="w-5 h-5 text-cyan-500"></i>
+            <a href="{{ url_for('suppliers.list_suppliers') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition">
+                <div class="bg-info/10 p-3 rounded-lg">
+                    <i data-lucide="store" class="w-5 h-5 text-info"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-adaptive text-sm">Fournisseurs</p>
-                    <p class="text-xs text-adaptive-muted">{{ supplier_count | default(0) }} actifs</p>
+                    <p class="font-bold text-default text-sm">Fournisseurs</p>
+                    <p class="text-xs text-muted">{{ supplier_count | default(0) }} actifs</p>
                 </div>
             </a>
             
-            <a href="{{ url_for('admin.beneficiaries') }}" class="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/10 dark:hover:bg-white/5 transition">
-                <div class="bg-pink-500/10 p-3 rounded-lg">
-                    <i data-lucide="contact" class="w-5 h-5 text-pink-500"></i>
+            <a href="{{ url_for('admin.beneficiaries') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition">
+                <div class="bg-accent/10 p-3 rounded-lg">
+                    <i data-lucide="contact" class="w-5 h-5 text-accent"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-adaptive text-sm">Bénéficiaires</p>
-                    <p class="text-xs text-adaptive-muted">{{ beneficiary_count | default(0) }} contacts</p>
+                    <p class="font-bold text-default text-sm">Bénéficiaires</p>
+                    <p class="text-xs text-muted">{{ beneficiary_count | default(0) }} contacts</p>
                 </div>
             </a>
         </div>
     </div>
 
     <!-- Export Section -->
-    <div class="glass-panel p-4 rounded-xl">
-        <h3 class="font-bold text-adaptive mb-4">Export des Données</h3>
+    <div class="card p-4">
+        <h3 class="font-bold text-default mb-4">Export des Données</h3>
         <div class="grid grid-cols-2 gap-3">
-            <a href="{{ url_for('admin.export_users') }}" class="flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 py-3 rounded-lg font-bold text-sm transition">
+            <a href="{{ url_for('admin.export_users') }}" class="btn btn-ghost flex items-center justify-center gap-2 bg-secondary/10 text-secondary hover:bg-secondary/20 py-3 font-bold text-sm transition">
                 <i data-lucide="download" class="w-4 h-4"></i>
                 Users CSV
             </a>
-            <a href="{{ url_for('admin.export_transactions') }}" class="flex items-center justify-center gap-2 bg-[rgb(224,90,3)]/10 hover:bg-[rgb(224,90,3)]/20 text-[rgb(224,90,3)] py-3 rounded-lg font-bold text-sm transition">
+            <a href="{{ url_for('admin.export_transactions') }}" class="btn btn-ghost flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary/20 py-3 font-bold text-sm transition">
                 <i data-lucide="download" class="w-4 h-4"></i>
                 Transactions CSV
             </a>
@@ -192,28 +192,25 @@
     <!-- Recent Transactions -->
     <div class="space-y-3">
         <div class="flex justify-between items-center">
-            <h3 class="font-bold text-adaptive">Transactions Récentes</h3>
-            <a href="{{ url_for('admin.transactions') }}" class="text-[rgb(224,90,3)] text-sm font-bold">Voir tout</a>
+            <h3 class="font-bold text-default">Transactions Récentes</h3>
+            <a href="{{ url_for('admin.transactions') }}" class="text-primary text-sm font-bold">Voir tout</a>
         </div>
         
         <div class="space-y-2">
             {% for tx in recent_transactions[:5] %}
-            <div class="glass-panel p-3 rounded-xl flex items-center justify-between">
+            <div class="card p-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-bold text-sm">
                         {{ tx.user_email[0] | upper if tx.user_email else 'U' }}
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-adaptive">{{ tx.user_email | default('N/A') }}</p>
-                        <p class="text-xs text-adaptive-muted">{{ tx.from_currency }} → {{ tx.to_currency }}</p>
+                        <p class="text-sm font-bold text-default">{{ tx.user_email | default('N/A') }}</p>
+                        <p class="text-xs text-muted">{{ tx.from_currency }} → {{ tx.to_currency }}</p>
                     </div>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-bold text-adaptive">{{ tx.amount | round(2) }} {{ tx.from_currency }}</p>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-bold
-                        {% if tx.status == 'completed' %}bg-green-500/20 text-green-500
-                        {% elif tx.status == 'pending' %}bg-yellow-500/20 text-yellow-500
-                        {% else %}bg-red-500/20 text-red-500{% endif %}">
+                    <p class="text-sm font-bold text-default">{{ tx.amount | round(2) }} {{ tx.from_currency }}</p>
+                    <span class="badge {% if tx.status == 'completed' %}badge-success{% elif tx.status == 'pending' %}badge-warning{% else %}badge-error{% endif %}">
                         {{ tx.status | capitalize }}
                     </span>
                 </div>
@@ -221,9 +218,9 @@
             {% endfor %}
             
             {% if not recent_transactions %}
-            <div class="glass-panel p-8 rounded-xl text-center">
-                <i data-lucide="inbox" class="w-12 h-12 text-adaptive-muted mx-auto mb-2"></i>
-                <p class="text-adaptive-muted">Aucune transaction récente</p>
+            <div class="card p-8 text-center">
+                <i data-lucide="inbox" class="w-12 h-12 text-muted mx-auto mb-2"></i>
+                <p class="text-muted">Aucune transaction récente</p>
             </div>
             {% endif %}
         </div>
@@ -232,20 +229,20 @@
     <!-- Recent Users -->
     <div class="space-y-3">
         <div class="flex justify-between items-center">
-            <h3 class="font-bold text-adaptive">Nouveaux Utilisateurs</h3>
-            <a href="{{ url_for('admin.users') }}" class="text-[rgb(224,90,3)] text-sm font-bold">Voir tout</a>
+            <h3 class="font-bold text-default">Nouveaux Utilisateurs</h3>
+            <a href="{{ url_for('admin.users') }}" class="text-primary text-sm font-bold">Voir tout</a>
         </div>
         
         <div class="space-y-2">
             {% for user in recent_users[:5] %}
-            <div class="glass-panel p-3 rounded-xl flex items-center justify-between">
+            <div class="card p-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-success to-info flex items-center justify-center text-white font-bold text-sm">
                         {{ user.email[0] | upper if user.email else 'U' }}
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-adaptive">{{ user.email | default('N/A') }}</p>
-                        <p class="text-xs text-adaptive-muted">
+                        <p class="text-sm font-bold text-default">{{ user.email | default('N/A') }}</p>
+                        <p class="text-xs text-muted">
                             {% if user.created_at %}
                             {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}
                             {% else %}
@@ -255,20 +252,18 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded-full text-xs font-bold
-                        {% if user.role == 'admin' %}bg-red-500/20 text-red-500
-                        {% else %}bg-blue-500/20 text-blue-500{% endif %}">
+                    <span class="badge {% if user.role == 'admin' %}badge-error{% else %}badge-secondary{% endif %}">
                         {{ user.role | capitalize }}
                     </span>
-                    <span class="w-2 h-2 rounded-full {% if user.is_active %}bg-green-500{% else %}bg-gray-400{% endif %}"></span>
+                    <span class="w-2 h-2 rounded-full {% if user.is_active %}bg-success{% else %}bg-neutral-400{% endif %}"></span>
                 </div>
             </div>
             {% endfor %}
             
             {% if not recent_users %}
-            <div class="glass-panel p-8 rounded-xl text-center">
-                <i data-lucide="users" class="w-12 h-12 text-adaptive-muted mx-auto mb-2"></i>
-                <p class="text-adaptive-muted">Aucun utilisateur récent</p>
+            <div class="card p-8 text-center">
+                <i data-lucide="users" class="w-12 h-12 text-muted mx-auto mb-2"></i>
+                <p class="text-muted">Aucun utilisateur récent</p>
             </div>
             {% endif %}
         </div>
@@ -276,25 +271,25 @@
 </div>
 
 <!-- Admin Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-white/10 px-6 py-3 z-50">
+<nav class="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-6 py-3 z-50" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
     <div class="flex justify-around items-center max-w-lg mx-auto">
-        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-[rgb(224,90,3)]">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-primary">
             <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Dashboard</span>
         </a>
-        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="users" class="w-5 h-5"></i>
             <span class="text-xs">Users</span>
         </a>
-        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Txns</span>
         </a>
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>
-        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="home" class="w-5 h-5"></i>
             <span class="text-xs">App</span>
         </a>

@@ -7,15 +7,15 @@
     <!-- Header -->
     <div class="flex justify-between items-center pt-2">
         <div>
-            <a href="{{ url_for('admin.dashboard') }}" class="text-adaptive-muted text-sm flex items-center gap-1 mb-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 Retour
             </a>
-            <h1 class="text-2xl font-bold text-adaptive">Utilisateurs</h1>
-            <p class="text-adaptive-muted text-sm">{{ users | length }} comptes enregistrés</p>
+            <h1 class="text-2xl font-bold text-default">Utilisateurs</h1>
+            <p class="text-muted text-sm">{{ users | length }} comptes enregistrés</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ url_for('admin.export_users') }}" class="glass-panel px-3 py-2 rounded-lg text-blue-500 font-bold text-sm flex items-center gap-1">
+            <a href="{{ url_for('admin.export_users') }}" class="card px-3 py-2 rounded-lg text-blue-500 font-bold text-sm flex items-center gap-1">
                 <i data-lucide="download" class="w-4 h-4"></i>
                 CSV
             </a>
@@ -24,20 +24,20 @@
     </div>
 
     <!-- Search & Filters -->
-    <div class="glass-panel p-4 rounded-xl">
+    <div class="card p-4 rounded-xl">
         <div class="flex gap-3">
             <div class="flex-1 relative">
-                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-adaptive-muted"></i>
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
                 <input type="text" id="search-input" placeholder="Rechercher par email..." 
-                       class="w-full pl-10 pr-4 py-2 glass-input rounded-lg text-sm"
+                       class="w-full pl-10 pr-4 py-2 input rounded-lg text-sm"
                        onkeyup="filterUsers()">
             </div>
-            <select id="filter-role" onchange="filterUsers()" class="glass-input px-3 py-2 rounded-lg text-sm bg-transparent">
+            <select id="filter-role" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm bg-transparent">
                 <option value="">Tous les rôles</option>
                 <option value="admin">Admin</option>
                 <option value="user">User</option>
             </select>
-            <select id="filter-status" onchange="filterUsers()" class="glass-input px-3 py-2 rounded-lg text-sm bg-transparent">
+            <select id="filter-status" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm bg-transparent">
                 <option value="">Tous statuts</option>
                 <option value="active">Actif</option>
                 <option value="inactive">Inactif</option>
@@ -48,7 +48,7 @@
     <!-- Users List -->
     <div class="space-y-3" id="users-list">
         {% for user in users %}
-        <div class="glass-panel p-4 rounded-xl user-card" 
+        <div class="card p-4 rounded-xl user-card" 
              data-email="{{ user.email | lower }}"
              data-role="{{ user.role | default('user') }}"
              data-status="{{ 'active' if user.get('is_active', True) else 'inactive' }}">
@@ -58,23 +58,23 @@
                         {{ user.email[0] | upper }}
                     </div>
                     <div>
-                        <p class="font-bold text-adaptive">{{ user.email }}</p>
-                        <p class="text-xs text-adaptive-muted">
+                        <p class="font-bold text-default">{{ user.email }}</p>
+                        <p class="text-xs text-muted">
                             {% if user.created_at %}
                             Inscrit le {{ user.created_at.strftime('%d/%m/%Y') }}
                             {% endif %}
                         </p>
                         <div class="flex items-center gap-2 mt-1">
                             <span class="text-[10px] px-2 py-0.5 rounded-full 
-                                {{ 'bg-amber-500/10 text-amber-500 border border-amber-500/20' if user.role == 'admin' else 'bg-slate-500/10 text-slate-400 border border-slate-500/20' }}">
+                                {{ 'badge badge-warning' if user.role == 'admin' else 'bg-slate-500/10 text-slate-400 border border-slate-500/20' }}">
                                 {{ user.role | default('user') | upper }}
                             </span>
                             <span class="text-[10px] px-2 py-0.5 rounded-full 
-                                {{ 'bg-emerald-500/10 text-emerald-500' if user.get('is_active', True) else 'bg-rose-500/10 text-rose-500' }}">
+                                {{ 'badge badge-success' if user.get('is_active', True) else 'badge badge-error' }}">
                                 {{ 'Actif' if user.get('is_active', True) else 'Inactif' }}
                             </span>
                             {% if user.verified %}
-                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full badge badge-secondary">
                                 ✓ Vérifié
                             </span>
                             {% endif %}
@@ -91,7 +91,7 @@
                     
                     <!-- Toggle Status -->
                     <form action="{{ url_for('admin.toggle_user', user_id=user._id) }}" method="POST">
-                        <button type="submit" class="p-2 rounded-lg {{ 'bg-emerald-500/10 text-emerald-500' if user.get('is_active', True) else 'bg-rose-500/10 text-rose-500' }} hover:opacity-80 transition" 
+                        <button type="submit" class="p-2 rounded-lg {{ 'badge badge-success' if user.get('is_active', True) else 'badge badge-error' }} hover:opacity-80 transition" 
                                 title="{{ 'Désactiver' if user.get('is_active', True) else 'Activer' }}">
                             <i data-lucide="{{ 'toggle-right' if user.get('is_active', True) else 'toggle-left' }}" class="w-4 h-4"></i>
                         </button>
@@ -99,7 +99,7 @@
                     
                     <!-- Change Role -->
                     <form action="{{ url_for('admin.change_role', user_id=user._id) }}" method="POST" class="inline">
-                        <select name="role" onchange="this.form.submit()" class="glass-input rounded-lg px-2 py-1 text-xs bg-transparent">
+                        <select name="role" onchange="this.form.submit()" class="input rounded-lg px-2 py-1 text-xs bg-transparent">
                             <option value="user" {{ 'selected' if user.role != 'admin' else '' }}>User</option>
                             <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>
                         </select>
@@ -124,37 +124,37 @@
 <!-- User Details Modal -->
 <div id="userModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeUserModal()"></div>
-    <div class="absolute bottom-0 left-0 right-0 glass-panel rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
+    <div class="absolute bottom-0 left-0 right-0 card rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
         <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
         <div id="user-details-content">
             <div class="text-center py-8">
-                <div class="animate-spin w-8 h-8 border-2 border-[rgb(224,90,3)] border-t-transparent rounded-full mx-auto"></div>
-                <p class="text-adaptive-muted mt-4">Chargement...</p>
+                <div class="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+                <p class="text-muted mt-4">Chargement...</p>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Admin Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-white/10 px-6 py-3 z-40">
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
     <div class="flex justify-around items-center max-w-lg mx-auto">
-        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
             <span class="text-xs">Dashboard</span>
         </a>
-        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-[rgb(224,90,3)]">
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-primary">
             <i data-lucide="users" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Users</span>
         </a>
-        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Txns</span>
         </a>
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>
-        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-adaptive-muted hover:text-adaptive transition">
+        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="home" class="w-5 h-5"></i>
             <span class="text-xs">App</span>
         </a>
@@ -195,28 +195,28 @@ function showUserDetails(userId) {
             }
             
             const balances = Object.entries(data.wallet.balances || {})
-                .map(([cur, amt]) => `<span class="px-2 py-1 glass-panel rounded-lg text-sm">${amt.toFixed(2)} ${cur}</span>`)
-                .join(' ') || '<span class="text-adaptive-muted">Aucun solde</span>';
+                .map(([cur, amt]) => `<span class="px-2 py-1 card rounded-lg text-sm">${amt.toFixed(2)} ${cur}</span>`)
+                .join(' ') || '<span class="text-muted">Aucun solde</span>';
             
             const transactions = data.recent_transactions
                 .map(tx => `
-                    <div class="flex justify-between items-center py-2 border-b border-white/10 last:border-0">
+                    <div class="flex justify-between items-center py-2 border-b border-border last:border-0">
                         <div>
-                            <p class="text-sm text-adaptive">${tx.amount} ${tx.from} → ${tx.to}</p>
-                            <p class="text-xs text-adaptive-muted">${new Date(tx.date).toLocaleDateString('fr-FR')}</p>
+                            <p class="text-sm text-default">${tx.amount} ${tx.from} → ${tx.to}</p>
+                            <p class="text-xs text-muted">${new Date(tx.date).toLocaleDateString('fr-FR')}</p>
                         </div>
                         <span class="px-2 py-0.5 rounded-full text-xs font-bold ${tx.status === 'completed' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">
                             ${tx.status}
                         </span>
                     </div>
-                `).join('') || '<p class="text-adaptive-muted text-center py-4">Aucune transaction</p>';
+                `).join('') || '<p class="text-muted text-center py-4">Aucune transaction</p>';
             
             content.innerHTML = `
                 <div class="text-center mb-6">
                     <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
                         ${data.user.email[0].toUpperCase()}
                     </div>
-                    <h3 class="text-xl font-bold text-adaptive">${data.user.email}</h3>
+                    <h3 class="text-xl font-bold text-default">${data.user.email}</h3>
                     <div class="flex justify-center gap-2 mt-2">
                         <span class="px-2 py-1 rounded-full text-xs font-bold ${data.user.role === 'admin' ? 'bg-amber-500/20 text-amber-500' : 'bg-slate-500/20 text-slate-400'}">${data.user.role.toUpperCase()}</span>
                         <span class="px-2 py-1 rounded-full text-xs font-bold ${data.user.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}">${data.user.is_active ? 'Actif' : 'Inactif'}</span>
@@ -225,36 +225,36 @@ function showUserDetails(userId) {
                 </div>
                 
                 <div class="space-y-4">
-                    <div class="glass-panel p-4 rounded-xl">
-                        <h4 class="font-bold text-adaptive mb-3">Portefeuille</h4>
+                    <div class="card p-4 rounded-xl">
+                        <h4 class="font-bold text-default mb-3">Portefeuille</h4>
                         <div class="flex flex-wrap gap-2">${balances}</div>
                     </div>
                     
-                    <div class="glass-panel p-4 rounded-xl">
-                        <h4 class="font-bold text-adaptive mb-3">Statistiques</h4>
+                    <div class="card p-4 rounded-xl">
+                        <h4 class="font-bold text-default mb-3">Statistiques</h4>
                         <div class="grid grid-cols-3 gap-4 text-center">
                             <div>
-                                <p class="text-2xl font-bold text-adaptive">${data.transactions_count}</p>
-                                <p class="text-xs text-adaptive-muted">Transactions</p>
+                                <p class="text-2xl font-bold text-default">${data.transactions_count}</p>
+                                <p class="text-xs text-muted">Transactions</p>
                             </div>
                             <div>
-                                <p class="text-2xl font-bold text-adaptive">${data.beneficiaries_count}</p>
-                                <p class="text-xs text-adaptive-muted">Bénéficiaires</p>
+                                <p class="text-2xl font-bold text-default">${data.beneficiaries_count}</p>
+                                <p class="text-xs text-muted">Bénéficiaires</p>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-adaptive">${data.user.created_at ? new Date(data.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}</p>
-                                <p class="text-xs text-adaptive-muted">Inscrit</p>
+                                <p class="text-sm font-bold text-default">${data.user.created_at ? new Date(data.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                <p class="text-xs text-muted">Inscrit</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="glass-panel p-4 rounded-xl">
-                        <h4 class="font-bold text-adaptive mb-3">Transactions Récentes</h4>
+                    <div class="card p-4 rounded-xl">
+                        <h4 class="font-bold text-default mb-3">Transactions Récentes</h4>
                         ${transactions}
                     </div>
                 </div>
                 
-                <button onclick="closeUserModal()" class="w-full mt-6 py-3 glass-panel rounded-xl font-bold text-adaptive">
+                <button onclick="closeUserModal()" class="w-full mt-6 py-3 card rounded-xl font-bold text-default">
                     Fermer
                 </button>
             `;
