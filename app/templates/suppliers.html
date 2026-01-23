@@ -75,7 +75,7 @@
                     <i data-lucide="power" class="w-4 h-4"></i>
                     {% if supplier.is_active %}Désactiver{% else %}Activer{% endif %}
                 </button>
-                <a href="{{ url_for('supplier.delete_supplier', id=supplier._id) }}" 
+                <a href="{{ url_for('suppliers.delete_supplier', id=supplier._id) }}" 
                    onclick="return confirm('Supprimer ce fournisseur?')"
                    class="text-red-500 hover:text-red-400 text-sm font-bold flex items-center gap-1 transition">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -104,7 +104,7 @@
     <div class="absolute bottom-0 left-0 right-0 glass-panel rounded-t-3xl p-6 transform transition-transform">
         <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
         <h2 id="modal-title" class="text-xl font-bold text-adaptive mb-6">Ajouter un fournisseur</h2>
-        <form id="supplier-form" action="{{ url_for('supplier.add_supplier') }}" method="POST" class="space-y-4">
+        <form id="supplier-form" action="{{ url_for('suppliers.add_supplier') }}" method="POST" class="space-y-4">
             <input type="hidden" id="supplier-id" name="supplier_id">
             <div>
                 <label class="block text-sm font-bold text-adaptive mb-2">Nom du fournisseur</label>
