@@ -1313,13 +1313,13 @@ ul, ol {
 }
 
 .logo-text {
-    color: #000000;
+    color: #000000 !important;
     transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 [data-theme="dark"] .logo-text,
 .theme-dark .logo-text {
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .logo-accent {
