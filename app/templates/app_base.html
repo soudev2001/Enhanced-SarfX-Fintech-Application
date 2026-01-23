@@ -1,33 +1,40 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>{% block title %}SarfX - Le Futur du Change{% endblock %}</title>
     
-    <!-- STACK TECHNIQUE -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Design System CSS (Local - No CDN) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    
+    <!-- Icons (Lucide) & Charts -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-    
     <!-- PWA Meta -->
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     {% block head %}{% endblock %}
 </head>
-<body class="h-screen flex flex-col overflow-hidden relative selection:bg-orange-500/30" id="app-body">
+<body class="min-h-screen flex flex-col overflow-x-hidden relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
 
     <!-- Background Blobs (Décoration) -->
-    <div class="blob bg-blue-600 w-80 h-80 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
-    <div class="blob bg-[rgb(224,90,3)] w-64 h-64 rounded-full bottom-0 right-0 translate-x-1/2 translate-y-1/2"></div>
+    <div class="blob rounded-full top-0 left-0" style="background: var(--brand-secondary); width: 320px; height: 320px; transform: translate(-50%, -50%);"></div>
+    <div class="blob rounded-full bottom-0 right-0" style="background: var(--brand-primary); width: 256px; height: 256px; transform: translate(50%, 50%);"></div>
 
     <!-- Notifications System -->
-    <div id="notification-container" class="fixed top-4 left-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
+    <div id="notification-container" class="toast-container"></div>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -42,32 +49,70 @@
         {% endif %}
     {% endwith %}
 
+    <!-- DESKTOP SIDEBAR NAVIGATION (visible ≥1024px) -->
+    <aside class="nav-sidebar" id="desktop-nav">
+        <div class="logo mb-8">
+            <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+        </div>
+        
+        <a href="{{ url_for('app.home') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'home' else '' }}">
+            <i data-lucide="home" style="width: 20px; height: 20px;"></i>
+            <span>Accueil</span>
+        </a>
+        <a href="{{ url_for('app.converter') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'converter' else '' }}">
+            <i data-lucide="repeat" style="width: 20px; height: 20px;"></i>
+            <span>Exchange</span>
+        </a>
+        <a href="{{ url_for('app.ai_forecast') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'ai' else '' }}">
+            <i data-lucide="brain-circuit" style="width: 20px; height: 20px;"></i>
+            <span>IA Prédictions</span>
+        </a>
+        <a href="{{ url_for('app.profile') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'profile' else '' }}">
+            <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+            <span>Profil</span>
+        </a>
+        <a href="{{ url_for('app.settings') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'settings' else '' }}">
+            <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+            <span>Réglages</span>
+        </a>
+        
+        <div class="mt-auto pt-6" style="border-top: 1px solid var(--border-light);">
+            <button onclick="toggleTheme()" class="nav-sidebar-item w-full" style="justify-content: flex-start;">
+                <i data-lucide="sun" id="theme-icon-light" style="width: 20px; height: 20px;"></i>
+                <i data-lucide="moon" id="theme-icon-dark" style="width: 20px; height: 20px; display: none;"></i>
+                <span id="theme-label">Mode sombre</span>
+            </button>
+        </div>
+    </aside>
+
     <!-- MAIN CONTENT AREA -->
-    <main id="main-content" class="flex-1 overflow-y-auto pb-24 relative z-10 p-6">
-        {% block content %}{% endblock %}
+    <main id="main-content" class="flex-1 overflow-y-auto pb-24 relative p-4 sm:p-6 lg:p-8 main-content-with-sidebar" style="z-index: 10;">
+        <div class="container mx-auto">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
-    <!-- NAVIGATION BAR -->
-    <nav class="fixed bottom-0 w-full nav-bar pb-6 pt-3 px-2 flex justify-around z-50">
-        <a href="{{ url_for('app.home') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'home' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
-            <i data-lucide="home" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Accueil</span>
+    <!-- MOBILE BOTTOM NAVIGATION (visible <1024px) -->
+    <nav class="nav-bottom" id="mobile-nav">
+        <a href="{{ url_for('app.home') }}" class="nav-item {{ 'active' if active_tab == 'home' else '' }}">
+            <i data-lucide="home" class="nav-item-icon"></i>
+            <span class="nav-item-label">Accueil</span>
         </a>
-        <a href="{{ url_for('app.converter') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'converter' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
-            <i data-lucide="repeat" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Exchange</span>
+        <a href="{{ url_for('app.converter') }}" class="nav-item {{ 'active' if active_tab == 'converter' else '' }}">
+            <i data-lucide="repeat" class="nav-item-icon"></i>
+            <span class="nav-item-label">Exchange</span>
         </a>
-        <a href="{{ url_for('app.ai_forecast') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'ai' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
-            <i data-lucide="brain-circuit" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">IA</span>
+        <a href="{{ url_for('app.ai_forecast') }}" class="nav-item {{ 'active' if active_tab == 'ai' else '' }}">
+            <i data-lucide="brain-circuit" class="nav-item-icon"></i>
+            <span class="nav-item-label">IA</span>
         </a>
-        <a href="{{ url_for('app.profile') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'profile' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
-            <i data-lucide="user" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Profil</span>
+        <a href="{{ url_for('app.profile') }}" class="nav-item {{ 'active' if active_tab == 'profile' else '' }}">
+            <i data-lucide="user" class="nav-item-icon"></i>
+            <span class="nav-item-label">Profil</span>
         </a>
-        <a href="{{ url_for('app.settings') }}" class="nav-item {{ 'text-blue-500' if active_tab == 'settings' else 'text-slate-500' }} flex flex-col items-center gap-1 w-16">
-            <i data-lucide="settings" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Réglages</span>
+        <a href="{{ url_for('app.settings') }}" class="nav-item {{ 'active' if active_tab == 'settings' else '' }}">
+            <i data-lucide="settings" class="nav-item-icon"></i>
+            <span class="nav-item-label">Réglages</span>
         </a>
     </nav>
 
@@ -78,49 +123,68 @@
 
         // Theme Management
         function toggleTheme() {
+            const html = document.documentElement;
             const body = document.body;
-            body.classList.toggle('theme-light');
-            const isDark = !body.classList.contains('theme-light');
-            localStorage.setItem('sarfx_theme', isDark ? 'dark' : 'light');
-            updateThemeToggleUI(isDark);
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            body.classList.toggle('theme-dark', newTheme === 'dark');
+            body.style.background = newTheme === 'dark' ? 'var(--bg-primary)' : 'var(--bg-primary)';
+            body.style.color = 'var(--text-primary)';
+            
+            localStorage.setItem('sarfx_theme', newTheme);
+            updateThemeToggleUI(newTheme === 'dark');
+            updateThemeColor(newTheme);
             
             // Sync with server
             fetch('/api/theme', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ theme: isDark ? 'dark' : 'light' })
-            });
+                body: JSON.stringify({ theme: newTheme })
+            }).catch(() => {});
         }
 
         function updateThemeToggleUI(isDark) {
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            const themeLabel = document.getElementById('theme-label');
             const dot = document.getElementById('theme-toggle-dot');
             const btn = document.getElementById('theme-toggle-btn');
-            if (dot && btn) {
-                if (isDark) {
-                    dot.style.transform = 'translateX(0)';
-                    btn.classList.replace('bg-blue-200', 'bg-slate-700');
-                } else {
-                    dot.style.transform = 'translateX(24px)';
-                    btn.classList.replace('bg-slate-700', 'bg-blue-200');
-                }
+            
+            if (lightIcon && darkIcon) {
+                lightIcon.style.display = isDark ? 'block' : 'none';
+                darkIcon.style.display = isDark ? 'none' : 'block';
             }
+            if (themeLabel) {
+                themeLabel.textContent = isDark ? 'Mode clair' : 'Mode sombre';
+            }
+            if (dot && btn) {
+                dot.style.transform = isDark ? 'translateX(0)' : 'translateX(24px)';
+            }
+        }
+        
+        function updateThemeColor(theme) {
+            const themeColor = theme === 'dark' ? '#0f172a' : '#ffffff';
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
         }
 
         // Notifications
         function showNotification(message, type = 'info') {
             const container = document.getElementById('notification-container');
             const toast = document.createElement('div');
-            toast.className = `notification-toast ${type}`;
+            toast.className = `toast toast-${type}`;
             
             const icons = {
                 success: 'check-circle',
                 error: 'x-circle',
-                info: 'info'
+                info: 'info',
+                warning: 'alert-triangle'
             };
             
             toast.innerHTML = `
-                <i data-lucide="${icons[type] || 'info'}" class="w-5 h-5"></i>
-                <span>${message}</span>
+                <i data-lucide="${icons[type] || 'info'}" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+                <span style="flex: 1;">${message}</span>
             `;
             
             container.appendChild(toast);
@@ -133,14 +197,33 @@
             }, 4000);
         }
 
-        // Init Theme
+        // Init Theme on Load
         document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('sarfx_theme') || '{{ user_theme | default("dark") }}';
-            if (savedTheme === 'light') {
-                document.body.classList.add('theme-light');
-            }
-            updateThemeToggleUI(savedTheme !== 'light');
+            const savedTheme = localStorage.getItem('sarfx_theme') || '{{ user_theme | default("light") }}';
+            const html = document.documentElement;
+            const body = document.body;
+            
+            html.setAttribute('data-theme', savedTheme);
+            body.classList.toggle('theme-dark', savedTheme === 'dark');
+            
+            updateThemeToggleUI(savedTheme === 'dark');
+            updateThemeColor(savedTheme);
+            
+            // Re-init icons after DOM ready
+            setTimeout(() => lucide.createIcons(), 100);
         });
+        
+        // Detect system theme preference
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('sarfx_theme')) {
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    document.body.classList.toggle('theme-dark', e.matches);
+                    updateThemeToggleUI(e.matches);
+                }
+            });
+        }
     </script>
     
     {% block scripts %}{% endblock %}

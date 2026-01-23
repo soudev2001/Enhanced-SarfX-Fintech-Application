@@ -1,29 +1,35 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>{{ 'Inscription' if request.args.get('mode') == 'register' else 'Connexion' }} - SarfX</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Design System CSS (Local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     
-    <meta name="theme-color" content="#0f172a">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- PWA Meta -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
-<body class="min-h-screen flex flex-col relative selection:bg-orange-500/30" id="app-body">
+<body class="min-h-screen flex flex-col relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
 
     <!-- Background Blobs -->
-    <div class="blob bg-blue-600 w-80 h-80 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
-    <div class="blob bg-[rgb(224,90,3)] w-64 h-64 rounded-full bottom-0 right-0 translate-x-1/2 translate-y-1/2"></div>
+    <div class="blob rounded-full" style="background: var(--brand-secondary); width: 320px; height: 320px; top: 0; left: 0; transform: translate(-50%, -50%);"></div>
+    <div class="blob rounded-full" style="background: var(--brand-primary); width: 256px; height: 256px; bottom: 0; right: 0; transform: translate(50%, 50%);"></div>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div id="notification-container" class="fixed top-4 left-4 right-4 z-[100] space-y-2">
+        <div id="notification-container" class="toast-container">
             {% for category, message in messages %}
-            <div class="notification-toast {{ category }} flex items-center gap-2 p-4 rounded-xl">
-                <i data-lucide="{{ 'check-circle' if category == 'success' else 'alert-circle' }}" class="w-5 h-5"></i>
+            <div class="toast toast-{{ category }}">
+                <i data-lucide="{{ 'check-circle' if category == 'success' else 'alert-circle' }}" style="width: 20px; height: 20px;"></i>
                 <span>{{ message }}</span>
             </div>
             {% endfor %}
@@ -32,53 +38,61 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="flex-1 flex items-center justify-center p-6 relative z-10">
-        <div class="w-full max-w-sm space-y-8">
+    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative" style="z-index: 10;">
+        <div class="w-full max-w-sm flex flex-col gap-8 animate-fade-in">
             <!-- Logo -->
             <div class="text-center">
-                <h1 class="font-extrabold text-4xl tracking-tighter logo-text mb-2">
-                    Sarf<span class="logo-x">X</span>
+                <h1 class="logo justify-center text-4xl mb-2">
+                    <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
                 </h1>
-                <p class="text-adaptive-muted text-sm">Le futur du change</p>
+                <p class="text-sm" style="color: var(--text-secondary);">Le futur du change</p>
             </div>
 
             <!-- Login Card -->
-            <div class="glass-panel p-6 rounded-2xl space-y-6">
-                <div class="text-center">
-                    <h2 class="text-xl font-bold text-adaptive">
+            <div class="card card-lg">
+                <div class="text-center mb-6">
+                    <h2 class="text-xl font-bold" style="color: var(--text-primary);">
                         {{ 'Créer un compte' if request.args.get('mode') == 'register' else 'Bienvenue' }}
                     </h2>
-                    <p class="text-sm text-adaptive-muted mt-1">
+                    <p class="text-sm mt-1" style="color: var(--text-secondary);">
                         {{ 'Rejoignez SarfX aujourd\'hui' if request.args.get('mode') == 'register' else 'Connectez-vous à votre compte' }}
                     </p>
                 </div>
                 
-                <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}" class="space-y-4">
-                    <div class="space-y-3">
-                        <div class="relative">
-                            <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-adaptive-muted"></i>
-                            <input type="email" name="email" 
-                                   class="w-full glass-input rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
-                                   placeholder="Adresse email" 
-                                   value="starkxgroup@gmail.com"
-                                   required>
+                <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}" class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-3">
+                        <div class="input-group">
+                            <div class="relative">
+                                <i data-lucide="mail" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
+                                <input type="email" name="email" 
+                                       class="input" 
+                                       style="padding-left: 48px;"
+                                       placeholder="Adresse email" 
+                                       value="starkxgroup@gmail.com"
+                                       required
+                                       autocomplete="email">
+                            </div>
                         </div>
-                        <div class="relative">
-                            <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-adaptive-muted"></i>
-                            <input type="password" name="password" id="password"
-                                   class="w-full glass-input rounded-xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
-                                   placeholder="Mot de passe"
-                                   value="admin"
-                                   required>
-                            <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-adaptive-muted hover:text-adaptive transition">
-                                <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
-                            </button>
+                        <div class="input-group">
+                            <div class="relative">
+                                <i data-lucide="lock" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
+                                <input type="password" name="password" id="password"
+                                       class="input" 
+                                       style="padding-left: 48px; padding-right: 48px;"
+                                       placeholder="Mot de passe"
+                                       value="admin"
+                                       required
+                                       autocomplete="current-password">
+                                <button type="button" onclick="togglePassword()" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-tertiary);" aria-label="Afficher/masquer le mot de passe">
+                                    <i data-lucide="eye" id="eye-icon" style="width: 20px; height: 20px;"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn-primary w-full">
+                    <button type="submit" class="btn btn-gradient btn-lg btn-block">
                         {{ 'Créer mon compte' if request.args.get('mode') == 'register' else 'Se connecter' }}
-                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
                     </button>
                 </form>
             </div>
@@ -86,44 +100,44 @@
             <!-- Toggle Register/Login -->
             <div class="text-center">
                 {% if request.args.get('mode') == 'register' %}
-                <p class="text-sm text-adaptive-muted">
+                <p class="text-sm" style="color: var(--text-secondary);">
                     Déjà inscrit ?
-                    <a href="{{ url_for('auth.login') }}" class="text-blue-500 font-bold hover:underline">Se connecter</a>
+                    <a href="{{ url_for('auth.login') }}" class="font-bold" style="color: var(--brand-secondary);">Se connecter</a>
                 </p>
                 {% else %}
-                <p class="text-sm text-adaptive-muted">
+                <p class="text-sm" style="color: var(--text-secondary);">
                     Pas encore de compte ?
-                    <a href="{{ url_for('auth.login', mode='register') }}" class="text-blue-500 font-bold hover:underline">S'inscrire</a>
+                    <a href="{{ url_for('auth.login', mode='register') }}" class="font-bold" style="color: var(--brand-secondary);">S'inscrire</a>
                 </p>
                 {% endif %}
             </div>
 
             <!-- Features Preview -->
-            <div class="grid grid-cols-3 gap-2 pt-4">
+            <div class="grid grid-cols-3 gap-3 pt-4">
                 <div class="text-center">
-                    <div class="w-10 h-10 mx-auto bg-blue-500/10 rounded-xl flex items-center justify-center mb-2">
-                        <i data-lucide="zap" class="w-5 h-5 text-blue-500"></i>
+                    <div class="feature-icon feature-icon-secondary mx-auto mb-2" style="width: 40px; height: 40px;">
+                        <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
                     </div>
-                    <p class="text-[10px] text-adaptive-muted">Rapide</p>
+                    <p class="text-xs" style="color: var(--text-tertiary);">Rapide</p>
                 </div>
                 <div class="text-center">
-                    <div class="w-10 h-10 mx-auto bg-emerald-500/10 rounded-xl flex items-center justify-center mb-2">
-                        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-500"></i>
+                    <div class="feature-icon mx-auto mb-2" style="width: 40px; height: 40px; background: var(--success-bg); color: var(--success);">
+                        <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
                     </div>
-                    <p class="text-[10px] text-adaptive-muted">Sécurisé</p>
+                    <p class="text-xs" style="color: var(--text-tertiary);">Sécurisé</p>
                 </div>
                 <div class="text-center">
-                    <div class="w-10 h-10 mx-auto bg-purple-500/10 rounded-xl flex items-center justify-center mb-2">
-                        <i data-lucide="brain-circuit" class="w-5 h-5 text-purple-500"></i>
+                    <div class="feature-icon mx-auto mb-2" style="width: 40px; height: 40px; background: rgba(168, 85, 247, 0.1); color: #a855f7;">
+                        <i data-lucide="brain-circuit" style="width: 20px; height: 20px;"></i>
                     </div>
-                    <p class="text-[10px] text-adaptive-muted">IA</p>
+                    <p class="text-xs" style="color: var(--text-tertiary);">IA</p>
                 </div>
             </div>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="text-center py-4 text-xs text-adaptive-muted relative z-10">
+    <footer class="text-center py-4 text-xs relative" style="z-index: 10; color: var(--text-tertiary);">
         © 2026 SarfX. Tous droits réservés.
     </footer>
 
