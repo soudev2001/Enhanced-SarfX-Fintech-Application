@@ -159,7 +159,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Txns</span>
         </a>
-        <a href="{{ url_for('supplier.suppliers') }}" class="flex flex-col items-center gap-1 text-[rgb(224,90,3)]">
+        <a href="{{ url_for('suppliers.list_suppliers') }}" class="flex flex-col items-center gap-1 text-[rgb(224,90,3)]">
             <i data-lucide="store" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Suppliers</span>
         </a>
@@ -173,7 +173,7 @@
 <script>
 function openAddModal() {
     document.getElementById('modal-title').textContent = 'Ajouter un fournisseur';
-    document.getElementById('supplier-form').action = '{{ url_for("supplier.add_supplier") }}';
+    document.getElementById('supplier-form').action = '{{ url_for("suppliers.add_supplier") }}';
     document.getElementById('supplier-id').value = '';
     document.getElementById('supplier-name').value = '';
     document.getElementById('supplier-url').value = '';

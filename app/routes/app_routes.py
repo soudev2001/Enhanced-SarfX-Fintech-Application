@@ -36,8 +36,11 @@ def get_user_total_balance(user_id):
     if db is None:
         return {"total_usd": 0, "wallets": []}
     
-    # Récupérer tous les wallets de l'utilisateur
-    wallets = list(db.wallets.find({"user_id": str(user_id)}))
+    # Récupérer le wallet de l'utilisateur (format: {balances: {USD: x, EUR: y, ...}})
+    wallet = db.wallets.find_one({"user_id": str(user_id)})
+    
+    if not wallet:
+        return {"total_usd": 0, "wallets": []}
     
     # Taux de change approximatifs (devrait venir de l'API en production)
     exchange_rates = {
@@ -51,9 +54,11 @@ def get_user_total_balance(user_id):
     total_usd = 0
     wallet_details = []
     
-    for wallet in wallets:
-        currency = wallet.get('currency', 'USD')
-        balance = float(wallet.get('balance', 0))
+    # Le wallet contient un dict 'balances' avec les devises comme clés
+    balances = wallet.get('balances', {})
+    
+    for currency, balance in balances.items():
+        balance = float(balance or 0)
         rate = exchange_rates.get(currency, 1.0)
         usd_value = balance * rate
         total_usd += usd_value
