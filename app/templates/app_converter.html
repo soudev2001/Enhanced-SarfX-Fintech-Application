@@ -1,48 +1,43 @@
 {% extends "app_base.html" %}
 
 {% block content %}
-<div class="container-fluid py-4 space-y-6">
-    <!-- Enhanced Header with Breadcrumb -->
-    <div class="fade-in">
-        <nav class="flex items-center gap-2 text-xs text-muted mb-4">
-            <a href="{{ url_for('app.home') }}" class="hover:text-primary transition-colors flex items-center gap-1">
-                <i data-lucide="home" class="w-3 h-3"></i> Accueil
+<div class="wise-converter">
+    <!-- Header -->
+    <div class="wise-conv-header">
+        <nav class="wise-breadcrumb">
+            <a href="{{ url_for('app.home') }}">
+                <i data-lucide="home" style="width: 14px; height: 14px;"></i> Accueil
             </a>
-            <i data-lucide="chevron-right" class="w-3 h-3"></i>
-            <span class="text-default">Convertisseur</span>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span>Convertir</span>
         </nav>
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 md:w-14 md:h-14 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-lg">
-                    <i data-lucide="repeat" class="w-6 h-6 text-white"></i>
-                </div>
-                <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-default">Convertir</h2>
-                    <p class="text-xs md:text-sm text-muted">Meilleurs taux en temps réel</p>
-                </div>
+        <div class="wise-conv-title-row">
+            <div class="wise-conv-icon">
+                <i data-lucide="repeat" style="width: 24px; height: 24px;"></i>
             </div>
-            <div class="badge badge-success flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                Live Market
+            <div>
+                <h1 class="wise-conv-title">Convertir</h1>
+                <p class="wise-conv-subtitle">Meilleurs taux en temps réel</p>
             </div>
+        </div>
+        <div class="wise-live-badge">
+            <span class="wise-live-dot"></span>
+            Live Market
         </div>
     </div>
     
-    <!-- Currency Input - Enhanced -->
-    <div class="card p-5 md:p-6 relative overflow-hidden slide-up">
-        <!-- Premium glow effect -->
-        <div class="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 relative z-10 mb-4">
-            <label class="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-2">
-                <i data-lucide="send" class="w-3 h-3 text-primary"></i> Vous envoyez
-            </label>
-            <span class="text-xs text-success bg-success/10 px-2 py-1 rounded-full font-semibold hidden" id="savings-badge">Économie: $--</span>
+    <!-- Amount Input Card -->
+    <div class="wise-input-card">
+        <div class="wise-input-header">
+            <span class="wise-input-label">
+                <i data-lucide="send" style="width: 14px; height: 14px; color: var(--brand-primary);"></i>
+                Vous envoyez
+            </span>
+            <span class="wise-savings-tag hidden" id="savings-badge">Économie: $--</span>
         </div>
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 relative z-10">
-            <div class="relative flex-1">
-                <input type="number" id="smart-amount" value="1000" min="0" class="input text-3xl md:text-4xl font-bold font-mono tracking-tight bg-transparent border-0 focus:ring-0 p-0" placeholder="0.00">
-            </div>
-            <select id="from-currency" class="currency-select flex items-center gap-2 bg-gradient-to-r from-neutral-800 to-neutral-700 hover:from-neutral-700 hover:to-neutral-600 text-white px-4 py-3 rounded-xl transition cursor-pointer border border-white/10 shadow-lg min-w-[140px]">
+        <div class="wise-input-row">
+            <input type="number" id="smart-amount" value="1000" min="0" class="wise-big-input" placeholder="0.00">
+            <select id="from-currency" class="wise-currency-pill">
                 <option value="USD" selected>🇺🇸 USD</option>
                 <option value="EUR">🇪🇺 EUR</option>
                 <option value="GBP">🇬🇧 GBP</option>
@@ -52,138 +47,756 @@
         </div>
     </div>
 
-    <!-- Breakdown Timeline -->
-    <div id="exchange-results" class="hidden-opacity relative pl-6 ml-4 space-y-6 md:space-y-8 border-l-2 border-neutral-200 dark:border-neutral-700 slide-up">
+    <!-- Breakdown Timeline - Wise Style -->
+    <div id="exchange-results" class="wise-timeline hidden-opacity">
         <!-- Fee -->
-        <div class="relative">
-            <div class="absolute -left-[25px] top-0 bg-surface border-2 border-surface-elevated w-8 h-8 rounded-full flex items-center justify-center text-muted">
-                <i data-lucide="minus" class="w-4 h-4"></i>
+        <div class="wise-timeline-item">
+            <div class="wise-timeline-dot">
+                <i data-lucide="minus" style="width: 14px; height: 14px;"></i>
             </div>
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                <p class="text-xs text-muted">Frais SarfX (1%)</p>
-                <p class="text-sm font-bold text-default" id="smart-fee-display">--</p>
+            <div class="wise-timeline-content">
+                <span class="wise-timeline-label">Frais SarfX (1%)</span>
+                <span class="wise-timeline-value" id="smart-fee-display">--</span>
             </div>
         </div>
         <!-- Convert -->
-        <div class="relative">
-            <div class="absolute -left-[25px] top-0 bg-surface border-2 border-surface-elevated w-8 h-8 rounded-full flex items-center justify-center text-muted">
-                <i data-lucide="arrow-down" class="w-4 h-4"></i>
+        <div class="wise-timeline-item">
+            <div class="wise-timeline-dot">
+                <i data-lucide="arrow-down" style="width: 14px; height: 14px;"></i>
             </div>
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                <p class="text-xs text-muted">Montant converti</p>
-                <p class="text-sm font-bold text-default" id="smart-convert-amount">--</p>
+            <div class="wise-timeline-content">
+                <span class="wise-timeline-label">Montant converti</span>
+                <span class="wise-timeline-value" id="smart-convert-amount">--</span>
             </div>
         </div>
-        <!-- Rate & Suppliers -->
-        <div class="relative">
-            <div class="absolute -left-[25px] top-0 bg-accent/10 border-2 border-surface-elevated w-8 h-8 rounded-full flex items-center justify-center text-accent animate-pulse">
-                <i data-lucide="percent" class="w-4 h-4"></i>
+        <!-- Rate -->
+        <div class="wise-timeline-item wise-timeline-highlight">
+            <div class="wise-timeline-dot wise-dot-accent">
+                <i data-lucide="percent" style="width: 14px; height: 14px;"></i>
             </div>
-            <div class="space-y-2">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                    <p class="text-xs text-muted font-semibold uppercase">Meilleur Taux (IA)</p>
-                    <p class="text-sm font-bold text-success font-mono" id="smart-rate-display">--</p>
-                </div>
-                <!-- Suppliers List -->
-                <div id="suppliers-list" class="space-y-2 mt-3"></div>
+            <div class="wise-timeline-content">
+                <span class="wise-timeline-label">Meilleur Taux (IA)</span>
+                <span class="wise-timeline-value wise-value-success" id="smart-rate-display">--</span>
             </div>
+        </div>
+        
+        <!-- Suppliers Grid -->
+        <div class="wise-suppliers-section">
+            <h3 class="wise-suppliers-title">
+                <i data-lucide="git-compare" style="width: 16px; height: 16px;"></i>
+                Comparer les fournisseurs
+            </h3>
+            <div id="suppliers-list" class="wise-suppliers-grid"></div>
         </div>
     </div>
 
     <!-- Recipient Section -->
-    <div id="recipient-section" class="hidden-opacity card p-5 md:p-6 relative overflow-hidden slide-up">
-        <div class="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-bl-full -mr-4 -mt-4"></div>
-        <div class="flex items-center gap-3 mb-4 relative z-10">
-            <div class="w-10 h-10 md:w-12 md:h-12 bg-primary/20 rounded-xl flex items-center justify-center text-primary border border-primary/30">
-                <i data-lucide="user-check" class="w-5 h-5"></i>
+    <div id="recipient-section" class="wise-card hidden-opacity">
+        <div class="wise-card-icon-header">
+            <div class="wise-card-icon" style="background: rgba(224, 90, 3, 0.1); color: var(--brand-primary);">
+                <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-                <h3 class="font-bold text-default text-sm md:text-base">Bénéficiaire</h3>
-                <p class="text-xs text-muted">Détails du compte</p>
+                <h3 class="wise-card-title">Bénéficiaire</h3>
+                <p class="wise-card-desc">Détails du compte</p>
             </div>
         </div>
-        <div class="grid gap-3 md:gap-4 relative z-10">
-            <input type="text" id="recipient-name" placeholder="Nom complet" class="input">
-            <input type="text" id="recipient-account" placeholder="IBAN / Numéro de compte" class="input">
+        <div class="wise-form-grid">
+            <input type="text" id="recipient-name" placeholder="Nom complet" class="wise-input">
+            <input type="text" id="recipient-account" placeholder="IBAN / Numéro de compte" class="wise-input">
         </div>
     </div>
 
-    <!-- Bank Selection Section -->
-    <div id="bank-selection-section" class="hidden-opacity card p-5 md:p-6 relative overflow-hidden slide-up">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 border border-purple-500/30">
-                <i data-lucide="landmark" class="w-5 h-5"></i>
+    <!-- Bank Selection -->
+    <div id="bank-selection-section" class="wise-card hidden-opacity">
+        <div class="wise-card-icon-header">
+            <div class="wise-card-icon" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">
+                <i data-lucide="landmark" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-                <h3 class="font-bold text-default text-sm md:text-base">Banque de Retrait</h3>
-                <p class="text-xs text-muted">Choisissez votre banque préférée</p>
+                <h3 class="wise-card-title">Banque de Retrait</h3>
+                <p class="wise-card-desc">Choisissez votre banque</p>
             </div>
         </div>
-        <div id="banks-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            <!-- Banks will be loaded here via JS -->
-        </div>
+        <div id="banks-grid" class="wise-banks-select-grid"></div>
     </div>
 
-    <!-- ATM Locations Section -->
-    <div id="atm-section" class="hidden-opacity card p-5 md:p-6 relative overflow-hidden slide-up">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-success/20 rounded-xl flex items-center justify-center text-success border border-success/30">
-                    <i data-lucide="map-pin" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-default text-sm md:text-base">Distributeurs Proches</h3>
-                    <p class="text-xs text-muted" id="atm-subtitle">Détectez votre position</p>
-                </div>
+    <!-- ATM Locations -->
+    <div id="atm-section" class="wise-card hidden-opacity">
+        <div class="wise-card-icon-header">
+            <div class="wise-card-icon" style="background: var(--success-bg); color: var(--success);">
+                <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
             </div>
-            <button onclick="getUserLocation()" id="location-btn" class="btn btn-ghost text-primary border border-primary/30 text-xs">
-                <i data-lucide="crosshair" class="w-4 h-4"></i> Ma Position
+            <div>
+                <h3 class="wise-card-title">Distributeurs Proches</h3>
+                <p class="wise-card-desc" id="atm-subtitle">Détectez votre position</p>
+            </div>
+            <button onclick="getUserLocation()" id="location-btn" class="wise-location-btn">
+                <i data-lucide="crosshair" style="width: 16px; height: 16px;"></i> Ma Position
             </button>
         </div>
-        <div id="atm-list" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin">
-            <div class="text-center text-muted text-sm py-8">
-                <i data-lucide="navigation" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+        <div id="atm-list" class="wise-atm-list">
+            <div class="wise-atm-empty">
+                <i data-lucide="navigation" style="width: 40px; height: 40px; opacity: 0.4;"></i>
                 <p>Sélectionnez une banque et activez votre position</p>
             </div>
         </div>
     </div>
 
-    <!-- Final Result - Premium Design -->
-    <div id="summary-section" class="hidden-opacity rounded-2xl p-5 md:p-8 text-white shadow-xl shadow-primary/20 relative overflow-hidden slide-up" style="background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1a1a2e 100%);">
-        <!-- Premium glow effects -->
-        <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
-        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-2xl"></div>
-        
-        <div class="relative z-10">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
-                <div>
-                    <p class="text-white/70 text-xs font-semibold uppercase mb-2 flex items-center gap-2">
-                        <i data-lucide="gift" class="w-3 h-3"></i> Le bénéficiaire reçoit
-                    </p>
-                    <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight" id="smart-final-amount">--</h2>
-                </div>
-                <div class="flex items-center gap-2 bg-white/20 px-4 py-2.5 rounded-xl backdrop-blur-md border border-white/10">
-                    <span class="text-2xl">🇲🇦</span>
-                    <span class="font-bold text-sm">MAD</span>
-                </div>
+    <!-- Final Result - Wise Style -->
+    <div id="summary-section" class="wise-result-card hidden-opacity">
+        <div class="wise-result-header">
+            <div>
+                <p class="wise-result-label">
+                    <i data-lucide="gift" style="width: 14px; height: 14px;"></i>
+                    Le bénéficiaire reçoit
+                </p>
+                <h2 class="wise-result-amount" id="smart-final-amount">--</h2>
             </div>
-            <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
-                <input type="hidden" name="amount" id="form-amount">
-                <input type="hidden" name="from_currency" id="form-from-currency">
-                <input type="hidden" name="to_currency" value="MAD">
-                <input type="hidden" name="rate" id="form-rate">
-                <input type="hidden" name="final_amount" id="form-final-amount">
-                <input type="hidden" name="supplier_id" id="form-supplier-id">
-                <button type="submit" class="btn btn-lg w-full bg-white text-neutral-900 font-bold hover:bg-neutral-100 shadow-lg touch-target">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    Confirmer l'échange
-                </button>
-            </form>
+            <div class="wise-result-currency-tag">
+                <span>🇲🇦</span>
+                <span>MAD</span>
+            </div>
         </div>
+        <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
+            <input type="hidden" name="amount" id="form-amount">
+            <input type="hidden" name="from_currency" id="form-from-currency">
+            <input type="hidden" name="to_currency" value="MAD">
+            <input type="hidden" name="rate" id="form-rate">
+            <input type="hidden" name="final_amount" id="form-final-amount">
+            <input type="hidden" name="supplier_id" id="form-supplier-id">
+            <button type="submit" class="wise-confirm-btn">
+                <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                Confirmer l'échange
+            </button>
+        </form>
     </div>
-    
-    <div class="h-6"></div>
 </div>
+
+<style>
+/* ==========================================
+   WISE-INSPIRED CONVERTER STYLES
+   ========================================== */
+
+.wise-converter {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: 100px;
+}
+
+/* Header */
+.wise-conv-header {
+    padding: 16px 0;
+}
+
+.wise-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+}
+
+.wise-breadcrumb a {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+}
+
+.wise-breadcrumb a:hover {
+    color: var(--brand-primary);
+}
+
+.wise-conv-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.wise-conv-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.25);
+}
+
+.wise-conv-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.wise-conv-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wise-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--success-bg);
+    color: var(--success);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wise-live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+/* Input Card */
+.wise-input-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.wise-input-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.wise-input-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+}
+
+.wise-savings-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--success);
+    background: var(--success-bg);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.wise-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wise-big-input {
+    flex: 1;
+    font-size: 36px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    padding: 8px 0;
+    min-width: 0;
+}
+
+.wise-big-input:focus {
+    outline: none;
+}
+
+.wise-currency-pill {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.wise-currency-pill:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+/* Timeline */
+.wise-timeline {
+    position: relative;
+    padding-left: 28px;
+    margin-left: 14px;
+    border-left: 2px solid var(--border-light);
+}
+
+.wise-timeline-item {
+    position: relative;
+    padding: 12px 0;
+}
+
+.wise-timeline-dot {
+    position: absolute;
+    left: -35px;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--surface);
+    border: 2px solid var(--border-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+}
+
+.wise-dot-accent {
+    background: rgba(224, 90, 3, 0.1);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.wise-timeline-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wise-timeline-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-timeline-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-value-success {
+    color: var(--success);
+}
+
+/* Suppliers */
+.wise-suppliers-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+}
+
+.wise-suppliers-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.wise-suppliers-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wise-supplier-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.wise-supplier-item:hover {
+    border-color: var(--brand-primary);
+}
+
+.wise-supplier-best {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--success);
+}
+
+.wise-supplier-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: white;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-supplier-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.wise-supplier-info {
+    flex: 1;
+}
+
+.wise-supplier-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.wise-supplier-rate {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.wise-supplier-tag {
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--success);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+/* Cards */
+.wise-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+}
+
+.wise-card-icon-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.wise-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-card-desc {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wise-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.wise-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+.wise-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Banks Grid */
+.wise-banks-select-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+@media (min-width: 640px) {
+    .wise-banks-select-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .wise-banks-select-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.wise-bank-select-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 10px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-bank-select-item:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+}
+
+.wise-bank-select-item.selected {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.wise-bank-select-item img {
+    width: 100%;
+    height: 40px;
+    object-fit: contain;
+}
+
+.wise-bank-select-item span {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+/* Location Button */
+.wise-location-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--brand-primary);
+    border-radius: 8px;
+    color: var(--brand-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.wise-location-btn:hover {
+    background: var(--brand-primary);
+    color: white;
+}
+
+.wise-location-btn.success {
+    background: var(--success-bg);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* ATM List */
+.wise-atm-list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.wise-atm-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+}
+
+.wise-atm-empty i {
+    margin-bottom: 8px;
+}
+
+.wise-atm-item {
+    padding: 14px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wise-atm-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.wise-atm-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.wise-atm-address {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.wise-atm-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.wise-atm-distance {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.wise-atm-hours {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+.wise-atm-24h {
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* Result Card */
+.wise-result-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1a1a2e 100%);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    box-shadow: 0 8px 24px rgba(14, 27, 42, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.wise-result-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    background: rgba(224, 90, 3, 0.15);
+    border-radius: 50%;
+    filter: blur(40px);
+}
+
+.wise-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-result-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+    margin-bottom: 8px;
+}
+
+.wise-result-amount {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.wise-result-currency-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wise-result-currency-tag span:first-child {
+    font-size: 20px;
+}
+
+.wise-confirm-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 24px;
+    background: white;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-confirm-btn:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Visibility */
+.hidden-opacity {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.visible-opacity {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+</style>
+
 {% endblock %}
 
 {% block scripts %}
@@ -221,17 +834,12 @@
             return;
         }
 
-        // Show all sections progressively
-        resSection.classList.remove('hidden-opacity');
-        resSection.classList.add('visible-opacity');
-        sumSection.classList.remove('hidden-opacity');
-        sumSection.classList.add('visible-opacity');
-        recSection.classList.remove('hidden-opacity');
-        recSection.classList.add('visible-opacity');
-        bankSection.classList.remove('hidden-opacity');
-        bankSection.classList.add('visible-opacity');
+        // Show sections
+        [resSection, sumSection, recSection, bankSection].forEach(sec => {
+            sec.classList.remove('hidden-opacity');
+            sec.classList.add('visible-opacity');
+        });
         
-        // Show ATM section only if bank is selected
         if (selectedBank) {
             atmSection.classList.remove('hidden-opacity');
             atmSection.classList.add('visible-opacity');
@@ -240,10 +848,10 @@
         const sarfxFee = amount * SARFX_FEE_PCT;
         const amountToConvert = amount - sarfxFee;
         
-        // Calculate rates for each supplier
+        // Calculate rates
         const providers = suppliers.map(s => ({
             ...s,
-            rate: s.rate * (1 + (Math.random() * 0.02 - 0.01)) // Small variation
+            rate: s.rate * (1 + (Math.random() * 0.02 - 0.01))
         }));
         providers.sort((a, b) => b.rate - a.rate);
         
@@ -255,38 +863,34 @@
         document.getElementById('smart-convert-amount').textContent = `${amountToConvert.toFixed(2)} ${fromCurrency}`;
         document.getElementById('smart-rate-display').textContent = bestSupplier.rate.toFixed(4);
         document.getElementById('smart-final-amount').textContent = new Intl.NumberFormat('fr-MA', { 
-            style: 'currency', 
-            currency: 'MAD' 
+            style: 'currency', currency: 'MAD' 
         }).format(finalAmount);
 
-        // Update form fields
+        // Form fields
         document.getElementById('form-amount').value = amount;
         document.getElementById('form-from-currency').value = fromCurrency;
         document.getElementById('form-rate').value = bestSupplier.rate;
         document.getElementById('form-final-amount').value = finalAmount.toFixed(2);
         document.getElementById('form-supplier-id').value = bestSupplier._id || bestSupplier.id;
 
-        // Render suppliers list
+        // Render suppliers - Wise style
         const list = document.getElementById('suppliers-list');
         list.innerHTML = '';
         
         providers.forEach((s, i) => {
             const isBest = i === 0;
             const div = document.createElement('div');
-            div.className = `flex justify-between items-center p-3 rounded-lg border transition-all ${isBest ? 'bg-emerald-500/10 border-emerald-500/30' : 'glass-panel border-white/5 opacity-80'}`;
+            div.className = `wise-supplier-item ${isBest ? 'wise-supplier-best' : ''}`;
             div.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-white p-1 flex items-center justify-center">
-                        <img src="${s.logo || 'https://cdn-icons-png.flaticon.com/512/1175/1175239.png'}" 
-                             class="w-full h-full object-contain" 
-                             onerror="this.src='https://cdn-icons-png.flaticon.com/512/1175/1175239.png'">
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold text-adaptive">${s.name}</p>
-                        <p class="text-[10px] text-slate-400">1 ${fromCurrency} = ${s.rate.toFixed(4)} MAD</p>
-                    </div>
+                <div class="wise-supplier-logo">
+                    <img src="${s.logo || 'https://cdn-icons-png.flaticon.com/512/1175/1175239.png'}" 
+                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/1175/1175239.png'">
                 </div>
-                ${isBest ? '<span class="text-[10px] font-bold bg-emerald-500 text-white px-2 py-1 rounded-full shadow-lg">Meilleur</span>' : ''}
+                <div class="wise-supplier-info">
+                    <span class="wise-supplier-name">${s.name}</span>
+                    <span class="wise-supplier-rate">1 ${fromCurrency} = ${s.rate.toFixed(4)} MAD</span>
+                </div>
+                ${isBest ? '<span class="wise-supplier-tag">Meilleur</span>' : ''}
             `;
             list.appendChild(div);
         });
@@ -328,7 +932,7 @@
         }
     });
 
-    // Load banks from API
+    // Load banks - Wise style
     async function loadBanks() {
         try {
             const response = await fetch('/api/banks');
@@ -340,10 +944,10 @@
                 
                 data.banks.forEach(bank => {
                     const bankCard = document.createElement('div');
-                    bankCard.className = 'bank-card glass-panel p-4 rounded-xl cursor-pointer hover:scale-105 transition-all border-2 border-transparent';
+                    bankCard.className = 'wise-bank-select-item';
                     bankCard.innerHTML = `
-                        <img src="${bank.logo}" alt="${bank.name}" class="w-full h-12 object-contain mb-2">
-                        <p class="text-xs text-center text-adaptive-muted">${bank.atm_count} ATM</p>
+                        <img src="${bank.logo}" alt="${bank.name}" onerror="this.style.display='none'">
+                        <span>${bank.atm_count} ATM</span>
                     `;
                     bankCard.onclick = () => selectBank(bank, bankCard);
                     banksGrid.appendChild(bankCard);
@@ -352,47 +956,40 @@
                 lucide.createIcons();
             }
         } catch (error) {
-            console.error('Erreur lors du chargement des banques:', error);
+            console.error('Erreur:', error);
         }
     }
 
-    // Select a bank
+    // Select bank
     function selectBank(bank, cardElement) {
         selectedBank = bank;
         
-        // Update UI - highlight selected bank
-        document.querySelectorAll('.bank-card').forEach(card => {
-            card.classList.remove('border-blue-500', 'bg-blue-500/10');
+        document.querySelectorAll('.wise-bank-select-item').forEach(card => {
+            card.classList.remove('selected');
         });
-        cardElement.classList.add('border-blue-500', 'bg-blue-500/10');
+        cardElement.classList.add('selected');
         
-        // Show ATM section
         const atmSection = document.getElementById('atm-section');
         atmSection.classList.remove('hidden-opacity');
         atmSection.classList.add('visible-opacity');
         
-        // Load ATMs for this bank
         loadATMsForBank(bank.code);
-        
-        showNotification(`Banque sélectionnée: ${bank.name}`, 'success');
+        showNotification(`Banque: ${bank.name}`, 'success');
     }
 
-    // Load ATMs for selected bank
+    // Load ATMs
     async function loadATMsForBank(bankCode) {
         const atmList = document.getElementById('atm-list');
-        atmList.innerHTML = '<div class="text-center text-adaptive-muted py-4"><i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin"></i><p class="mt-2">Chargement...</p></div>';
+        atmList.innerHTML = '<div class="wise-atm-empty"><i data-lucide="loader-2" style="width: 32px; height: 32px; animation: spin 1s linear infinite;"></i><p>Chargement...</p></div>';
         lucide.createIcons();
         
         try {
             let url = `/api/atms?bank_code=${bankCode}&limit=20`;
             
-            // If we have user location, use nearest ATMs
             if (userLocation) {
                 const response = await fetch('/api/atms/nearest', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         latitude: userLocation.latitude,
                         longitude: userLocation.longitude,
@@ -402,34 +999,26 @@
                     })
                 });
                 const data = await response.json();
-                
                 if (data.success && data.atms.length > 0) {
                     displayATMs(data.atms, true);
                     return;
                 }
             }
             
-            // Otherwise, just show all ATMs for this bank
             const response = await fetch(url);
             const data = await response.json();
-            
-            if (data.success) {
-                displayATMs(data.atms, false);
-            } else {
-                atmList.innerHTML = '<div class="text-center text-red-500 py-4">Erreur lors du chargement</div>';
-            }
+            if (data.success) displayATMs(data.atms, false);
         } catch (error) {
-            console.error('Erreur:', error);
-            atmList.innerHTML = '<div class="text-center text-red-500 py-4">Erreur de connexion</div>';
+            atmList.innerHTML = '<div class="wise-atm-empty" style="color: var(--error);">Erreur de connexion</div>';
         }
     }
 
-    // Display ATMs
+    // Display ATMs - Wise style
     function displayATMs(atms, withDistance) {
         const atmList = document.getElementById('atm-list');
         
         if (atms.length === 0) {
-            atmList.innerHTML = '<div class="text-center text-adaptive-muted py-4">Aucun distributeur trouvé</div>';
+            atmList.innerHTML = '<div class="wise-atm-empty">Aucun distributeur trouvé</div>';
             return;
         }
         
@@ -437,53 +1026,35 @@
         
         atms.forEach(atm => {
             const atmCard = document.createElement('div');
-            atmCard.className = 'glass-panel p-4 rounded-xl hover:bg-white/5 transition cursor-pointer';
+            atmCard.className = 'wise-atm-item';
             
             const distanceHTML = withDistance && atm.distance_km 
-                ? `<span class="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                    <i data-lucide="navigation" class="w-3 h-3"></i> ${atm.distance_km} km
-                   </span>
-                   <span class="text-[10px] text-adaptive-muted">~${atm.walk_time_min} min à pied</span>`
-                : '';
+                ? `<span class="wise-atm-distance">${atm.distance_km} km • ~${atm.walk_time_min} min</span>` : '';
             
-            const servicesHTML = atm.services && atm.services.length > 0
-                ? `<div class="flex gap-1 mt-2 flex-wrap">
-                    ${atm.services.map(s => `<span class="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full">${s}</span>`).join('')}
-                   </div>`
-                : '';
-            
-            const hours = atm.available_24h 
-                ? '<span class="text-[10px] text-emerald-400 font-bold">🕐 24/7</span>'
-                : `<span class="text-[10px] text-adaptive-muted">${atm.hours || 'Horaires non disponibles'}</span>`;
+            const hoursHTML = atm.available_24h 
+                ? '<span class="wise-atm-hours wise-atm-24h">🕐 24/7</span>'
+                : `<span class="wise-atm-hours">${atm.hours || ''}</span>`;
             
             atmCard.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex-1">
-                        <h4 class="font-bold text-sm text-adaptive mb-1">${atm.name}</h4>
-                        <p class="text-xs text-adaptive-muted flex items-start gap-1">
-                            <i data-lucide="map-pin" class="w-3 h-3 mt-0.5 flex-shrink-0"></i>
-                            <span>${atm.address}, ${atm.city}</span>
-                        </p>
-                    </div>
-                    ${withDistance ? `<div class="text-right ml-2">${distanceHTML}</div>` : ''}
+                <div class="wise-atm-name">${atm.name}</div>
+                <div class="wise-atm-address">
+                    <i data-lucide="map-pin" style="width: 12px; height: 12px; flex-shrink: 0;"></i>
+                    <span>${atm.address}, ${atm.city}</span>
                 </div>
-                <div class="flex items-center justify-between">
-                    ${hours}
-                    ${atm.has_wheelchair_access ? '<span class="text-[10px] text-blue-400">♿ Accessible</span>' : ''}
+                <div class="wise-atm-meta">
+                    ${distanceHTML}
+                    ${hoursHTML}
                 </div>
-                ${servicesHTML}
             `;
             
-            // Add click to open maps
             atmCard.onclick = () => openInMaps(atm);
-            
             atmList.appendChild(atmCard);
         });
         
         lucide.createIcons();
     }
 
-    // Get user location
+    // Get location
     function getUserLocation() {
         const btn = document.getElementById('location-btn');
         const subtitle = document.getElementById('atm-subtitle');
@@ -494,7 +1065,7 @@
         }
         
         btn.disabled = true;
-        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Détection...';
+        btn.innerHTML = '<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Détection...';
         lucide.createIcons();
         
         navigator.geolocation.getCurrentPosition(
@@ -504,40 +1075,27 @@
                     longitude: position.coords.longitude
                 };
                 
-                btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Position OK';
-                btn.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
-                btn.classList.remove('bg-blue-500/20', 'text-blue-400', 'border-blue-500/30');
-                subtitle.textContent = `Distributeurs triés par distance`;
-                
+                btn.innerHTML = '<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> OK';
+                btn.classList.add('success');
+                subtitle.textContent = 'Triés par distance';
                 lucide.createIcons();
                 
-                // Reload ATMs with location
-                if (selectedBank) {
-                    loadATMsForBank(selectedBank.code);
-                }
-                
-                showNotification('Position détectée !', 'success');
+                if (selectedBank) loadATMsForBank(selectedBank.code);
+                showNotification('Position détectée!', 'success');
             },
             (error) => {
                 btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="crosshair" class="w-4 h-4"></i> Ma Position';
+                btn.innerHTML = '<i data-lucide="crosshair" style="width: 16px; height: 16px;"></i> Ma Position';
                 lucide.createIcons();
-                
-                let message = 'Erreur de géolocalisation';
-                if (error.code === error.PERMISSION_DENIED) {
-                    message = 'Permission de géolocalisation refusée';
-                }
-                showNotification(message, 'error');
+                showNotification('Permission refusée', 'error');
             }
         );
     }
 
-    // Open ATM location in maps
     function openInMaps(atm) {
         if (atm.location && atm.location.coordinates) {
             const [lng, lat] = atm.location.coordinates;
-            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-            window.open(url, '_blank');
+            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
         }
     }
 </script>

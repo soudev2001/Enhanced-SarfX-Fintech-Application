@@ -29,10 +29,6 @@
 </head>
 <body class="min-h-screen flex flex-col overflow-x-hidden relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
 
-    <!-- Background Blobs (Décoration) -->
-    <div class="blob rounded-full top-0 left-0" style="background: var(--brand-secondary); width: 320px; height: 320px; transform: translate(-50%, -50%);"></div>
-    <div class="blob rounded-full bottom-0 right-0" style="background: var(--brand-primary); width: 256px; height: 256px; transform: translate(50%, 50%);"></div>
-
     <!-- Notifications System -->
     <div id="notification-container" class="toast-container"></div>
 
@@ -50,69 +46,75 @@
     {% endwith %}
 
     <!-- DESKTOP SIDEBAR NAVIGATION (visible ≥1024px) -->
-    <aside class="nav-sidebar" id="desktop-nav">
-        <div class="logo mb-8">
-            <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+    <aside class="wise-sidebar" id="desktop-nav">
+        <div class="wise-sidebar-logo">
+            <span class="wise-logo-text">Sarf<span class="wise-logo-accent">X</span></span>
         </div>
         
-        <a href="{{ url_for('app.home') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'home' else '' }}">
-            <i data-lucide="home" style="width: 20px; height: 20px;"></i>
-            <span>Accueil</span>
-        </a>
-        <a href="{{ url_for('app.converter') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'converter' else '' }}">
-            <i data-lucide="repeat" style="width: 20px; height: 20px;"></i>
-            <span>Exchange</span>
-        </a>
-        <a href="{{ url_for('app.ai_forecast') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'ai' else '' }}">
-            <i data-lucide="brain-circuit" style="width: 20px; height: 20px;"></i>
-            <span>IA Prédictions</span>
-        </a>
-        <a href="{{ url_for('app.profile') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'profile' else '' }}">
-            <i data-lucide="user" style="width: 20px; height: 20px;"></i>
-            <span>Profil</span>
-        </a>
-        <a href="{{ url_for('app.settings') }}" class="nav-sidebar-item {{ 'active' if active_tab == 'settings' else '' }}">
-            <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
-            <span>Réglages</span>
-        </a>
+        <nav class="wise-sidebar-nav">
+            <a href="{{ url_for('app.home') }}" class="wise-nav-item {{ 'active' if active_tab == 'home' else '' }}">
+                <i data-lucide="home" class="wise-nav-icon"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="{{ url_for('app.converter') }}" class="wise-nav-item {{ 'active' if active_tab == 'converter' else '' }}">
+                <i data-lucide="repeat" class="wise-nav-icon"></i>
+                <span>Convertir</span>
+            </a>
+            <a href="{{ url_for('app.transactions') }}" class="wise-nav-item {{ 'active' if active_tab == 'transactions' else '' }}">
+                <i data-lucide="receipt" class="wise-nav-icon"></i>
+                <span>Historique</span>
+            </a>
+            <a href="{{ url_for('app.ai_forecast') }}" class="wise-nav-item {{ 'active' if active_tab == 'ai' else '' }}">
+                <i data-lucide="brain-circuit" class="wise-nav-icon"></i>
+                <span>IA Prédictions</span>
+            </a>
+            <a href="{{ url_for('app.profile') }}" class="wise-nav-item {{ 'active' if active_tab == 'profile' else '' }}">
+                <i data-lucide="user" class="wise-nav-icon"></i>
+                <span>Profil</span>
+            </a>
+        </nav>
         
-        <div class="mt-auto pt-6" style="border-top: 1px solid var(--border-light);">
-            <button onclick="toggleTheme()" class="nav-sidebar-item w-full" style="justify-content: flex-start;">
-                <i data-lucide="sun" id="theme-icon-light" style="width: 20px; height: 20px;"></i>
-                <i data-lucide="moon" id="theme-icon-dark" style="width: 20px; height: 20px; display: none;"></i>
+        <div class="wise-sidebar-footer">
+            <a href="{{ url_for('app.settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'settings' else '' }}">
+                <i data-lucide="settings" class="wise-nav-icon"></i>
+                <span>Réglages</span>
+            </a>
+            <button onclick="toggleTheme()" class="wise-nav-item wise-theme-toggle">
+                <i data-lucide="sun" id="theme-icon-light" class="wise-nav-icon"></i>
+                <i data-lucide="moon" id="theme-icon-dark" class="wise-nav-icon" style="display: none;"></i>
                 <span id="theme-label">Mode sombre</span>
             </button>
         </div>
     </aside>
 
     <!-- MAIN CONTENT AREA -->
-    <main id="main-content" class="flex-1 overflow-y-auto pb-24 relative p-4 sm:p-6 lg:p-8 main-content-with-sidebar" style="z-index: 10;">
-        <div class="container mx-auto">
+    <main id="main-content" class="wise-main-content">
+        <div class="wise-content-inner">
             {% block content %}{% endblock %}
         </div>
     </main>
 
     <!-- MOBILE BOTTOM NAVIGATION (visible <1024px) -->
-    <nav class="nav-bottom" id="mobile-nav">
-        <a href="{{ url_for('app.home') }}" class="nav-item {{ 'active' if active_tab == 'home' else '' }}">
-            <i data-lucide="home" class="nav-item-icon"></i>
-            <span class="nav-item-label">Accueil</span>
+    <nav class="wise-bottom-nav" id="mobile-nav">
+        <a href="{{ url_for('app.home') }}" class="wise-bottom-item {{ 'active' if active_tab == 'home' else '' }}">
+            <i data-lucide="home" class="wise-bottom-icon"></i>
+            <span>Accueil</span>
         </a>
-        <a href="{{ url_for('app.converter') }}" class="nav-item {{ 'active' if active_tab == 'converter' else '' }}">
-            <i data-lucide="repeat" class="nav-item-icon"></i>
-            <span class="nav-item-label">Exchange</span>
+        <a href="{{ url_for('app.converter') }}" class="wise-bottom-item {{ 'active' if active_tab == 'converter' else '' }}">
+            <i data-lucide="repeat" class="wise-bottom-icon"></i>
+            <span>Convertir</span>
         </a>
-        <a href="{{ url_for('app.ai_forecast') }}" class="nav-item {{ 'active' if active_tab == 'ai' else '' }}">
-            <i data-lucide="brain-circuit" class="nav-item-icon"></i>
-            <span class="nav-item-label">IA</span>
+        <a href="{{ url_for('app.transactions') }}" class="wise-bottom-item {{ 'active' if active_tab == 'transactions' else '' }}">
+            <i data-lucide="receipt" class="wise-bottom-icon"></i>
+            <span>Historique</span>
         </a>
-        <a href="{{ url_for('app.profile') }}" class="nav-item {{ 'active' if active_tab == 'profile' else '' }}">
-            <i data-lucide="user" class="nav-item-icon"></i>
-            <span class="nav-item-label">Profil</span>
+        <a href="{{ url_for('app.ai_forecast') }}" class="wise-bottom-item {{ 'active' if active_tab == 'ai' else '' }}">
+            <i data-lucide="brain-circuit" class="wise-bottom-icon"></i>
+            <span>IA</span>
         </a>
-        <a href="{{ url_for('app.settings') }}" class="nav-item {{ 'active' if active_tab == 'settings' else '' }}">
-            <i data-lucide="settings" class="nav-item-icon"></i>
-            <span class="nav-item-label">Réglages</span>
+        <a href="{{ url_for('app.profile') }}" class="wise-bottom-item {{ 'active' if active_tab == 'profile' else '' }}">
+            <i data-lucide="user" class="wise-bottom-icon"></i>
+            <span>Profil</span>
         </a>
     </nav>
 

@@ -60,46 +60,54 @@ ul, ol {
     --brand-secondary-light: #60a5fa;
     --brand-secondary-dark: #2563eb;
     
+    /* === WISE-INSPIRED COLORS === */
+    --wise-green: #9fe870;
+    --wise-green-dark: #7ed957;
+    --wise-navy: #163300;
+    --wise-navy-light: #2d4a0a;
+    --wise-gray: #f2f5f7;
+    --wise-border: #e5e9eb;
+    
     /* === SEMANTIC COLORS === */
     --success: #10b981;
     --success-light: #34d399;
-    --success-bg: rgba(16, 185, 129, 0.1);
+    --success-bg: rgba(16, 185, 129, 0.08);
     --warning: #f59e0b;
     --warning-light: #fbbf24;
-    --warning-bg: rgba(245, 158, 11, 0.1);
+    --warning-bg: rgba(245, 158, 11, 0.08);
     --error: #ef4444;
     --error-light: #f87171;
-    --error-bg: rgba(239, 68, 68, 0.1);
+    --error-bg: rgba(239, 68, 68, 0.08);
     --info: #3b82f6;
     --info-light: #60a5fa;
-    --info-bg: rgba(59, 130, 246, 0.1);
+    --info-bg: rgba(59, 130, 246, 0.08);
     
-    /* === NEUTRAL COLORS - LIGHT THEME (Default) === */
+    /* === NEUTRAL COLORS - LIGHT THEME (Default) - Wise Inspired === */
     --bg-primary: #ffffff;
-    --bg-secondary: #f8fafc;
-    --bg-tertiary: #f1f5f9;
+    --bg-secondary: #f7f9fb;
+    --bg-tertiary: #f2f5f7;
     --surface: #ffffff;
     --surface-elevated: #ffffff;
-    --surface-hover: #f8fafc;
+    --surface-hover: #f7f9fb;
     
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-tertiary: #94a3b8;
+    --text-primary: #1a1f36;
+    --text-secondary: #4a5568;
+    --text-tertiary: #8492a6;
     --text-inverse: #ffffff;
     
-    --border-light: #e2e8f0;
-    --border-medium: #cbd5e1;
-    --border-dark: #94a3b8;
+    --border-light: #e5e9eb;
+    --border-medium: #d1d9e0;
+    --border-dark: #9aa5b1;
     
-    /* === SHADOWS === */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    /* === SHADOWS - Wise Style (Subtle) === */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 16px 48px rgba(0, 0, 0, 0.12);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
     
     /* === SPACING SCALE (4px base) === */
     --space-0: 0;
@@ -1644,3 +1652,751 @@ ul, ol {
 .theme-dark .blob {
     opacity: 0.4;
 }
+
+/* ===========================================
+   WISE-INSPIRED LIGHT MODE ENHANCEMENTS
+   =========================================== */
+
+/* Clean Light Mode - Subtle shadows and borders */
+:root {
+    /* Override shadows for cleaner look */
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Light mode specific improvements */
+@media (prefers-color-scheme: light) {
+    body {
+        background: var(--bg-secondary);
+    }
+    
+    .card, .wise-card, .wise-input-card, .wise-convert-card {
+        background: var(--surface);
+        border: 1px solid var(--wise-border, #e5e9eb);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    
+    .card:hover, .wise-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+}
+
+/* Explicit light theme */
+[data-theme="light"],
+.theme-light {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f9fb;
+    --bg-tertiary: #f2f5f7;
+    --surface: #ffffff;
+    --text-primary: #1a1f36;
+    --text-secondary: #4a5568;
+    --text-tertiary: #8492a6;
+    --border-light: #e5e9eb;
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Wise-style card utilities */
+.wise-clean-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    padding: 20px;
+}
+
+.wise-clean-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Wise green accent utilities */
+.wise-accent-bg {
+    background: var(--wise-green, #9fe870);
+}
+
+.wise-accent-text {
+    color: var(--wise-navy, #163300);
+}
+
+/* Improved form inputs for light mode */
+.wise-input, .input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.wise-input:focus, .input:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(224, 90, 3, 0.08);
+}
+
+/* Better button hover states */
+.btn-primary:hover, .wise-cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.2);
+}
+
+/* Animation for spin */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Smooth transitions for theme changes */
+body, .card, .wise-card, .btn, input, select {
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Better contrast for badges in light mode */
+.badge, .wise-provider-badge {
+    font-weight: 600;
+}
+
+/* Clean dividers */
+.wise-divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 16px 0;
+}
+
+/* Subtle hover states */
+.wise-hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Fixed navigation improvements */
+.nav-bottom {
+    background: var(--surface);
+    border-top: 1px solid var(--border-light);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .nav-bottom,
+.theme-dark .nav-bottom {
+    background: rgba(15, 23, 42, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Improved scrollbar for light mode */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+/* ==================================
+   WISE-STYLE NAVIGATION SYSTEM
+   ================================== */
+
+/* Sidebar Desktop */
+.wise-sidebar {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border-light);
+    padding: 24px 16px;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.wise-sidebar-logo {
+    padding: 8px 12px 24px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.wise-logo-text {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.wise-logo-accent {
+    color: var(--wise-green);
+}
+
+.wise-sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.wise-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    color: var(--text-secondary);
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.wise-nav-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.wise-nav-item:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.wise-nav-item.active {
+    background: var(--wise-green);
+    color: var(--wise-navy);
+    font-weight: 600;
+}
+
+.wise-nav-item.active .wise-nav-icon {
+    color: var(--wise-navy);
+}
+
+.wise-sidebar-footer {
+    border-top: 1px solid var(--border-light);
+    padding-top: 16px;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wise-theme-toggle {
+    color: var(--text-tertiary);
+}
+
+.wise-theme-toggle:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+}
+
+/* Main Content */
+.wise-main-content {
+    flex: 1;
+    min-height: 100vh;
+    padding: 20px;
+    padding-bottom: 100px;
+    background: var(--bg-primary);
+    overflow-x: hidden;
+}
+
+.wise-content-inner {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Mobile Bottom Nav */
+.wise-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border-light);
+    padding: 8px 12px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 1000;
+    justify-content: space-around;
+}
+
+.wise-bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    min-width: 56px;
+}
+
+.wise-bottom-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.wise-bottom-item:hover {
+    color: var(--text-secondary);
+}
+
+.wise-bottom-item.active {
+    color: var(--wise-green);
+}
+
+.wise-bottom-item.active .wise-bottom-icon {
+    color: var(--wise-green);
+}
+
+/* Desktop breakpoint */
+@media (min-width: 1024px) {
+    .wise-sidebar {
+        display: flex;
+    }
+    
+    .wise-main-content {
+        margin-left: 260px;
+        padding: 32px 40px;
+        padding-bottom: 40px;
+    }
+    
+    .wise-content-inner {
+        max-width: 960px;
+    }
+    
+    .wise-bottom-nav {
+        display: none;
+    }
+}
+
+/* Dark mode adjustments for navigation */
+[data-theme="dark"] .wise-sidebar,
+.theme-dark .wise-sidebar {
+    background: rgba(15, 23, 42, 0.98);
+    border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .wise-nav-item.active,
+.theme-dark .wise-nav-item.active {
+    background: var(--wise-green);
+    color: var(--wise-navy);
+}
+
+[data-theme="dark"] .wise-bottom-nav,
+.theme-dark .wise-bottom-nav {
+    background: rgba(15, 23, 42, 0.98);
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ==================================
+   WISE-STYLE PAGE COMPONENTS
+   ================================== */
+
+/* Page Header */
+.wise-page-header {
+    margin-bottom: 24px;
+}
+
+.wise-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+}
+
+.wise-breadcrumb a {
+    color: var(--text-tertiary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wise-breadcrumb a:hover {
+    color: var(--wise-green);
+}
+
+.wise-page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.wise-page-subtitle {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+/* Section Card */
+.wise-section {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.wise-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.wise-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wise-section-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--wise-green);
+}
+
+/* List Items */
+.wise-list-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: background 0.2s ease;
+}
+
+.wise-list-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.wise-list-item:last-child {
+    margin-bottom: 0;
+}
+
+.wise-list-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wise-list-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.wise-list-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+}
+
+.wise-list-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.wise-list-value {
+    text-align: right;
+}
+
+.wise-list-amount {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.wise-list-meta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* Status Colors */
+.wise-status-success { color: var(--success); }
+.wise-status-warning { color: var(--warning); }
+.wise-status-error { color: var(--error); }
+.wise-status-info { color: var(--info); }
+
+.wise-bg-success { background: rgba(16, 185, 129, 0.15); }
+.wise-bg-warning { background: rgba(245, 158, 11, 0.15); }
+.wise-bg-error { background: rgba(239, 68, 68, 0.15); }
+.wise-bg-info { background: rgba(59, 130, 246, 0.15); }
+
+/* Filter Pills */
+.wise-filter-group {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.wise-filter-group::-webkit-scrollbar {
+    display: none;
+}
+
+.wise-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wise-filter-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-medium);
+}
+
+.wise-filter-btn.active {
+    background: var(--wise-green);
+    border-color: var(--wise-green);
+    color: var(--wise-navy);
+    font-weight: 600;
+}
+
+/* Empty State */
+.wise-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.wise-empty-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.wise-empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.wise-empty-text {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: 24px;
+}
+
+/* Wise Button */
+.wise-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.wise-btn-primary {
+    background: var(--wise-green);
+    color: var(--wise-navy);
+}
+
+.wise-btn-primary:hover {
+    background: #8de05f;
+    transform: translateY(-1px);
+}
+
+.wise-btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+
+.wise-btn-secondary:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-medium);
+}
+
+.wise-btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.wise-btn-ghost:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* User Profile Card */
+.wise-profile-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.wise-profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: var(--wise-green);
+    color: var(--wise-navy);
+    font-size: 32px;
+    font-weight: 700;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.wise-profile-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.wise-profile-role {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+}
+
+.wise-profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Wallet Card Wise Style */
+.wise-wallet-card {
+    background: linear-gradient(135deg, var(--wise-navy) 0%, #0d1f00 100%);
+    border-radius: 20px;
+    padding: 24px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.wise-wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, var(--wise-green) 0%, transparent 70%);
+    opacity: 0.1;
+}
+
+.wise-wallet-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.wise-wallet-balance {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.wise-wallet-currency {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.wise-wallet-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: monospace;
+    margin-top: 16px;
+}
+
+/* Currency Grid in Wallet */
+.wise-currency-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.wise-currency-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wise-currency-flag {
+    font-size: 24px;
+}
+
+.wise-currency-amount {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.wise-currency-code {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+
