@@ -258,24 +258,58 @@ body.theme-light {
     color: var(--brand-orange);
 }
 
-/* --- WALLET CARD --- */
+/* --- WALLET CARD - Modern Premium Design --- */
 .wallet-card {
-    background: linear-gradient(135deg, var(--brand-blue), var(--brand-orange));
-    border-radius: 1rem;
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1a1a2e 100%);
+    border-radius: 1.5rem;
     padding: 1.5rem;
     color: white;
     position: relative;
     overflow: hidden;
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .wallet-card::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(ellipse at 20% 20%, rgba(224, 90, 3, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.wallet-card::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, rgba(224, 90, 3, 0.3), transparent, rgba(59, 130, 246, 0.3));
+    border-radius: 1.6rem;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wallet-card:hover::after {
+    opacity: 1;
+}
+
+/* Light theme wallet card */
+.theme-light .wallet-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    box-shadow: 
+        0 25px 50px -12px rgba(102, 126, 234, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 /* --- SUPPLIER BADGE --- */
