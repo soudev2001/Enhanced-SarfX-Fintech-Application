@@ -2,45 +2,79 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h2 class="text-2xl font-bold pt-4 text-adaptive">Mon Profil</h2>
-    
-    <!-- User Card -->
-    <div class="glass-panel p-6 rounded-xl text-center">
-        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-[rgb(224,90,3)] rounded-full mx-auto flex items-center justify-center text-3xl shadow-lg mb-4 text-white">
-            {{ user.email[0] | upper if user else 'U' }}
+    <!-- Enhanced Header with Breadcrumb -->
+    <div class="pt-4">
+        <div class="flex items-center gap-2 text-xs text-adaptive-muted mb-3">
+            <a href="{{ url_for('app.home') }}" class="hover:text-blue-400 transition flex items-center gap-1">
+                <i data-lucide="home" class="w-3 h-3"></i> Accueil
+            </a>
+            <i data-lucide="chevron-right" class="w-3 h-3"></i>
+            <span class="text-adaptive">Profil</span>
         </div>
-        <h3 class="font-bold text-adaptive text-xl">{{ user.email if user else 'Utilisateur' }}</h3>
-        <p class="text-sm text-adaptive-muted">{{ user.role | default('user') | capitalize }}</p>
+        <h2 class="text-2xl font-bold text-adaptive">Mon Profil</h2>
+    </div>
+    
+    <!-- Enhanced User Card -->
+    <div class="glass-panel p-6 rounded-2xl text-center border border-white/10 relative overflow-hidden">
+        <!-- Premium glow -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-[rgb(224,90,3)]/10 rounded-full blur-3xl"></div>
         
-        {% if user.verified %}
-        <span class="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-emerald-500/10 text-emerald-500 text-xs rounded-full">
-            <i data-lucide="check-circle" class="w-3 h-3"></i> Vérifié
-        </span>
-        {% endif %}
+        <div class="relative z-10">
+            <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-[rgb(224,90,3)] rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-2xl mb-4 text-white border-4 border-white/10">
+                {{ user.email[0] | upper if user else 'U' }}
+            </div>
+            <h3 class="font-bold text-adaptive text-xl">{{ user.email if user else 'Utilisateur' }}</h3>
+            <p class="text-sm text-adaptive-muted">{{ user.role | default('user') | capitalize }}</p>
+            
+            {% if user.verified %}
+            <span class="inline-flex items-center gap-1 mt-3 px-3 py-1.5 bg-emerald-500/10 text-emerald-500 text-xs font-bold rounded-full border border-emerald-500/20">
+                <i data-lucide="check-circle" class="w-3 h-3"></i> Compte Vérifié
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1 mt-3 px-3 py-1.5 bg-amber-500/10 text-amber-500 text-xs font-bold rounded-full border border-amber-500/20">
+                <i data-lucide="alert-circle" class="w-3 h-3"></i> Non vérifié
+            </span>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Wallet Section -->
+    <!-- Premium Wallet Section -->
     {% if wallet %}
-    <div class="wallet-card">
+    <div class="wallet-card rounded-2xl p-6 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1a1a2e 100%);">
+        <!-- Premium glow effects -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-[rgb(224,90,3)]/20 rounded-full blur-2xl"></div>
+        
         <div class="relative z-10">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <p class="text-white/70 text-xs font-bold uppercase">Portefeuille Principal</p>
-                    <h2 class="text-3xl font-extrabold tracking-tight mt-1">
-                        {{ "{:,.2f}".format(wallet.balances.get('USD', 0)) }} USD
+                    <p class="text-white/70 text-xs font-bold uppercase flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-3 h-3"></i> Portefeuille Principal
+                    </p>
+                    <h2 class="text-3xl font-extrabold tracking-tight mt-2">
+                        {{ "{:,.2f}".format(wallet.balances.get('USD', 0)) }} 
+                        <span class="text-lg text-white/70">🇺🇸 USD</span>
                     </h2>
                 </div>
-                <div class="bg-white/20 px-2 py-1 rounded-lg text-xs font-bold">
+                <div class="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10">
+                    <i data-lucide="credit-card" class="w-3 h-3 inline mr-1"></i>
                     {{ wallet.wallet_id[:8] }}...
                 </div>
             </div>
             
-            <!-- Other currencies -->
+            <!-- Currency Grid with Flags -->
             {% if wallet.balances %}
-            <div class="flex flex-wrap gap-2 mt-3">
+            <div class="grid grid-cols-2 gap-2 mt-4">
                 {% for currency, balance in wallet.balances.items() if currency != 'USD' and balance > 0 %}
-                <div class="bg-white/10 px-3 py-1 rounded-lg text-sm">
-                    {{ "{:,.2f}".format(balance) }} {{ currency }}
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                    <div class="text-2xl">
+                        {% if currency == 'EUR' %}🇪🇺{% elif currency == 'GBP' %}🇬🇧{% elif currency == 'MAD' %}🇲🇦{% elif currency == 'CHF' %}🇨🇭{% elif currency == 'CAD' %}🇨🇦{% else %}💰{% endif %}
+                    </div>
+                    <div>
+                        <p class="text-white font-bold text-sm">{{ "{:,.2f}".format(balance) }}</p>
+                        <p class="text-white/50 text-xs">{{ currency }}</p>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -48,37 +82,39 @@
         </div>
     </div>
     {% else %}
-    <div class="glass-panel p-6 rounded-xl text-center">
-        <div class="w-16 h-16 bg-blue-500/10 rounded-full mx-auto flex items-center justify-center mb-4">
-            <i data-lucide="wallet" class="w-8 h-8 text-blue-500"></i>
+    <div class="glass-panel p-8 rounded-2xl text-center border border-white/10">
+        <div class="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl mx-auto flex items-center justify-center mb-4">
+            <i data-lucide="wallet" class="w-10 h-10 text-blue-500"></i>
         </div>
-        <h3 class="font-bold text-adaptive">Aucun Portefeuille</h3>
-        <p class="text-sm text-adaptive-muted mt-1">Créez votre premier portefeuille pour commencer</p>
-        <form action="{{ url_for('api.create_wallet') }}" method="POST" class="mt-4">
-            <button type="submit" class="btn-secondary">
+        <h3 class="font-bold text-adaptive text-lg">Aucun Portefeuille</h3>
+        <p class="text-sm text-adaptive-muted mt-2 mb-4">Créez votre premier portefeuille pour commencer</p>
+        <form action="{{ url_for('api.create_wallet') }}" method="POST">
+            <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-[rgb(224,90,3)] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition">
                 <i data-lucide="plus" class="w-4 h-4"></i> Créer un portefeuille
             </button>
         </form>
     </div>
     {% endif %}
     
-    <!-- Transaction History -->
-    <div class="glass-panel p-4 rounded-xl">
+    <!-- Enhanced Transaction History -->
+    <div class="glass-panel p-4 rounded-xl border border-white/10">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-adaptive flex items-center gap-2">
-                <i data-lucide="history" class="w-4 h-4 text-purple-400"></i> Historique
+                <i data-lucide="history" class="w-4 h-4 text-purple-400"></i> Historique Récent
             </h3>
             {% if transactions %}
-            <a href="{{ url_for('app.transactions') }}" class="text-xs text-blue-500 font-bold">Voir tout</a>
+            <a href="{{ url_for('app.transactions') }}" class="text-xs text-blue-500 font-bold hover:text-blue-400 transition flex items-center gap-1">
+                Voir tout <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </a>
             {% endif %}
         </div>
         
         {% if transactions %}
         <div class="space-y-2">
             {% for tx in transactions[:5] %}
-            <div class="transaction-item">
+            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition">
                 <div class="flex items-center gap-3">
-                    <div class="transaction-icon {{ 'send' if tx.type == 'send' else 'receive' }}">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ 'bg-rose-500/10 text-rose-500' if tx.type == 'send' else 'bg-emerald-500/10 text-emerald-500' }}">
                         <i data-lucide="{{ 'arrow-up-right' if tx.type == 'send' else 'arrow-down-left' }}" class="w-4 h-4"></i>
                     </div>
                     <div>
@@ -88,10 +124,17 @@
                 </div>
                 <div class="text-right">
                     <span class="text-sm font-bold {{ 'text-rose-500' if tx.type == 'send' else 'text-emerald-500' }}">
-                        {{ '-' if tx.type == 'send' else '+' }}{{ "{:,.2f}".format(tx.amount) }} {{ tx.from_currency }}
+                        {{ '-' if tx.type == 'send' else '+' }}{{ "{:,.2f}".format(tx.amount) }} 
+                        {% if tx.from_currency == 'USD' %}🇺🇸{% elif tx.from_currency == 'EUR' %}🇪🇺{% elif tx.from_currency == 'GBP' %}🇬🇧{% elif tx.from_currency == 'MAD' %}🇲🇦{% elif tx.from_currency == 'CHF' %}🇨🇭{% endif %}
+                        {{ tx.from_currency }}
                     </span>
                     {% if tx.final_amount %}
-                    <p class="text-[10px] text-adaptive-muted">→ {{ "{:,.2f}".format(tx.final_amount) }} {{ tx.to_currency }}</p>
+                    <p class="text-[10px] text-adaptive-muted flex items-center justify-end gap-1">
+                        <i data-lucide="arrow-right" class="w-2 h-2"></i>
+                        {{ "{:,.2f}".format(tx.final_amount) }} 
+                        {% if tx.to_currency == 'MAD' %}🇲🇦{% elif tx.to_currency == 'EUR' %}🇪🇺{% elif tx.to_currency == 'USD' %}🇺🇸{% endif %}
+                        {{ tx.to_currency }}
+                    </p>
                     {% endif %}
                 </div>
             </div>
@@ -99,28 +142,34 @@
         </div>
         {% else %}
         <div class="text-center py-8">
-            <div class="w-12 h-12 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-3">
-                <i data-lucide="inbox" class="w-6 h-6 text-slate-500"></i>
+            <div class="w-16 h-16 bg-slate-800/50 rounded-2xl mx-auto flex items-center justify-center mb-3">
+                <i data-lucide="inbox" class="w-8 h-8 text-slate-500"></i>
             </div>
-            <p class="text-sm text-adaptive-muted">Aucune transaction</p>
+            <p class="text-sm text-adaptive-muted">Aucune transaction récente</p>
         </div>
         {% endif %}
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Enhanced Quick Actions -->
     <div class="grid grid-cols-2 gap-3">
-        <a href="{{ url_for('app.converter') }}" class="glass-panel p-4 rounded-xl text-center">
-            <i data-lucide="send" class="w-6 h-6 mx-auto mb-2 text-blue-500"></i>
+        <a href="{{ url_for('app.converter') }}" class="glass-panel p-4 rounded-xl text-center border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition group">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl mx-auto flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                <i data-lucide="send" class="w-6 h-6 text-blue-500"></i>
+            </div>
             <span class="text-sm font-bold text-adaptive">Envoyer</span>
+            <p class="text-[10px] text-adaptive-muted mt-1">Transfert rapide</p>
         </a>
-        <a href="{{ url_for('app.settings') }}" class="glass-panel p-4 rounded-xl text-center">
-            <i data-lucide="settings" class="w-6 h-6 mx-auto mb-2 text-slate-400"></i>
+        <a href="{{ url_for('app.settings') }}" class="glass-panel p-4 rounded-xl text-center border border-white/10 hover:border-slate-500/30 hover:bg-slate-500/5 transition group">
+            <div class="w-12 h-12 bg-gradient-to-br from-slate-500/20 to-slate-600/20 rounded-xl mx-auto flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                <i data-lucide="settings" class="w-6 h-6 text-slate-400"></i>
+            </div>
             <span class="text-sm font-bold text-adaptive">Paramètres</span>
+            <p class="text-[10px] text-adaptive-muted mt-1">Configuration</p>
         </a>
     </div>
 
-    <!-- Logout -->
-    <a href="{{ url_for('auth.logout') }}" class="block glass-panel p-4 rounded-xl text-center text-rose-500 font-bold">
+    <!-- Enhanced Logout -->
+    <a href="{{ url_for('auth.logout') }}" class="block glass-panel p-4 rounded-xl text-center text-rose-500 font-bold border border-rose-500/20 hover:bg-rose-500/10 hover:border-rose-500/30 transition">
         <i data-lucide="log-out" class="w-4 h-4 inline mr-2"></i> Déconnexion
     </a>
 </div>

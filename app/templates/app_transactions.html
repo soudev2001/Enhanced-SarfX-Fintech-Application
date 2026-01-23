@@ -4,30 +4,44 @@
 
 {% block content %}
 <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-xl font-bold text-adaptive">Historique</h2>
-            <p class="text-xs text-adaptive-muted">Toutes vos transactions</p>
+    <!-- Enhanced Header with Breadcrumb -->
+    <div class="pt-4">
+        <div class="flex items-center gap-2 text-xs text-adaptive-muted mb-3">
+            <a href="{{ url_for('app.home') }}" class="hover:text-blue-400 transition flex items-center gap-1">
+                <i data-lucide="home" class="w-3 h-3"></i> Accueil
+            </a>
+            <i data-lucide="chevron-right" class="w-3 h-3"></i>
+            <span class="text-adaptive">Historique</span>
         </div>
-        <a href="{{ url_for('app.home') }}" class="glass-panel p-2 rounded-xl">
-            <i data-lucide="x" class="w-5 h-5 text-adaptive"></i>
-        </a>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <i data-lucide="history" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-adaptive">Historique</h2>
+                    <p class="text-xs text-adaptive-muted">Toutes vos transactions</p>
+                </div>
+            </div>
+            <a href="{{ url_for('app.home') }}" class="glass-panel p-2.5 rounded-xl hover:bg-white/10 transition border border-white/10">
+                <i data-lucide="x" class="w-5 h-5 text-adaptive"></i>
+            </a>
+        </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Enhanced Filters -->
     <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <button onclick="filterTransactions('all')" class="filter-btn active flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="all">
-            Toutes
+        <button onclick="filterTransactions('all')" class="filter-btn active flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2" data-filter="all">
+            <i data-lucide="layers" class="w-3 h-3"></i> Toutes
         </button>
-        <button onclick="filterTransactions('completed')" class="filter-btn flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="completed">
-            Complétées
+        <button onclick="filterTransactions('completed')" class="filter-btn flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2" data-filter="completed">
+            <i data-lucide="check-circle" class="w-3 h-3"></i> Complétées
         </button>
-        <button onclick="filterTransactions('pending')" class="filter-btn flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="pending">
-            En attente
+        <button onclick="filterTransactions('pending')" class="filter-btn flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2" data-filter="pending">
+            <i data-lucide="clock" class="w-3 h-3"></i> En attente
         </button>
-        <button onclick="filterTransactions('failed')" class="filter-btn flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition" data-filter="failed">
-            Échouées
+        <button onclick="filterTransactions('failed')" class="filter-btn flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2" data-filter="failed">
+            <i data-lucide="x-circle" class="w-3 h-3"></i> Échouées
         </button>
     </div>
 
@@ -35,24 +49,32 @@
     <div class="space-y-3" id="transactions-list">
         {% if transactions %}
             {% for tx in transactions %}
-            <div class="transaction-item glass-panel p-4 rounded-xl" data-status="{{ tx.status }}">
+            <div class="transaction-item glass-panel p-4 rounded-xl border border-white/5 hover:border-white/10 transition cursor-pointer" data-status="{{ tx.status }}">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center
                         {% if tx.status == 'completed' %}bg-emerald-500/20 text-emerald-500
-                        {% elif tx.status == 'pending' %}bg-yellow-500/20 text-yellow-500
+                        {% elif tx.status == 'pending' %}bg-amber-500/20 text-amber-500
                         {% else %}bg-red-500/20 text-red-500{% endif %}">
                         <i data-lucide="{% if tx.status == 'completed' %}check{% elif tx.status == 'pending' %}clock{% else %}x{% endif %}" class="w-5 h-5"></i>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-baseline justify-between">
-                            <p class="font-medium text-adaptive truncate">{{ tx.recipient_name or 'Transfert' }}</p>
+                            <p class="font-bold text-adaptive truncate">{{ tx.recipient_name or 'Transfert' }}</p>
                             <p class="text-sm font-bold
-                                {% if tx.type == 'send' %}text-red-500{% else %}text-emerald-500{% endif %}">
-                                {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount_sent }} {{ tx.from_currency }}
+                                {% if tx.type == 'send' %}text-rose-500{% else %}text-emerald-500{% endif %}">
+                                {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount_sent }} 
+                                {% if tx.from_currency == 'USD' %}🇺🇸{% elif tx.from_currency == 'EUR' %}🇪🇺{% elif tx.from_currency == 'GBP' %}🇬🇧{% elif tx.from_currency == 'MAD' %}🇲🇦{% elif tx.from_currency == 'CHF' %}🇨🇭{% endif %}
+                                {{ tx.from_currency }}
                             </p>
                         </div>
                         <div class="flex items-center justify-between mt-1">
-                            <span class="text-xs text-adaptive-muted">{{ tx.from_currency }} → {{ tx.to_currency }}</span>
+                            <span class="text-xs text-adaptive-muted flex items-center gap-1">
+                                {% if tx.from_currency == 'USD' %}🇺🇸{% elif tx.from_currency == 'EUR' %}🇪🇺{% elif tx.from_currency == 'GBP' %}🇬🇧{% elif tx.from_currency == 'MAD' %}🇲🇦{% elif tx.from_currency == 'CHF' %}🇨🇭{% endif %}
+                                {{ tx.from_currency }} 
+                                <i data-lucide="arrow-right" class="w-3 h-3 mx-1"></i>
+                                {% if tx.to_currency == 'USD' %}🇺🇸{% elif tx.to_currency == 'EUR' %}🇪🇺{% elif tx.to_currency == 'GBP' %}🇬🇧{% elif tx.to_currency == 'MAD' %}🇲🇦{% elif tx.to_currency == 'CHF' %}🇨🇭{% endif %}
+                                {{ tx.to_currency }}
+                            </span>
                             <span class="text-xs text-adaptive-muted">{{ tx.created_at.strftime('%d/%m %H:%M') if tx.created_at else '' }}</span>
                         </div>
                     </div>
@@ -86,16 +108,16 @@
             </div>
             {% endfor %}
         {% else %}
-            <!-- Empty State -->
-            <div class="glass-panel p-8 rounded-2xl text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4">
-                    <i data-lucide="receipt" class="w-8 h-8 text-blue-500"></i>
+            <!-- Enhanced Empty State -->
+            <div class="glass-panel p-8 rounded-2xl text-center border border-white/5">
+                <div class="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mb-4">
+                    <i data-lucide="receipt" class="w-10 h-10 text-blue-500"></i>
                 </div>
-                <h3 class="font-bold text-adaptive mb-2">Aucune transaction</h3>
-                <p class="text-sm text-adaptive-muted mb-4">Effectuez votre première conversion pour voir l'historique</p>
-                <a href="{{ url_for('app.converter') }}" class="btn-primary inline-flex">
-                    Convertir
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                <h3 class="font-bold text-adaptive text-lg mb-2">Aucune transaction</h3>
+                <p class="text-sm text-adaptive-muted mb-6">Effectuez votre première conversion pour voir l'historique</p>
+                <a href="{{ url_for('app.converter') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-[rgb(224,90,3)] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition">
+                    <i data-lucide="repeat" class="w-4 h-4"></i>
+                    Convertir maintenant
                 </a>
             </div>
         {% endif %}

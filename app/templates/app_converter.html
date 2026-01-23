@@ -2,31 +2,52 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="pt-4 flex justify-between items-center">
-        <span class="font-extrabold text-2xl tracking-tighter logo-text">
-            Sarf<span class="logo-x">X</span>
-        </span>
-        <div class="bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/20">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse mr-1"></span>
-            Live Market
+    <!-- Enhanced Header with Breadcrumb -->
+    <div class="pt-4">
+        <div class="flex items-center gap-2 text-xs text-adaptive-muted mb-3">
+            <a href="{{ url_for('app.home') }}" class="hover:text-blue-400 transition flex items-center gap-1">
+                <i data-lucide="home" class="w-3 h-3"></i> Accueil
+            </a>
+            <i data-lucide="chevron-right" class="w-3 h-3"></i>
+            <span class="text-adaptive">Convertisseur</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-[rgb(224,90,3)] rounded-2xl flex items-center justify-center shadow-lg">
+                    <i data-lucide="repeat" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-adaptive">Convertir</h2>
+                    <p class="text-xs text-adaptive-muted">Meilleurs taux en temps réel</p>
+                </div>
+            </div>
+            <div class="bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-full text-xs font-bold border border-emerald-500/20 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Live Market
+            </div>
         </div>
     </div>
     
-    <!-- Currency Input -->
-    <div class="glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden group">
-        <div class="flex justify-between items-center">
-            <label class="text-xs font-bold text-adaptive-muted uppercase tracking-wide">Vous envoyez</label>
+    <!-- Currency Input - Enhanced -->
+    <div class="glass-panel p-5 rounded-2xl space-y-4 relative overflow-hidden group border border-white/10">
+        <!-- Premium glow effect -->
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div class="flex justify-between items-center relative z-10">
+            <label class="text-xs font-bold text-adaptive-muted uppercase tracking-wide flex items-center gap-2">
+                <i data-lucide="send" class="w-3 h-3 text-blue-400"></i> Vous envoyez
+            </label>
             <span class="text-[10px] text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded font-bold border border-emerald-500/20 hidden" id="savings-badge">Économie: $--</span>
         </div>
         <div class="flex items-center gap-4 relative z-10">
             <div class="relative flex-1">
                 <input type="number" id="smart-amount" value="1000" min="0" class="w-full text-4xl font-bold text-adaptive focus:outline-none bg-transparent placeholder-slate-400 font-mono tracking-tight" placeholder="0.00">
             </div>
-            <select id="from-currency" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl transition cursor-pointer border-none">
+            <select id="from-currency" class="currency-select flex items-center gap-2 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white px-4 py-2.5 rounded-xl transition cursor-pointer border border-white/10 shadow-lg">
                 <option value="USD" selected>🇺🇸 USD</option>
                 <option value="EUR">🇪🇺 EUR</option>
                 <option value="GBP">🇬🇧 GBP</option>
+                <option value="CHF">🇨🇭 CHF</option>
+                <option value="CAD">🇨🇦 CAD</option>
             </select>
         </div>
     </div>
@@ -127,29 +148,38 @@
         </div>
     </div>
 
-    <!-- Final Result -->
-    <div id="summary-section" class="hidden-opacity bg-gradient-to-r from-blue-600 to-[rgb(224,90,3)] rounded-2xl p-6 text-white shadow-xl shadow-blue-900/20">
-        <div class="flex justify-between items-end mb-4">
-            <div>
-                <p class="text-white/80 text-xs font-bold uppercase mb-1">Le bénéficiaire reçoit</p>
-                <h2 class="text-4xl font-extrabold tracking-tight" id="smart-final-amount">--</h2>
+    <!-- Final Result - Premium Design -->
+    <div id="summary-section" class="hidden-opacity rounded-2xl p-6 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden" style="background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1a1a2e 100%);">
+        <!-- Premium glow effects -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-[rgb(224,90,3)]/20 rounded-full blur-2xl"></div>
+        
+        <div class="relative z-10">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <p class="text-white/70 text-xs font-bold uppercase mb-1 flex items-center gap-2">
+                        <i data-lucide="gift" class="w-3 h-3"></i> Le bénéficiaire reçoit
+                    </p>
+                    <h2 class="text-4xl font-extrabold tracking-tight" id="smart-final-amount">--</h2>
+                </div>
+                <div class="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-xl backdrop-blur-md border border-white/10">
+                    <span class="text-2xl">🇲🇦</span>
+                    <span class="font-bold text-sm">MAD</span>
+                </div>
             </div>
-            <div class="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg backdrop-blur-md">
-                <span class="text-xl">🇲🇦</span>
-                <span class="font-bold text-sm">MAD</span>
-            </div>
+            <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
+                <input type="hidden" name="amount" id="form-amount">
+                <input type="hidden" name="from_currency" id="form-from-currency">
+                <input type="hidden" name="to_currency" value="MAD">
+                <input type="hidden" name="rate" id="form-rate">
+                <input type="hidden" name="final_amount" id="form-final-amount">
+                <input type="hidden" name="supplier_id" id="form-supplier-id">
+                <button type="submit" class="w-full bg-white text-slate-900 font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-50 transition flex items-center justify-center gap-2 active:scale-[0.98]">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    Confirmer l'échange
+                </button>
+            </form>
         </div>
-        <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
-            <input type="hidden" name="amount" id="form-amount">
-            <input type="hidden" name="from_currency" id="form-from-currency">
-            <input type="hidden" name="to_currency" value="MAD">
-            <input type="hidden" name="rate" id="form-rate">
-            <input type="hidden" name="final_amount" id="form-final-amount">
-            <input type="hidden" name="supplier_id" id="form-supplier-id">
-            <button type="submit" class="w-full bg-white text-blue-900 font-bold py-3 rounded-xl shadow-sm hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                Confirmer l'échange <i data-lucide="check-circle" class="w-5 h-5"></i>
-            </button>
-        </form>
     </div>
     
     <div class="h-6"></div>
