@@ -99,24 +99,39 @@
             <!-- Partners Carousel -->
             <div id="partners-carousel" class="overflow-hidden">
                 <div class="flex gap-4 transition-transform duration-500 ease-out" id="partners-track" style="transform: translateX(0)">
-                    <div class="partner-card flex-shrink-0">
-                        <img src="{{ url_for('static', filename='images/banks/attijariwafa.svg') }}" alt="Attijariwafa Bank" class="w-full h-full object-contain">
-                    </div>
-                    <div class="partner-card flex-shrink-0">
-                        <img src="{{ url_for('static', filename='images/banks/boa.svg') }}" alt="Bank of Africa" class="w-full h-full object-contain">
-                    </div>
-                    <div class="partner-card flex-shrink-0">
-                        <img src="{{ url_for('static', filename='images/banks/banque-populaire.svg') }}" alt="Banque Populaire" class="w-full h-full object-contain">
-                    </div>
-                    <div class="partner-card flex-shrink-0">
-                        <img src="{{ url_for('static', filename='images/banks/cih.svg') }}" alt="CIH Bank" class="w-full h-full object-contain">
-                    </div>
-                    <div class="partner-card flex-shrink-0">
-                        <img src="{{ url_for('static', filename='images/banks/albarid.svg') }}" alt="Al Barid Bank" class="w-full h-full object-contain">
-                    </div>
-                    <div class="partner-card flex-shrink-0">
-                        <img src="{{ url_for('static', filename='images/banks/bmci.svg') }}" alt="BMCI" class="w-full h-full object-contain">
-                    </div>
+                    {% if banks and banks|length > 0 %}
+                        {% for bank in banks %}
+                        <div class="partner-card flex-shrink-0">
+                            {% if bank.logo %}
+                            <img src="{{ bank.logo }}" alt="{{ bank.name }}" class="w-full h-full object-contain">
+                            {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-adaptive-muted">
+                                <span class="font-bold text-sm">{{ bank.name[:3] | upper }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback static logos if no banks in DB -->
+                        <div class="partner-card flex-shrink-0">
+                            <img src="{{ url_for('static', filename='images/banks/attijariwafa.svg') }}" alt="Attijariwafa Bank" class="w-full h-full object-contain">
+                        </div>
+                        <div class="partner-card flex-shrink-0">
+                            <img src="{{ url_for('static', filename='images/banks/boa.svg') }}" alt="Bank of Africa" class="w-full h-full object-contain">
+                        </div>
+                        <div class="partner-card flex-shrink-0">
+                            <img src="{{ url_for('static', filename='images/banks/banque-populaire.svg') }}" alt="Banque Populaire" class="w-full h-full object-contain">
+                        </div>
+                        <div class="partner-card flex-shrink-0">
+                            <img src="{{ url_for('static', filename='images/banks/cih.svg') }}" alt="CIH Bank" class="w-full h-full object-contain">
+                        </div>
+                        <div class="partner-card flex-shrink-0">
+                            <img src="{{ url_for('static', filename='images/banks/albarid.svg') }}" alt="Al Barid Bank" class="w-full h-full object-contain">
+                        </div>
+                        <div class="partner-card flex-shrink-0">
+                            <img src="{{ url_for('static', filename='images/banks/bmci.svg') }}" alt="BMCI" class="w-full h-full object-contain">
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <!-- Carousel Indicators -->

@@ -115,13 +115,19 @@ def home():
     db = get_db()
     suppliers_count = db.suppliers.count_documents({"is_active": True}) if db is not None else 0
     
+    # Récupérer les banques partenaires actives
+    banks = []
+    if db is not None and 'banks' in db.list_collection_names():
+        banks = list(db.banks.find({"is_active": True}).limit(10))
+    
     return render_template('app_home.html', 
         active_tab='home',
         user=user,
         wallet=wallet,
         total_balance=total_balance,
         transactions=transactions,
-        suppliers_count=suppliers_count
+        suppliers_count=suppliers_count,
+        banks=banks
     )
 
 
