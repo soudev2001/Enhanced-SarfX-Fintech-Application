@@ -1,19 +1,3 @@
-@app_bp.route('/associate-bank', methods=['GET', 'POST'])
-@login_required
-def associate_bank():
-    """Associer un user banque à une banque et donner accès à l'API banque"""
-    user = get_current_user()
-    db = get_db()
-    banks = list(db.banks.find({"is_active": True})) if db is not None else []
-    if request.method == 'POST':
-        bank_code = request.form.get('bank_code')
-        if bank_code:
-            db.users.update_one({"_id": user['_id']}, {"$set": {"bank_code": bank_code, "role": "bank_user"}})
-            flash("Association à la banque réussie !", "success")
-            return redirect(url_for('app.bank_settings'))
-        else:
-            flash("Veuillez sélectionner une banque.", "error")
-    return render_template('app_associate_bank.html', user=user, banks=banks)
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash
 from functools import wraps
 from app.services.db_service import get_db
@@ -516,4 +500,22 @@ def admin_atm_management():
         user=user,
         atms=atms
     )
+
+
+@app_bp.route('/associate-bank', methods=['GET', 'POST'])
+@login_required
+def associate_bank():
+    """Associer un user banque à une banque et donner accès à l'API banque"""
+    user = get_current_user()
+    db = get_db()
+    banks = list(db.banks.find({"is_active": True})) if db is not None else []
+    if request.method == 'POST':
+        bank_code = request.form.get('bank_code')
+        if bank_code:
+            db.users.update_one({"_id": user['_id']}, {"$set": {"bank_code": bank_code, "role": "bank_user"}})
+            flash("Association à la banque réussie !", "success")
+            return redirect(url_for('app.bank_settings'))
+        else:
+            flash("Veuillez sélectionner une banque.", "error")
+    return render_template('app_associate_bank.html', user=user, banks=banks)
 
