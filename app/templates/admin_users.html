@@ -55,7 +55,13 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3 cursor-pointer" onclick="showUserDetails('{{ user._id }}')">
                     <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {{ user.email[0] | upper }}
+                        {% set email_name = user.email.split('@')[0] if user.email else 'us' %}
+                        {% if '.' in email_name %}
+                            {% set email_parts = email_name.split('.') %}
+                            {{ email_parts[0][0] | upper }}{{ email_parts[1][0] | upper }}
+                        {% else %}
+                            {{ email_name[:2] | upper }}
+                        {% endif %}
                     </div>
                     <div>
                         <p class="font-bold text-default">{{ user.email }}</p>

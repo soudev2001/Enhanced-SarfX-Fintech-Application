@@ -228,6 +228,10 @@ def adjust_wallet(wallet_id):
 def transactions():
     db = get_db()
     
+    # Vérifier si la collection existe
+    if 'transactions' not in db.list_collection_names():
+        return render_template('admin_transactions.html', transactions=[])
+    
     # Filtres
     status = request.args.get('status')
     user_id = request.args.get('user_id')
@@ -238,12 +242,27 @@ def transactions():
     if user_id:
         query['user_id'] = user_id
     
-    all_transactions = list(db.transactions.find(query).sort("created_at", -1).limit(100))
+    try:
+        all_transactions = list(db.transactions.find(query).sort("created_at", -1).limit(100))
+    except Exception as e:
+        print(f"Erreur transactions: {e}")
+        all_transactions = []
     
     # Enrichir avec les infos utilisateur
     for tx in all_transactions:
-        user = db.users.find_one({"_id": ObjectId(tx['user_id'])}) if tx.get('user_id') else None
-        tx['user_email'] = user['email'] if user else 'Unknown'
+        try:
+            user_id_str = tx.get('user_id')
+            if user_id_str:
+                # Essayer de convertir en ObjectId si c'est une chaîne valide
+                if isinstance(user_id_str, str) and len(user_id_str) == 24:
+                    user = db.users.find_one({"_id": ObjectId(user_id_str)})
+                else:
+                    user = db.users.find_one({"_id": user_id_str})
+                tx['user_email'] = user.get('email', 'Unknown') if user else 'Unknown'
+            else:
+                tx['user_email'] = 'Unknown'
+        except Exception:
+            tx['user_email'] = 'Unknown'
     
     return render_template('admin_transactions.html', transactions=all_transactions)
 

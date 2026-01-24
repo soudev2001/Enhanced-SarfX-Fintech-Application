@@ -238,7 +238,13 @@
             <div class="card p-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-success to-info flex items-center justify-center text-white font-bold text-sm">
-                        {{ user.email[0] | upper if user.email else 'U' }}
+                        {% set email_name = user.email.split('@')[0] if user.email else 'us' %}
+                        {% if '.' in email_name %}
+                            {% set email_parts = email_name.split('.') %}
+                            {{ email_parts[0][0] | upper }}{{ email_parts[1][0] | upper }}
+                        {% else %}
+                            {{ email_name[:2] | upper }}
+                        {% endif %}
                     </div>
                     <div>
                         <p class="text-sm font-bold text-default">{{ user.email | default('N/A') }}</p>

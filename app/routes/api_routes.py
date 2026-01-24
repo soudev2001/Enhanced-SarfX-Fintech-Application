@@ -591,3 +591,158 @@ def get_cities():
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== BENEFICIARIES ====================
+
+@api_bp.route('/beneficiaries')
+@login_required_api
+def get_beneficiaries():
+    """Récupère les bénéficiaires de l'utilisateur connecté"""
+    try:
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        user_id = session.get('user_id')
+        
+        # Récupérer les bénéficiaires de l'utilisateur
+        beneficiaries = list(db.beneficiaries.find({"user_id": str(user_id)}).sort([
+            ("is_favorite", -1),
+            ("transfer_count", -1),
+            ("name", 1)
+        ]))
+        
+        # Convertir ObjectId en string
+        for b in beneficiaries:
+            b['_id'] = str(b['_id'])
+        
+        return jsonify({
+            "success": True,
+            "beneficiaries": beneficiaries,
+            "total": len(beneficiaries)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/beneficiaries', methods=['POST'])
+@login_required_api
+def create_beneficiary():
+    """Crée un nouveau bénéficiaire"""
+    try:
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        data = request.get_json()
+        user_id = session.get('user_id')
+        user_email = session.get('email', '')
+        
+        # Validation
+        required_fields = ['name', 'bank_code', 'iban']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"success": False, "error": f"Champ requis: {field}"}), 400
+        
+        # Créer le bénéficiaire
+        beneficiary = {
+            "beneficiary_id": str(uuid.uuid4())[:12].upper(),
+            "user_id": str(user_id),
+            "user_email": user_email,
+            "name": data['name'],
+            "first_name": data.get('first_name', ''),
+            "last_name": data.get('last_name', ''),
+            "bank_code": data['bank_code'],
+            "bank_name": data.get('bank_name', ''),
+            "swift_code": data.get('swift_code', ''),
+            "iban": data['iban'],
+            "rib": data.get('rib', ''),
+            "phone": data.get('phone', ''),
+            "email": data.get('email', ''),
+            "city": data.get('city', ''),
+            "country": data.get('country', 'Maroc'),
+            "currency": "MAD",
+            "is_favorite": data.get('is_favorite', False),
+            "is_verified": False,
+            "transfer_count": 0,
+            "notes": data.get('notes', ''),
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        result = db.beneficiaries.insert_one(beneficiary)
+        beneficiary['_id'] = str(result.inserted_id)
+        
+        return jsonify({
+            "success": True,
+            "message": "Bénéficiaire créé",
+            "beneficiary": beneficiary
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/beneficiaries/<beneficiary_id>', methods=['DELETE'])
+@login_required_api
+def delete_beneficiary(beneficiary_id):
+    """Supprime un bénéficiaire"""
+    try:
+        from bson import ObjectId
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        user_id = session.get('user_id')
+        
+        # Vérifier que le bénéficiaire appartient à l'utilisateur
+        result = db.beneficiaries.delete_one({
+            "_id": ObjectId(beneficiary_id),
+            "user_id": str(user_id)
+        })
+        
+        if result.deleted_count == 0:
+            return jsonify({"success": False, "error": "Bénéficiaire non trouvé"}), 404
+        
+        return jsonify({
+            "success": True,
+            "message": "Bénéficiaire supprimé"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/beneficiaries/<beneficiary_id>/favorite', methods=['POST'])
+@login_required_api
+def toggle_favorite_beneficiary(beneficiary_id):
+    """Toggle le statut favori d'un bénéficiaire"""
+    try:
+        from bson import ObjectId
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        user_id = session.get('user_id')
+        
+        # Récupérer le bénéficiaire
+        beneficiary = db.beneficiaries.find_one({
+            "_id": ObjectId(beneficiary_id),
+            "user_id": str(user_id)
+        })
+        
+        if not beneficiary:
+            return jsonify({"success": False, "error": "Bénéficiaire non trouvé"}), 404
+        
+        # Toggle favorite
+        new_favorite = not beneficiary.get('is_favorite', False)
+        db.beneficiaries.update_one(
+            {"_id": ObjectId(beneficiary_id)},
+            {"$set": {"is_favorite": new_favorite, "updated_at": datetime.utcnow()}}
+        )
+        
+        return jsonify({
+            "success": True,
+            "is_favorite": new_favorite
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

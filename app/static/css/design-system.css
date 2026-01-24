@@ -207,6 +207,24 @@ ul, ol {
     
     --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
     --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    
+    /* Dark mode semantic colors - Brighter for better contrast */
+    --success: #34d399;
+    --success-light: #6ee7b7;
+    --success-bg: rgba(52, 211, 153, 0.12);
+    --warning: #fbbf24;
+    --warning-light: #fcd34d;
+    --warning-bg: rgba(251, 191, 36, 0.12);
+    --error: #f87171;
+    --error-light: #fca5a5;
+    --error-bg: rgba(248, 113, 113, 0.12);
+    --info: #60a5fa;
+    --info-light: #93c5fd;
+    --info-bg: rgba(96, 165, 250, 0.12);
+    
+    /* Dark mode brand colors - Brighter */
+    --brand-primary: #ff7a2e;
+    --brand-primary-light: #ff9d5c;
 }
 
 /* ===========================================
@@ -477,6 +495,163 @@ ul, ol {
     min-width: var(--touch-target-min);
 }
 
+/* Button Outline Variants - Better contrast for dark/light mode */
+.btn-success-outline {
+    background: transparent;
+    color: var(--success);
+    border: 1.5px solid var(--success);
+}
+
+.btn-success-outline:hover {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.btn-warning-outline {
+    background: transparent;
+    color: var(--warning);
+    border: 1.5px solid var(--warning);
+}
+
+.btn-warning-outline:hover {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.btn-danger-outline {
+    background: transparent;
+    color: var(--error);
+    border: 1.5px solid var(--error);
+}
+
+.btn-danger-outline:hover {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.btn-info-outline {
+    background: transparent;
+    color: var(--info);
+    border: 1.5px solid var(--info);
+}
+
+.btn-info-outline:hover {
+    background: var(--info-bg);
+    color: var(--info);
+}
+
+/* Solid Button Variants */
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    background: var(--success-light);
+}
+
+.btn-warning {
+    background: var(--warning);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: var(--warning-light);
+}
+
+.btn-danger {
+    background: var(--error);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: var(--error-light);
+}
+
+.btn-info {
+    background: var(--info);
+    color: white;
+}
+
+.btn-info:hover {
+    background: var(--info-light);
+}
+
+/* Dark mode button improvements for better contrast */
+[data-theme="dark"] .btn-primary,
+.theme-dark .btn-primary {
+    background: var(--brand-primary);
+    color: #0f172a;
+    box-shadow: 0 0 20px rgba(255, 122, 46, 0.3);
+}
+
+[data-theme="dark"] .btn-primary:hover,
+.theme-dark .btn-primary:hover {
+    background: var(--brand-primary-light);
+    box-shadow: 0 0 30px rgba(255, 122, 46, 0.4);
+}
+
+[data-theme="dark"] .btn-secondary,
+.theme-dark .btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-medium);
+}
+
+[data-theme="dark"] .btn-secondary:hover,
+.theme-dark .btn-secondary:hover {
+    background: rgba(71, 85, 105, 0.8);
+    border-color: var(--border-dark);
+}
+
+[data-theme="dark"] .btn-success,
+.theme-dark .btn-success {
+    background: var(--success);
+    color: #0f172a;
+    box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
+}
+
+[data-theme="dark"] .btn-danger,
+.theme-dark .btn-danger {
+    background: var(--error);
+    color: #0f172a;
+    box-shadow: 0 0 15px rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .btn-warning,
+.theme-dark .btn-warning {
+    background: var(--warning);
+    color: #0f172a;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+}
+
+[data-theme="dark"] .btn-info,
+.theme-dark .btn-info {
+    background: var(--info);
+    color: #0f172a;
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
+}
+
+/* Bank Logo Styles - Consistent Sizing */
+.bank-logo-container {
+    flex-shrink: 0;
+    background: white;
+    transition: all var(--transition-fast);
+}
+
+.bank-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Dark mode adjustments for bank logos */
+[data-theme="dark"] .bank-logo-container,
+.theme-dark .bank-logo-container {
+    background: white;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* --- CARDS --- */
 .card {
     background: var(--surface);
@@ -723,26 +898,79 @@ ul, ol {
     border-radius: var(--radius-full);
     text-transform: uppercase;
     letter-spacing: 0.025em;
+    border: 1px solid transparent;
 }
 
 .badge-success {
     background: var(--success-bg);
     color: var(--success);
+    border-color: rgba(16, 185, 129, 0.3);
 }
 
 .badge-warning {
     background: var(--warning-bg);
     color: var(--warning);
+    border-color: rgba(245, 158, 11, 0.3);
 }
 
 .badge-error {
     background: var(--error-bg);
     color: var(--error);
+    border-color: rgba(239, 68, 68, 0.3);
 }
 
 .badge-info {
     background: var(--info-bg);
     color: var(--info);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.badge-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
+}
+
+.badge-primary {
+    background: rgba(224, 90, 3, 0.1);
+    color: var(--brand-primary);
+    border-color: rgba(224, 90, 3, 0.3);
+}
+
+/* Dark mode badge improvements - Better contrast */
+[data-theme="dark"] .badge-success,
+.theme-dark .badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(52, 211, 153, 0.4);
+}
+
+[data-theme="dark"] .badge-warning,
+.theme-dark .badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.4);
+}
+
+[data-theme="dark"] .badge-error,
+.theme-dark .badge-error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.4);
+}
+
+[data-theme="dark"] .badge-info,
+.theme-dark .badge-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.4);
+}
+
+[data-theme="dark"] .badge-primary,
+.theme-dark .badge-primary {
+    background: rgba(224, 90, 3, 0.15);
+    color: #ff7a2e;
+    border-color: rgba(255, 122, 46, 0.4);
 }
 
 /* --- STATUS DOTS --- */

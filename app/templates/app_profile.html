@@ -18,9 +18,38 @@
     <!-- User Profile Card -->
     <div class="wise-profile-card">
         <div class="wise-profile-avatar">
-            {{ user.email[0] | upper if user else 'U' }}
+            {% if user %}
+                {% if user.first_name and user.last_name %}
+                    {{ user.first_name[0] | upper }}{{ user.last_name[0] | upper }}
+                {% elif user.full_name %}
+                    {% set name_parts = user.full_name.split(' ') %}
+                    {% if name_parts | length >= 2 %}
+                        {{ name_parts[0][0] | upper }}{{ name_parts[1][0] | upper }}
+                    {% else %}
+                        {{ user.full_name[:2] | upper }}
+                    {% endif %}
+                {% else %}
+                    {% set email_name = user.email.split('@')[0] %}
+                    {% if '.' in email_name %}
+                        {% set email_parts = email_name.split('.') %}
+                        {{ email_parts[0][0] | upper }}{{ email_parts[1][0] | upper }}
+                    {% else %}
+                        {{ email_name[:2] | upper }}
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                US
+            {% endif %}
         </div>
-        <h2 class="wise-profile-name">{{ user.email if user else 'Utilisateur' }}</h2>
+        <h2 class="wise-profile-name">
+            {% if user.full_name %}
+                {{ user.full_name }}
+            {% elif user.first_name and user.last_name %}
+                {{ user.first_name }} {{ user.last_name }}
+            {% else %}
+                {{ user.email if user else 'Utilisateur' }}
+            {% endif %}
+        </h2>
         <p class="wise-profile-role">{{ user.role | default('user') | capitalize }}</p>
         
         {% if user.verified %}

@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SarfX - Échange de devises intelligent avec IA</title>
+    <meta name="description" content="SarfX - Plateforme fintech marocaine de change intelligent. Comparez les taux en temps réel, retirez sans carte, accédez à 4500+ ATMs.">
+    
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --landing-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Navbar */
+        .landing-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .landing-nav.scrolled {
+            background: rgba(15, 23, 42, 0.95);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 28px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        
+        .nav-logo .logo-text { color: white; }
+        .nav-logo .logo-accent { color: #e05a03; }
+        
+        .nav-links {
+            display: none;
+            align-items: center;
+            gap: 32px;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-links { display: flex; }
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .nav-link:hover { color: white; }
+        
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .btn-nav {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-nav-outline {
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+        }
+        
+        .btn-nav-outline:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .btn-nav-primary {
+            background: linear-gradient(135deg, #e05a03, #ff8c42);
+            color: white;
+            border: none;
+        }
+        
+        .btn-nav-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(224, 90, 3, 0.4);
+        }
+        
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: flex;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-menu-btn { display: none; }
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 24px 80px;
+            background: var(--landing-gradient);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(224, 90, 3, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(159, 232, 112, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .hero-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 48px;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+        
+        @media (min-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr 1fr;
+                gap: 64px;
+            }
+        }
+        
+        .hero-text h1 {
+            font-size: clamp(36px, 6vw, 64px);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: white;
+        }
+        
+        .hero-text h1 span {
+            background: linear-gradient(135deg, #e05a03, #ff8c42, #9fe870);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-text p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .btn-hero {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn-hero-primary {
+            background: linear-gradient(135deg, #e05a03, #ff8c42);
+            color: white;
+            box-shadow: 0 4px 20px rgba(224, 90, 3, 0.3);
+        }
+        
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(224, 90, 3, 0.5);
+        }
+        
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Hero Visual */
+        .hero-visual {
+            position: relative;
+        }
+        
+        .app-preview {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .app-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .app-preview-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .rate-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .rate-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .rate-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .rate-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .rate-pair {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .rate-value {
+            color: #9fe870;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        /* Stats Section */
+        .stats-strip {
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 40px 24px;
+        }
+        
+        .stats-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+        
+        @media (min-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value span {
+            color: #e05a03;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 100px 24px;
+            background: var(--bg-primary);
+        }
+        
+        .section-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        
+        .section-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        
+        @media (min-width: 768px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: var(--brand-primary);
+        }
+        
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .feature-icon-orange {
+            background: rgba(224, 90, 3, 0.1);
+            color: #e05a03;
+        }
+        
+        .feature-icon-green {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+        
+        .feature-icon-blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .feature-icon-purple {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+        
+        .feature-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .feature-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* How It Works */
+        .how-it-works {
+            padding: 100px 24px;
+            background: var(--bg-secondary);
+        }
+        
+        .steps-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 32px;
+            margin-top: 48px;
+        }
+        
+        @media (min-width: 768px) {
+            .steps-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .step-card {
+            text-align: center;
+            position: relative;
+        }
+        
+        .step-number {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #e05a03, #ff8c42);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 24px rgba(224, 90, 3, 0.3);
+        }
+        
+        .step-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .step-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 24px;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 16px;
+        }
+        
+        .cta-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 32px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Footer */
+        .landing-footer {
+            background: #0f172a;
+            padding: 64px 24px 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .footer-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+        
+        @media (min-width: 768px) {
+            .footer-grid {
+                grid-template-columns: 2fr 1fr 1fr 1fr;
+            }
+        }
+        
+        .footer-brand p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-top: 16px;
+            max-width: 300px;
+        }
+        
+        .footer-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .footer-copyright {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 14px;
+        }
+        
+        .footer-socials {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .footer-socials a {
+            color: rgba(255, 255, 255, 0.4);
+            transition: color 0.2s;
+        }
+        
+        .footer-socials a:hover {
+            color: white;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        /* Theme Toggle */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="landing-nav" id="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('landing.home') }}" class="nav-logo">
+                <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Services</a>
+                <a href="#how-it-works" class="nav-link">Comment ça marche</a>
+                <a href="#about" class="nav-link">À propos</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <i data-lucide="moon" style="width: 20px; height: 20px;"></i>
+                </button>
+                <a href="{{ url_for('auth.login') }}" class="btn-nav btn-nav-outline">Connexion</a>
+                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-nav btn-nav-primary">S'inscrire</a>
+            </div>
+            
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text animate-fade-in">
+                <h1>
+                    Échange de devises<br>
+                    <span>intelligent avec IA</span>
+                </h1>
+                <p>
+                    Comparez les taux en temps réel de 18+ fournisseurs, générez des codes de retrait sécurisés et accédez à 4500+ DAB au Maroc — sans carte physique.
+                </p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('auth.login', mode='register') }}" class="btn-hero btn-hero-primary">
+                        <i data-lucide="rocket" style="width: 20px; height: 20px;"></i>
+                        Commencer gratuitement
+                    </a>
+                    <a href="#features" class="btn-hero btn-hero-secondary">
+                        <i data-lucide="play-circle" style="width: 20px; height: 20px;"></i>
+                        Voir les taux live
+                    </a>
+                </div>
+            </div>
+            
+            <div class="hero-visual animate-fade-in" style="animation-delay: 0.2s;">
+                <div class="app-preview">
+                    <div class="app-preview-header">
+                        <span class="app-preview-title">💱 Taux en direct</span>
+                        <span class="rate-badge">Live</span>
+                    </div>
+                    
+                    <div class="rate-card">
+                        <div class="rate-row">
+                            <span class="rate-pair">🇺🇸 USD → 🇲🇦 MAD</span>
+                            <span class="rate-value">10.12</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rate-card">
+                        <div class="rate-row">
+                            <span class="rate-pair">🇪🇺 EUR → 🇲🇦 MAD</span>
+                            <span class="rate-value">10.85</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rate-card">
+                        <div class="rate-row">
+                            <span class="rate-pair">🇬🇧 GBP → 🇲🇦 MAD</span>
+                            <span class="rate-value">12.76</span>
+                        </div>
+                    </div>
+                    
+                    <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 16px;">
+                        💫 Mis à jour toutes les 60 secondes avec IA
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Strip -->
+    <section class="stats-strip">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value">50K<span>+</span></div>
+                <div class="stat-label">Utilisateurs actifs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">4,577<span>+</span></div>
+                <div class="stat-label">DAB Partenaires</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">150<span>+</span></div>
+                <div class="stat-label">Devises supportées</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3.2<span>%</span></div>
+                <div class="stat-label">Économie moyenne</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Pourquoi choisir SarfX ?</h2>
+                <p class="section-subtitle">
+                    Tout ce dont vous avez besoin pour des transferts internationaux et des échanges de devises fluides
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-orange">
+                        <i data-lucide="brain-circuit" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="feature-title">Meilleurs taux IA</h3>
+                    <p class="feature-desc">
+                        Notre IA compare 18+ fournisseurs en temps réel pour garantir le meilleur taux à chaque fois.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-green">
+                        <i data-lucide="scan-line" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="feature-title">Retrait sans carte</h3>
+                    <p class="feature-desc">
+                        Générez des codes sécurisés et retirez de l'argent à n'importe quel DAB partenaire sans carte physique.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-blue">
+                        <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="feature-title">Sécurité bancaire</h3>
+                    <p class="feature-desc">
+                        Vérification KYC multi-niveaux, transactions chiffrées et codes de retrait à usage unique.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-purple">
+                        <i data-lucide="map-pin" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="feature-title">Réseau DAB global</h3>
+                    <p class="feature-desc">
+                        Accédez à 4500+ DAB partenaires à travers le Maroc avec 5 banques partenaires.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-orange">
+                        <i data-lucide="wallet" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="feature-title">Portefeuille multi-devises</h3>
+                    <p class="feature-desc">
+                        Conservez vos soldes en 150+ devises et convertissez au moment parfait.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-green">
+                        <i data-lucide="zap" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="feature-title">Transferts instantanés</h3>
+                    <p class="feature-desc">
+                        Envoyez de l'argent à l'international en quelques secondes avec des frais transparents.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Comment ça marche</h2>
+                <p class="section-subtitle">Commencez en 3 étapes simples</p>
+            </div>
+            
+            <div class="steps-container">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <h3 class="step-title">Inscrivez-vous gratuitement</h3>
+                    <p class="step-desc">Créez votre compte en moins de 2 minutes avec email ou GitHub.</p>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <h3 class="step-title">Générez un code</h3>
+                    <p class="step-desc">Sélectionnez le montant, la devise et générez instantanément un code de retrait sécurisé.</p>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <h3 class="step-title">Retirez partout</h3>
+                    <p class="step-desc">Utilisez votre code à n'importe quel DAB partenaire pour récupérer votre argent — sans carte.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="about">
+        <div class="section-container">
+            <h2 class="cta-title">Prêt à économiser sur chaque échange ?</h2>
+            <p class="cta-subtitle">
+                Rejoignez 50 000+ utilisateurs qui font confiance à SarfX pour leurs transferts internationaux
+            </p>
+            <div class="hero-buttons" style="justify-content: center;">
+                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-hero btn-hero-primary">
+                    <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                    Créer un compte gratuit
+                </a>
+                <a href="mailto:contact@sarfx.io" class="btn-hero btn-hero-secondary">
+                    <i data-lucide="mail" style="width: 20px; height: 20px;"></i>
+                    Contacter les ventes
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer" id="contact">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="{{ url_for('landing.home') }}" class="nav-logo">
+                        <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+                    </a>
+                    <p>Retraits sans carte et échange de devises avec comparaison de taux alimentée par IA.</p>
+                </div>
+                
+                <div>
+                    <h4 class="footer-title">Produit</h4>
+                    <ul class="footer-links">
+                        <li><a href="#features">Taux de change</a></li>
+                        <li><a href="#features">Envoyer de l'argent</a></li>
+                        <li><a href="#features">Localisateur DAB</a></li>
+                        <li><a href="#features">Vérification</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="footer-title">Entreprise</h4>
+                    <ul class="footer-links">
+                        <li><a href="#about">À propos</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#features">FAQ</a></li>
+                        <li><a href="#features">Documentation</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="footer-title">Légal</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Conditions d'utilisation</a></li>
+                        <li><a href="#">Politique de confidentialité</a></li>
+                        <li><a href="#">Cookies</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p class="footer-copyright">© 2026 SarfX. Tous droits réservés.</p>
+                <div class="footer-socials">
+                    <a href="#" aria-label="Twitter">
+                        <i data-lucide="twitter" style="width: 20px; height: 20px;"></i>
+                    </a>
+                    <a href="#" aria-label="LinkedIn">
+                        <i data-lucide="linkedin" style="width: 20px; height: 20px;"></i>
+                    </a>
+                    <a href="#" aria-label="GitHub">
+                        <i data-lucide="github" style="width: 20px; height: 20px;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        
+        // Theme toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            
+            // Update icon
+            const icon = document.querySelector('.theme-toggle i');
+            icon.setAttribute('data-lucide', next === 'dark' ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            // Implement mobile menu logic if needed
+            alert('Menu mobile - à implémenter');
+        }
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -95,6 +95,33 @@
                         <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
                     </button>
                 </form>
+                
+                {% if request.args.get('mode') != 'register' %}
+                <!-- Demo Quick Login Buttons -->
+                <div class="demo-login-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light);">
+                    <p class="text-xs text-center" style="color: var(--text-tertiary); margin-bottom: 12px;">
+                        <i data-lucide="sparkles" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i>
+                        Connexion Démo Rapide
+                    </p>
+                    <div class="demo-buttons" style="display: flex; flex-direction: column; gap: 8px;">
+                        <button type="button" onclick="demoLogin('admin@sarfx.io', 'admin123')" 
+                                class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                            Admin Demo
+                        </button>
+                        <button type="button" onclick="demoLogin('bank@attijariwafa.ma', 'bank123')" 
+                                class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
+                            Bank Respo Demo
+                        </button>
+                        <button type="button" onclick="demoLogin('user@demo.com', 'demo123')" 
+                                class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                            User Demo
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Toggle Register/Login -->
@@ -144,6 +171,21 @@
     <script>
         lucide.createIcons();
         
+        // Demo login function
+        function demoLogin(email, password) {
+            document.querySelector('input[name="email"]').value = email;
+            document.querySelector('input[name="password"]').value = password;
+            
+            // Submit form after short delay for visual feedback
+            const btn = event.target.closest('button');
+            btn.innerHTML = '<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Connexion...';
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                document.querySelector('form').submit();
+            }, 500);
+        }
+        
         function togglePassword() {
             const input = document.getElementById('password');
             const icon = document.getElementById('eye-icon');
@@ -168,5 +210,12 @@
             }
         }, 4000);
     </script>
+    
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </body>
 </html>

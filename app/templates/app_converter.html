@@ -90,7 +90,7 @@
         </div>
     </div>
 
-    <!-- Recipient Section -->
+    <!-- Recipient Section with Beneficiary Dropdown -->
     <div id="recipient-section" class="wise-card hidden-opacity">
         <div class="wise-card-icon-header">
             <div class="wise-card-icon" style="background: rgba(224, 90, 3, 0.1); color: var(--brand-primary);">
@@ -98,12 +98,44 @@
             </div>
             <div>
                 <h3 class="wise-card-title">Bénéficiaire</h3>
-                <p class="wise-card-desc">Détails du compte</p>
+                <p class="wise-card-desc">Sélectionnez ou ajoutez un destinataire</p>
             </div>
         </div>
-        <div class="wise-form-grid">
+        
+        <!-- Saved Beneficiaries Dropdown -->
+        <div class="wise-beneficiary-selector">
+            <label class="wise-input-label">
+                <i data-lucide="users" style="width: 14px; height: 14px;"></i>
+                Bénéficiaires enregistrés
+            </label>
+            <div class="wise-dropdown-container">
+                <select id="saved-beneficiaries" class="wise-select" onchange="selectBeneficiary(this.value)">
+                    <option value="">-- Sélectionner un bénéficiaire --</option>
+                    <option value="new">➕ Nouveau bénéficiaire</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Manual Input Fields (hidden when beneficiary selected) -->
+        <div id="manual-recipient-fields" class="wise-form-grid" style="margin-top: 12px;">
             <input type="text" id="recipient-name" placeholder="Nom complet" class="wise-input">
             <input type="text" id="recipient-account" placeholder="IBAN / Numéro de compte" class="wise-input">
+            <input type="tel" id="recipient-phone" placeholder="Téléphone (optionnel)" class="wise-input">
+        </div>
+        
+        <!-- Selected Beneficiary Preview -->
+        <div id="selected-beneficiary-preview" class="wise-beneficiary-preview hidden">
+            <div class="wise-beneficiary-avatar">
+                <span id="beneficiary-initials">AB</span>
+            </div>
+            <div class="wise-beneficiary-info">
+                <p class="wise-beneficiary-name" id="preview-ben-name">--</p>
+                <p class="wise-beneficiary-bank" id="preview-ben-bank">--</p>
+                <p class="wise-beneficiary-iban" id="preview-ben-iban">--</p>
+            </div>
+            <button type="button" onclick="clearBeneficiary()" class="wise-beneficiary-clear">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
         </div>
     </div>
 
@@ -795,6 +827,115 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+
+/* Beneficiary Selector Styles */
+.wise-beneficiary-selector {
+    margin-bottom: 16px;
+}
+
+.wise-input-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.wise-select {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 42px;
+}
+
+.wise-select:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+.wise-beneficiary-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    margin-top: 12px;
+}
+
+.wise-beneficiary-preview.hidden {
+    display: none;
+}
+
+.wise-beneficiary-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.wise-beneficiary-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.wise-beneficiary-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.wise-beneficiary-bank {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.wise-beneficiary-iban {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wise-beneficiary-clear {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    color: var(--error);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.wise-beneficiary-clear:hover {
+    background: var(--error-bg);
+}
 </style>
 
 {% endblock %}
@@ -807,13 +948,141 @@
     let bestSupplier = null;
     let selectedBank = null;
     let userLocation = null;
+    let beneficiariesData = [];
+    let selectedBeneficiary = null;
 
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('smart-amount').addEventListener('input', calculateSmartExchange);
         document.getElementById('from-currency').addEventListener('change', calculateSmartExchange);
         calculateSmartExchange();
         loadBanks();
+        loadBeneficiaries();
     });
+
+    // ==================== BENEFICIARIES ====================
+    
+    async function loadBeneficiaries() {
+        try {
+            const response = await fetch('/api/beneficiaries');
+            const data = await response.json();
+            
+            if (data.success && data.beneficiaries) {
+                beneficiariesData = data.beneficiaries;
+                populateBeneficiaryDropdown(data.beneficiaries);
+            }
+        } catch (error) {
+            console.error('Erreur chargement bénéficiaires:', error);
+        }
+    }
+
+    function populateBeneficiaryDropdown(beneficiaries) {
+        const select = document.getElementById('saved-beneficiaries');
+        
+        // Clear existing options except first two
+        while (select.options.length > 2) {
+            select.remove(2);
+        }
+        
+        // Add favorites first
+        const favorites = beneficiaries.filter(b => b.is_favorite);
+        const others = beneficiaries.filter(b => !b.is_favorite);
+        
+        if (favorites.length > 0) {
+            const favGroup = document.createElement('optgroup');
+            favGroup.label = '⭐ Favoris';
+            favorites.forEach(ben => {
+                const option = document.createElement('option');
+                option.value = ben._id || ben.beneficiary_id;
+                option.textContent = `${ben.name} - ${ben.bank_name || ben.bank_code}`;
+                option.dataset.beneficiary = JSON.stringify(ben);
+                favGroup.appendChild(option);
+            });
+            select.appendChild(favGroup);
+        }
+        
+        if (others.length > 0) {
+            const othersGroup = document.createElement('optgroup');
+            othersGroup.label = '📋 Autres';
+            others.forEach(ben => {
+                const option = document.createElement('option');
+                option.value = ben._id || ben.beneficiary_id;
+                option.textContent = `${ben.name} - ${ben.bank_name || ben.bank_code}`;
+                option.dataset.beneficiary = JSON.stringify(ben);
+                othersGroup.appendChild(option);
+            });
+            select.appendChild(othersGroup);
+        }
+    }
+
+    function selectBeneficiary(value) {
+        const manualFields = document.getElementById('manual-recipient-fields');
+        const preview = document.getElementById('selected-beneficiary-preview');
+        
+        if (!value || value === '') {
+            // Reset to manual entry
+            manualFields.style.display = 'flex';
+            preview.classList.add('hidden');
+            selectedBeneficiary = null;
+            document.getElementById('recipient-name').value = '';
+            document.getElementById('recipient-account').value = '';
+            return;
+        }
+        
+        if (value === 'new') {
+            // Show manual entry for new beneficiary
+            manualFields.style.display = 'flex';
+            preview.classList.add('hidden');
+            selectedBeneficiary = null;
+            document.getElementById('recipient-name').value = '';
+            document.getElementById('recipient-account').value = '';
+            document.getElementById('recipient-name').focus();
+            return;
+        }
+        
+        // Find selected beneficiary
+        const ben = beneficiariesData.find(b => (b._id || b.beneficiary_id) === value);
+        
+        if (ben) {
+            selectedBeneficiary = ben;
+            
+            // Hide manual fields, show preview
+            manualFields.style.display = 'none';
+            preview.classList.remove('hidden');
+            
+            // Update preview
+            const initials = getInitials(ben.name);
+            document.getElementById('beneficiary-initials').textContent = initials;
+            document.getElementById('preview-ben-name').textContent = ben.name;
+            document.getElementById('preview-ben-bank').textContent = ben.bank_name || ben.bank_code;
+            document.getElementById('preview-ben-iban').textContent = ben.iban ? maskIBAN(ben.iban) : '--';
+            
+            // Fill hidden form fields
+            document.getElementById('recipient-name').value = ben.name;
+            document.getElementById('recipient-account').value = ben.iban || ben.rib || '';
+            
+            showNotification(`Bénéficiaire: ${ben.name}`, 'success');
+            lucide.createIcons();
+        }
+    }
+
+    function clearBeneficiary() {
+        document.getElementById('saved-beneficiaries').value = '';
+        selectBeneficiary('');
+    }
+
+    function getInitials(name) {
+        if (!name) return 'XX';
+        const parts = name.trim().split(' ').filter(p => p);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    function maskIBAN(iban) {
+        if (!iban || iban.length < 8) return iban;
+        return iban.substring(0, 4) + ' •••• •••• ' + iban.substring(iban.length - 4);
+    }
 
     function calculateSmartExchange() {
         const amountInput = document.getElementById('smart-amount');

@@ -20,22 +20,15 @@ def create_app():
     from .routes.app_routes import app_bp
     from .routes.api_routes import api_bp
     from .routes.admin_bank_routes import admin_banks_bp
+    from .routes.landing_routes import landing_bp
     
+    app.register_blueprint(landing_bp)  # Landing page (/)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(supplier_bp) # Préfixe géré dans le blueprint
     app.register_blueprint(app_bp, url_prefix='/app')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(admin_banks_bp) # /admin/banks
-
-    # Route Racine
-    @app.route('/')
-    def index():
-        # Redirection intelligente : App si connecté, Login sinon
-        from flask import session, redirect, url_for
-        if 'user_id' in session:
-            return redirect(url_for('app.home'))
-        return redirect(url_for('auth.login'))
 
     # Gestionnaires d'erreurs
     @app.errorhandler(404)
