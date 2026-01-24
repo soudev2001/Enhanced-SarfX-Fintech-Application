@@ -56,9 +56,17 @@
                 <i data-lucide="home" class="wise-nav-icon"></i>
                 <span>Accueil</span>
             </a>
+            <a href="{{ url_for('app.wallets') }}" class="wise-nav-item {{ 'active' if active_tab == 'wallets' else '' }}">
+                <i data-lucide="wallet" class="wise-nav-icon"></i>
+                <span>Wallets</span>
+            </a>
             <a href="{{ url_for('app.converter') }}" class="wise-nav-item {{ 'active' if active_tab == 'converter' else '' }}">
                 <i data-lucide="repeat" class="wise-nav-icon"></i>
-                <span>Convertir</span>
+                <span>Exchange</span>
+            </a>
+            <a href="{{ url_for('app.atms') }}" class="wise-nav-item {{ 'active' if active_tab == 'atms' else '' }}">
+                <i data-lucide="map-pin" class="wise-nav-icon"></i>
+                <span>Find ATMs</span>
             </a>
             <a href="{{ url_for('app.beneficiaries') }}" class="wise-nav-item {{ 'active' if active_tab == 'beneficiaries' else '' }}">
                 <i data-lucide="users" class="wise-nav-icon"></i>
@@ -67,6 +75,10 @@
             <a href="{{ url_for('app.transactions') }}" class="wise-nav-item {{ 'active' if active_tab == 'transactions' else '' }}">
                 <i data-lucide="receipt" class="wise-nav-icon"></i>
                 <span>Historique</span>
+            </a>
+            <a href="{{ url_for('app.faq') }}" class="wise-nav-item {{ 'active' if active_tab == 'faq' else '' }}">
+                <i data-lucide="help-circle" class="wise-nav-icon"></i>
+                <span>FAQ</span>
             </a>
             <a href="{{ url_for('app.ai_forecast') }}" class="wise-nav-item {{ 'active' if active_tab == 'ai' else '' }}">
                 <i data-lucide="brain-circuit" class="wise-nav-icon"></i>
@@ -112,19 +124,19 @@
     <nav class="wise-bottom-nav" id="mobile-nav">
         <a href="{{ url_for('app.home') }}" class="wise-bottom-item {{ 'active' if active_tab == 'home' else '' }}">
             <i data-lucide="home" class="wise-bottom-icon"></i>
-            <span>Accueil</span>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('app.wallets') }}" class="wise-bottom-item {{ 'active' if active_tab == 'wallets' else '' }}">
+            <i data-lucide="wallet" class="wise-bottom-icon"></i>
+            <span>Wallets</span>
         </a>
         <a href="{{ url_for('app.converter') }}" class="wise-bottom-item {{ 'active' if active_tab == 'converter' else '' }}">
             <i data-lucide="repeat" class="wise-bottom-icon"></i>
-            <span>Convertir</span>
+            <span>Exchange</span>
         </a>
-        <a href="{{ url_for('app.beneficiaries') }}" class="wise-bottom-item {{ 'active' if active_tab == 'beneficiaries' else '' }}">
-            <i data-lucide="users" class="wise-bottom-icon"></i>
-            <span>Bénéfic.</span>
-        </a>
-        <a href="{{ url_for('app.transactions') }}" class="wise-bottom-item {{ 'active' if active_tab == 'transactions' else '' }}">
-            <i data-lucide="receipt" class="wise-bottom-icon"></i>
-            <span>Historique</span>
+        <a href="{{ url_for('app.atms') }}" class="wise-bottom-item {{ 'active' if active_tab == 'atms' else '' }}">
+            <i data-lucide="map-pin" class="wise-bottom-icon"></i>
+            <span>ATMs</span>
         </a>
         <a href="{{ url_for('auth.logout') }}" class="wise-bottom-item wise-logout-mobile">
             <i data-lucide="log-out" class="wise-bottom-icon"></i>

@@ -286,3 +286,60 @@ def bank_settings():
         user=user,
         bank=bank
     )
+
+
+@app_bp.route('/wallets')
+@login_required
+def wallets():
+    """Page des portefeuilles multi-devises"""
+    user = get_current_user()
+    total_balance = get_user_total_balance(session['user_id'])
+    transactions = get_user_transactions(session['user_id'], limit=10)
+    
+    return render_template('app_wallets.html',
+        active_tab='wallets',
+        user=user,
+        total_balance=total_balance,
+        transactions=transactions
+    )
+
+
+@app_bp.route('/atms')
+@login_required
+def atms():
+    """Page de recherche des DABs partenaires"""
+    user = get_current_user()
+    db = get_db()
+    
+    banks = []
+    cities = set()
+    atm_count = 0
+    
+    if db is not None:
+        # Récupérer les banques partenaires avec leurs ATMs
+        if 'banks' in db.list_collection_names():
+            banks = list(db.banks.find({"is_active": True}))
+            for bank in banks:
+                bank['_id'] = str(bank['_id'])
+                cities.add(bank.get('city', 'Unknown'))
+                atm_count += bank.get('atm_count', 0)
+    
+    return render_template('app_atms.html',
+        active_tab='atms',
+        user=user,
+        banks=banks,
+        cities=sorted(list(cities)),
+        atm_count=atm_count
+    )
+
+
+@app_bp.route('/faq')
+@login_required
+def faq():
+    """Page des questions fréquentes"""
+    user = get_current_user()
+    
+    return render_template('app_faq.html',
+        active_tab='faq',
+        user=user
+    )

@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SarfX - Échange de devises intelligent avec IA</title>
-    <meta name="description" content="SarfX - Plateforme fintech marocaine de change intelligent. Comparez les taux en temps réel, retirez sans carte, accédez à 4500+ ATMs.">
-    
-    <!-- Design System CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <title>SarfX - AI-Powered Exchange Rates | Send Money Globally</title>
+    <meta name="description" content="Compare real-time rates from 6+ providers, generate secure withdrawal codes, and access cash at 1,000+ ATMs worldwide - all without a physical card.">
     
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -19,35 +16,47 @@
     
     <style>
         :root {
-            --landing-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            --brand-orange: #e05a03;
+            --brand-orange-light: #ff8c42;
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --slate: #334155;
+            --text-white: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --text-dim: rgba(255, 255, 255, 0.5);
+            --success: #10b981;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
+        html { scroll-behavior: smooth; }
+        
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            background: var(--navy-dark);
+            color: var(--text-white);
             line-height: 1.6;
             overflow-x: hidden;
         }
         
-        /* Navbar */
-        .landing-nav {
+        /* ============ NAVBAR ============ */
+        .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
             padding: 16px 24px;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
         }
         
-        .landing-nav.scrolled {
-            background: rgba(15, 23, 42, 0.95);
+        .navbar.scrolled {
+            background: rgba(15, 23, 42, 0.98);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
         
@@ -62,31 +71,31 @@
         .nav-logo {
             display: flex;
             align-items: center;
-            gap: 8px;
             font-size: 28px;
             font-weight: 800;
             text-decoration: none;
+            color: white;
         }
         
-        .nav-logo .logo-text { color: white; }
-        .nav-logo .logo-accent { color: #e05a03; }
+        .nav-logo span { color: var(--brand-orange); }
         
         .nav-links {
             display: none;
             align-items: center;
-            gap: 32px;
+            gap: 28px;
         }
         
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
             .nav-links { display: flex; }
         }
         
         .nav-link {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
             transition: color 0.2s;
+            padding: 8px 0;
         }
         
         .nav-link:hover { color: white; }
@@ -97,8 +106,11 @@
             gap: 12px;
         }
         
-        .btn-nav {
+        .btn-ghost {
             padding: 10px 20px;
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             font-size: 14px;
             font-weight: 600;
@@ -106,29 +118,29 @@
             transition: all 0.2s;
         }
         
-        .btn-nav-outline {
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: transparent;
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
         }
         
-        .btn-nav-outline:hover {
-            border-color: rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        .btn-nav-primary {
-            background: linear-gradient(135deg, #e05a03, #ff8c42);
+        .btn-primary {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
             color: white;
             border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
         }
         
-        .btn-nav-primary:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 20px rgba(224, 90, 3, 0.4);
         }
         
-        /* Mobile Menu */
         .mobile-menu-btn {
             display: flex;
             padding: 8px;
@@ -138,18 +150,15 @@
             cursor: pointer;
         }
         
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
             .mobile-menu-btn { display: none; }
         }
         
-        /* Hero Section */
+        /* ============ HERO SECTION ============ */
         .hero {
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 120px 24px 80px;
-            background: var(--landing-gradient);
+            background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-light) 50%, var(--navy-dark) 100%);
             position: relative;
             overflow: hidden;
         }
@@ -162,13 +171,12 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(ellipse at 20% 20%, rgba(224, 90, 3, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(255, 140, 66, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(224, 90, 3, 0.08) 0%, transparent 70%);
+                radial-gradient(ellipse at 20% 30%, rgba(224, 90, 3, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
             pointer-events: none;
         }
         
-        .hero-content {
+        .hero-container {
             max-width: 1280px;
             margin: 0 auto;
             display: grid;
@@ -180,30 +188,29 @@
         }
         
         @media (min-width: 1024px) {
-            .hero-content {
+            .hero-container {
                 grid-template-columns: 1fr 1fr;
                 gap: 64px;
             }
         }
         
-        .hero-text h1 {
-            font-size: clamp(36px, 6vw, 64px);
+        .hero-content h1 {
+            font-size: clamp(36px, 5vw, 56px);
             font-weight: 900;
             line-height: 1.1;
             margin-bottom: 24px;
-            color: white;
         }
         
-        .hero-text h1 span {
-            background: linear-gradient(135deg, #e05a03, #ff8c42, #ffb366);
+        .hero-content h1 .highlight {
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         
-        .hero-text p {
+        .hero-content p {
             font-size: 18px;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
             margin-bottom: 32px;
             max-width: 500px;
         }
@@ -212,6 +219,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 16px;
+            margin-bottom: 40px;
         }
         
         .btn-hero {
@@ -227,7 +235,7 @@
         }
         
         .btn-hero-primary {
-            background: linear-gradient(135deg, #e05a03, #ff8c42);
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
             color: white;
             box-shadow: 0 4px 20px rgba(224, 90, 3, 0.3);
         }
@@ -241,99 +249,277 @@
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
         }
         
         .btn-hero-secondary:hover {
             background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
         }
         
-        /* Hero Visual */
+        /* Hero Rate Cards */
+        .hero-rates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .rate-card-mini {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .rate-card-mini .pair {
+            font-size: 20px;
+        }
+        
+        .rate-card-mini .info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rate-card-mini .label {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        
+        .rate-card-mini .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brand-orange-light);
+        }
+        
+        .hero-rates-note {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 16px;
+        }
+        
+        /* Hero Visual - Rate Preview */
         .hero-visual {
             position: relative;
         }
         
-        .app-preview {
-            background: linear-gradient(135deg, #1e293b, #334155);
+        .rate-preview-card {
+            background: linear-gradient(135deg, var(--navy-light), var(--slate));
             border-radius: 24px;
-            padding: 24px;
+            padding: 28px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
         
-        .app-preview-header {
+        .rate-preview-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 24px;
         }
         
-        .app-preview-title {
-            color: white;
-            font-size: 14px;
+        .rate-preview-title {
+            font-size: 16px;
             font-weight: 600;
         }
         
-        .rate-badge {
+        .live-badge {
             display: flex;
             align-items: center;
             gap: 6px;
-            background: rgba(224, 90, 3, 0.1);
-            color: #e05a03;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
         }
         
-        .rate-badge::before {
+        .live-badge::before {
             content: '';
             width: 8px;
             height: 8px;
-            background: #e05a03;
+            background: var(--success);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .rate-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
         }
         
         .rate-row {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
+        
+        .rate-row:last-child { margin-bottom: 0; }
         
         .rate-pair {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: white;
+            gap: 10px;
             font-weight: 600;
         }
         
         .rate-value {
-            color: #ff8c42;
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--brand-orange-light);
         }
         
-        /* Stats Section */
-        .stats-strip {
-            background: rgba(255, 255, 255, 0.03);
+        .rate-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+        
+        /* ============ MOBILE APP DOWNLOAD ============ */
+        .app-download {
+            padding: 80px 24px;
+            background: var(--navy-light);
             border-top: 1px solid rgba(255, 255, 255, 0.05);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 40px 24px;
+        }
+        
+        .app-download-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .app-download h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .app-download p {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+        
+        .qr-codes {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        
+        .qr-code-box {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #eee 25%, transparent 25%), linear-gradient(-45deg, #eee 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #eee 75%), linear-gradient(-45deg, transparent 75%, #eee 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--slate);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .qr-label {
+            color: var(--slate);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .or-divider {
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        
+        .store-badges {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .store-badge {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .store-badge:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .store-badge-text {
+            text-align: left;
+        }
+        
+        .store-badge-text .small {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+        
+        .store-badge-text .big {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+        
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .trust-badge i {
+            color: var(--success);
+        }
+        
+        /* ============ STATS SECTION ============ */
+        .stats {
+            padding: 60px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .stats-container {
@@ -352,28 +538,29 @@
         
         .stat-item {
             text-align: center;
+            padding: 20px;
         }
         
         .stat-value {
-            font-size: 36px;
+            font-size: 40px;
             font-weight: 800;
             color: white;
             margin-bottom: 4px;
         }
         
         .stat-value span {
-            color: #e05a03;
+            color: var(--brand-orange);
         }
         
         .stat-label {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--text-muted);
         }
         
-        /* Features Section */
+        /* ============ FEATURES SECTION ============ */
         .features {
             padding: 100px 24px;
-            background: var(--bg-primary);
+            background: var(--navy-dark);
         }
         
         .section-container {
@@ -389,13 +576,12 @@
         .section-title {
             font-size: 36px;
             font-weight: 800;
-            color: var(--text-primary);
             margin-bottom: 16px;
         }
         
         .section-subtitle {
             font-size: 18px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             max-width: 600px;
             margin: 0 auto;
         }
@@ -419,8 +605,8 @@
         }
         
         .feature-card {
-            background: var(--surface);
-            border: 1px solid var(--border-light);
+            background: var(--navy-light);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 20px;
             padding: 32px;
             transition: all 0.3s;
@@ -428,57 +614,56 @@
         
         .feature-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border-color: var(--brand-primary);
+            border-color: var(--brand-orange);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
         
         .feature-icon {
             width: 56px;
             height: 56px;
-            border-radius: 16px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
         }
         
-        .feature-icon-orange {
-            background: rgba(224, 90, 3, 0.1);
-            color: #e05a03;
+        .feature-icon.orange {
+            background: rgba(224, 90, 3, 0.15);
+            color: var(--brand-orange);
         }
         
-        .feature-icon-green {
-            background: rgba(255, 140, 66, 0.1);
-            color: #ff8c42;
+        .feature-icon.blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue);
         }
         
-        .feature-icon-blue {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
+        .feature-icon.green {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
         }
         
-        .feature-icon-purple {
-            background: rgba(139, 92, 246, 0.1);
-            color: #8b5cf6;
+        .feature-icon.purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--purple);
         }
         
         .feature-title {
             font-size: 20px;
             font-weight: 700;
-            color: var(--text-primary);
             margin-bottom: 12px;
         }
         
         .feature-desc {
             font-size: 14px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             line-height: 1.6;
         }
         
-        /* How It Works */
+        /* ============ HOW IT WORKS ============ */
         .how-it-works {
             padding: 100px 24px;
-            background: var(--bg-secondary);
+            background: var(--navy-light);
         }
         
         .steps-container {
@@ -500,58 +685,307 @@
         }
         
         .step-number {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, #e05a03, #ff8c42);
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 800;
             color: white;
             margin: 0 auto 24px;
-            box-shadow: 0 8px 24px rgba(224, 90, 3, 0.3);
+            box-shadow: 0 8px 24px rgba(224, 90, 3, 0.4);
         }
         
         .step-title {
             font-size: 20px;
             font-weight: 700;
-            color: var(--text-primary);
             margin-bottom: 12px;
         }
         
         .step-desc {
             font-size: 14px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
+            max-width: 280px;
+            margin: 0 auto;
         }
         
-        /* CTA Section */
-        .cta-section {
+        /* ============ MOBILE APP PREVIEW ============ */
+        .mobile-preview {
             padding: 100px 24px;
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            text-align: center;
+            background: var(--navy-dark);
+            position: relative;
+            overflow: hidden;
         }
         
-        .cta-title {
+        .mobile-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(224, 90, 3, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        
+        .mobile-preview-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-preview-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .mobile-preview-content {
+            position: relative;
+            z-index: 10;
+        }
+        
+        .coming-soon-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(224, 90, 3, 0.15);
+            color: var(--brand-orange);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        
+        .mobile-preview-content h2 {
             font-size: 36px;
             font-weight: 800;
-            color: white;
             margin-bottom: 16px;
         }
         
-        .cta-subtitle {
+        .mobile-preview-content p {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+        
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            font-size: 15px;
+        }
+        
+        .feature-list li i {
+            color: var(--success);
+        }
+        
+        .notify-form {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .notify-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .notify-input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        .notify-input:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+        }
+        
+        /* Phone Mockup */
+        .phone-mockup {
+            position: relative;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+        
+        .phone-frame {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .phone-screen {
+            background: var(--navy-dark);
+            border-radius: 32px;
+            overflow: hidden;
+        }
+        
+        .phone-notch {
+            height: 28px;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 4px;
+        }
+        
+        .phone-notch-inner {
+            width: 80px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+        }
+        
+        .phone-content {
+            padding: 20px 16px;
+        }
+        
+        .phone-balance {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .phone-balance-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+        
+        .phone-balance-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+        }
+        
+        .phone-currencies {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .phone-currency {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 12px;
+        }
+        
+        .phone-currency-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .phone-currency-flag {
+            font-size: 20px;
+        }
+        
+        .phone-currency-code {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .phone-currency-amount {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--brand-orange-light);
+        }
+        
+        .phone-currency-status {
+            font-size: 10px;
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.15);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .phone-actions {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+        }
+        
+        .phone-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        
+        .phone-action-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(224, 90, 3, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-orange);
+        }
+        
+        .phone-footer {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+        
+        /* ============ CTA SECTION ============ */
+        .cta {
+            padding: 100px 24px;
+            background: linear-gradient(135deg, var(--navy-light), var(--navy-dark));
+            text-align: center;
+        }
+        
+        .cta h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        
+        .cta p {
             font-size: 18px;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
             margin-bottom: 32px;
             max-width: 500px;
             margin-left: auto;
             margin-right: auto;
         }
         
-        /* Footer */
-        .landing-footer {
-            background: #0f172a;
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        /* ============ FOOTER ============ */
+        .footer {
+            background: #0a0f1a;
             padding: 64px 24px 32px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -564,7 +998,7 @@
         .footer-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 48px;
+            gap: 40px;
             margin-bottom: 48px;
         }
         
@@ -575,19 +1009,19 @@
         }
         
         .footer-brand p {
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--text-muted);
             font-size: 14px;
             margin-top: 16px;
-            max-width: 300px;
+            max-width: 280px;
         }
         
         .footer-title {
-            color: white;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            margin-bottom: 20px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            color: white;
         }
         
         .footer-links {
@@ -599,7 +1033,7 @@
         }
         
         .footer-links a {
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--text-muted);
             text-decoration: none;
             font-size: 14px;
             transition: color 0.2s;
@@ -620,7 +1054,7 @@
         }
         
         .footer-copyright {
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-dim);
             font-size: 14px;
         }
         
@@ -630,7 +1064,7 @@
         }
         
         .footer-socials a {
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-dim);
             transition: color 0.2s;
         }
         
@@ -638,11 +1072,11 @@
             color: white;
         }
         
-        /* Animations */
+        /* ============ ANIMATIONS ============ */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -651,46 +1085,31 @@
         }
         
         .animate-fade-in {
-            animation: fadeInUp 0.6s ease forwards;
+            animation: fadeInUp 0.8s ease forwards;
         }
         
-        /* Theme Toggle */
-        .theme-toggle {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            padding: 8px;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="landing-nav" id="navbar">
+    <!-- ============ NAVBAR ============ -->
+    <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="{{ url_for('landing.home') }}" class="nav-logo">
-                <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
-            </a>
+            <a href="/" class="nav-logo">Sarf<span>X</span></a>
             
             <div class="nav-links">
-                <a href="#features" class="nav-link">Services</a>
-                <a href="#how-it-works" class="nav-link">Comment ça marche</a>
-                <a href="#about" class="nav-link">À propos</a>
-                <a href="#contact" class="nav-link">Contact</a>
+                <a href="#wallets" class="nav-link">Wallets</a>
+                <a href="#send-money" class="nav-link">Send Money</a>
+                <a href="#rates" class="nav-link">Exchange Rates</a>
+                <a href="#atms" class="nav-link">Find ATMs</a>
+                <a href="#faq" class="nav-link">FAQ</a>
             </div>
             
             <div class="nav-actions">
-                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-                    <i data-lucide="moon" style="width: 20px; height: 20px;"></i>
-                </button>
-                <a href="{{ url_for('auth.login') }}" class="btn-nav btn-nav-outline">Connexion</a>
-                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-nav btn-nav-primary">S'inscrire</a>
+                <a href="{{ url_for('auth.login') }}" class="btn-ghost">Dashboard</a>
+                <a href="{{ url_for('auth.login') }}" class="btn-primary">Get Started</a>
             </div>
             
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -699,254 +1118,437 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-text animate-fade-in">
+    <!-- ============ HERO SECTION ============ -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-content animate-fade-in">
                 <h1>
-                    Échange de devises<br>
-                    <span>intelligent avec IA</span>
+                    <span class="highlight">AI-Powered</span> Exchange Rates<br>
+                    Send Money Globally<br>
+                    Without Hidden Fees
                 </h1>
                 <p>
-                    Comparez les taux en temps réel de 18+ fournisseurs, générez des codes de retrait sécurisés et accédez à 4500+ DAB au Maroc — sans carte physique.
+                    Compare real-time rates from 6+ providers, generate secure withdrawal codes, and access cash at 1,000+ ATMs worldwide - all without a physical card.
                 </p>
                 <div class="hero-buttons">
-                    <a href="{{ url_for('auth.login', mode='register') }}" class="btn-hero btn-hero-primary">
+                    <a href="{{ url_for('auth.login') }}" class="btn-hero btn-hero-primary">
                         <i data-lucide="rocket" style="width: 20px; height: 20px;"></i>
-                        Commencer gratuitement
+                        Get Started Free
                     </a>
-                    <a href="#features" class="btn-hero btn-hero-secondary">
-                        <i data-lucide="play-circle" style="width: 20px; height: 20px;"></i>
-                        Voir les taux live
+                    <a href="#rates" class="btn-hero btn-hero-secondary">
+                        <i data-lucide="trending-up" style="width: 20px; height: 20px;"></i>
+                        View Live Rates
                     </a>
                 </div>
+                
+                <div class="hero-rates">
+                    <div class="rate-card-mini">
+                        <span class="pair">🇺🇸→🇪🇺</span>
+                        <div class="info">
+                            <span class="label">USD/EUR</span>
+                            <span class="value">0.9232</span>
+                        </div>
+                    </div>
+                    <div class="rate-card-mini">
+                        <span class="pair">🇪🇺→🇬🇧</span>
+                        <div class="info">
+                            <span class="label">EUR/GBP</span>
+                            <span class="value">0.8410</span>
+                        </div>
+                    </div>
+                    <div class="rate-card-mini">
+                        <span class="pair">🇺🇸→🇬🇧</span>
+                        <div class="info">
+                            <span class="label">USD/GBP</span>
+                            <span class="value">0.7834</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="hero-rates-note">
+                    💫 Live rates updated every 60 seconds with AI
+                </p>
             </div>
             
-            <div class="hero-visual animate-fade-in" style="animation-delay: 0.2s;">
-                <div class="app-preview">
-                    <div class="app-preview-header">
-                        <span class="app-preview-title">💱 Taux en direct</span>
-                        <span class="rate-badge">Live</span>
+            <div class="hero-visual animate-fade-in animate-delay-2">
+                <div class="rate-preview-card">
+                    <div class="rate-preview-header">
+                        <span class="rate-preview-title">💱 Live Exchange Rates</span>
+                        <span class="live-badge">Live</span>
                     </div>
                     
-                    <div class="rate-card">
-                        <div class="rate-row">
-                            <span class="rate-pair">🇺🇸 USD → 🇲🇦 MAD</span>
-                            <span class="rate-value">10.12</span>
-                        </div>
+                    <div class="rate-row">
+                        <span class="rate-pair">🇺🇸 USD → 🇲🇦 MAD</span>
+                        <span class="rate-value">10.12</span>
                     </div>
                     
-                    <div class="rate-card">
-                        <div class="rate-row">
-                            <span class="rate-pair">🇪🇺 EUR → 🇲🇦 MAD</span>
-                            <span class="rate-value">10.85</span>
-                        </div>
+                    <div class="rate-row">
+                        <span class="rate-pair">🇪🇺 EUR → 🇲🇦 MAD</span>
+                        <span class="rate-value">10.85</span>
                     </div>
                     
-                    <div class="rate-card">
-                        <div class="rate-row">
-                            <span class="rate-pair">🇬🇧 GBP → 🇲🇦 MAD</span>
-                            <span class="rate-value">12.76</span>
-                        </div>
+                    <div class="rate-row">
+                        <span class="rate-pair">🇬🇧 GBP → 🇲🇦 MAD</span>
+                        <span class="rate-value">12.76</span>
                     </div>
                     
-                    <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 16px;">
-                        💫 Mis à jour toutes les 60 secondes avec IA
+                    <p class="rate-footer">
+                        ✨ Best rates from 6+ providers compared with AI
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Stats Strip -->
-    <section class="stats-strip">
-        <div class="stats-container">
-            <div class="stat-item">
-                <div class="stat-value">50K<span>+</span></div>
-                <div class="stat-label">Utilisateurs actifs</div>
+    <!-- ============ MOBILE APP DOWNLOAD ============ -->
+    <section class="app-download">
+        <div class="app-download-container">
+            <h2>Download Our Mobile App</h2>
+            <p>Scan QR codes to get instant access 📱</p>
+            
+            <div class="qr-codes">
+                <div class="qr-code-box">
+                    <div class="qr-placeholder">App Store QR</div>
+                    <span class="qr-label">iOS</span>
+                </div>
+                <span class="or-divider">OR</span>
+                <div class="qr-code-box">
+                    <div class="qr-placeholder">Play Store QR</div>
+                    <span class="qr-label">Android</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value">4,577<span>+</span></div>
-                <div class="stat-label">DAB Partenaires</div>
+            
+            <div class="store-badges">
+                <a href="#" class="store-badge">
+                    <i data-lucide="apple" style="width: 24px; height: 24px;"></i>
+                    <div class="store-badge-text">
+                        <div class="small">Download on the</div>
+                        <div class="big">App Store</div>
+                    </div>
+                </a>
+                <a href="#" class="store-badge">
+                    <i data-lucide="play" style="width: 24px; height: 24px;"></i>
+                    <div class="store-badge-text">
+                        <div class="small">Get it on</div>
+                        <div class="big">Google Play</div>
+                    </div>
+                </a>
             </div>
-            <div class="stat-item">
-                <div class="stat-value">150<span>+</span></div>
-                <div class="stat-label">Devises supportées</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">3.2<span>%</span></div>
-                <div class="stat-label">Économie moyenne</div>
+            
+            <div class="trust-badges">
+                <div class="trust-badge">
+                    <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                    Secure
+                </div>
+                <div class="trust-badge">
+                    <i data-lucide="zap" style="width: 18px; height: 18px;"></i>
+                    Fast
+                </div>
+                <div class="trust-badge">
+                    <i data-lucide="trending-up" style="width: 18px; height: 18px;"></i>
+                    Best Rates
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
+    <!-- ============ STATS SECTION ============ -->
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value">50K<span>+</span></div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1,000<span>+</span></div>
+                <div class="stat-label">Partner ATMs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">150<span>+</span></div>
+                <div class="stat-label">Currencies</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3.2<span>%</span></div>
+                <div class="stat-label">Avg. Savings</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FEATURES SECTION ============ -->
+    <section class="features" id="send-money">
         <div class="section-container">
             <div class="section-header">
-                <h2 class="section-title">Pourquoi choisir SarfX ?</h2>
+                <h2 class="section-title">Why Choose SarfX?</h2>
                 <p class="section-subtitle">
-                    Tout ce dont vous avez besoin pour des transferts internationaux et des échanges de devises fluides
+                    Everything you need for seamless international money transfers and currency exchange
                 </p>
             </div>
             
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon feature-icon-orange">
+                    <div class="feature-icon orange">
                         <i data-lucide="brain-circuit" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h3 class="feature-title">Meilleurs taux IA</h3>
+                    <h3 class="feature-title">Best Exchange Rates</h3>
                     <p class="feature-desc">
-                        Notre IA compare 18+ fournisseurs en temps réel pour garantir le meilleur taux à chaque fois.
+                        AI compares 6+ providers in real-time to guarantee you get the best rate every time.
                     </p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon feature-icon-green">
+                    <div class="feature-icon green">
                         <i data-lucide="scan-line" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h3 class="feature-title">Retrait sans carte</h3>
+                    <h3 class="feature-title">Cardless Withdrawals</h3>
                     <p class="feature-desc">
-                        Générez des codes sécurisés et retirez de l'argent à n'importe quel DAB partenaire sans carte physique.
+                        Generate secure codes and withdraw cash at any partner ATM without carrying a physical card.
                     </p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon feature-icon-blue">
+                    <div class="feature-icon blue">
                         <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h3 class="feature-title">Sécurité bancaire</h3>
+                    <h3 class="feature-title">Bank-Level Security</h3>
                     <p class="feature-desc">
-                        Vérification KYC multi-niveaux, transactions chiffrées et codes de retrait à usage unique.
+                        Multi-level KYC verification, encrypted transactions, and one-time withdrawal codes.
                     </p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon feature-icon-purple">
+                    <div class="feature-icon purple">
                         <i data-lucide="map-pin" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h3 class="feature-title">Réseau DAB global</h3>
+                    <h3 class="feature-title">Global ATM Network</h3>
                     <p class="feature-desc">
-                        Accédez à 4500+ DAB partenaires à travers le Maroc avec 5 banques partenaires.
+                        Access 1,000+ partner ATMs across Morocco and expanding globally.
                     </p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon feature-icon-orange">
+                    <div class="feature-icon orange">
                         <i data-lucide="wallet" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h3 class="feature-title">Portefeuille multi-devises</h3>
+                    <h3 class="feature-title">Multi-Currency Wallet</h3>
                     <p class="feature-desc">
-                        Conservez vos soldes en 150+ devises et convertissez au moment parfait.
+                        Hold balances in 150+ currencies and convert at the perfect moment.
                     </p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon feature-icon-green">
+                    <div class="feature-icon green">
                         <i data-lucide="zap" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h3 class="feature-title">Transferts instantanés</h3>
+                    <h3 class="feature-title">Instant Transfers</h3>
                     <p class="feature-desc">
-                        Envoyez de l'argent à l'international en quelques secondes avec des frais transparents.
+                        Send money internationally in seconds with transparent fees and real-time tracking.
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- How It Works -->
-    <section class="how-it-works" id="how-it-works">
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="how-it-works" id="wallets">
         <div class="section-container">
             <div class="section-header">
-                <h2 class="section-title">Comment ça marche</h2>
-                <p class="section-subtitle">Commencez en 3 étapes simples</p>
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">Get started in 3 simple steps</p>
             </div>
             
             <div class="steps-container">
                 <div class="step-card">
                     <div class="step-number">01</div>
-                    <h3 class="step-title">Inscrivez-vous gratuitement</h3>
-                    <p class="step-desc">Créez votre compte en moins de 2 minutes avec email ou GitHub.</p>
+                    <h3 class="step-title">Sign Up Free</h3>
+                    <p class="step-desc">Create your account in under 2 minutes with email or GitHub.</p>
                 </div>
                 
                 <div class="step-card">
                     <div class="step-number">02</div>
-                    <h3 class="step-title">Générez un code</h3>
-                    <p class="step-desc">Sélectionnez le montant, la devise et générez instantanément un code de retrait sécurisé.</p>
+                    <h3 class="step-title">Generate Code</h3>
+                    <p class="step-desc">Select amount, currency, and instantly generate a secure withdrawal code.</p>
                 </div>
                 
                 <div class="step-card">
                     <div class="step-number">03</div>
-                    <h3 class="step-title">Retirez partout</h3>
-                    <p class="step-desc">Utilisez votre code à n'importe quel DAB partenaire pour récupérer votre argent — sans carte.</p>
+                    <h3 class="step-title">Withdraw Anywhere</h3>
+                    <p class="step-desc">Use your code at any partner ATM to collect cash - no card needed.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section" id="about">
+    <!-- ============ MOBILE APP PREVIEW ============ -->
+    <section class="mobile-preview" id="rates">
+        <div class="mobile-preview-container">
+            <div class="mobile-preview-content">
+                <span class="coming-soon-badge">
+                    <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                    Coming Soon
+                </span>
+                <h2>Mobile App Experience</h2>
+                <p>
+                    Manage your money on the go with our upcoming mobile app. Access all features, generate QR codes, and track rates in real-time from your phone.
+                </p>
+                
+                <ul class="feature-list">
+                    <li>
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        Instant notifications for rate changes
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        Biometric authentication
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        Offline QR code generation
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        Apple Pay & Google Pay integration
+                    </li>
+                </ul>
+                
+                <form class="notify-form" onsubmit="return handleNotify(event)">
+                    <input type="email" class="notify-input" placeholder="Enter your email" required>
+                    <button type="submit" class="btn-primary">Notify Me at Launch</button>
+                </form>
+            </div>
+            
+            <div class="phone-mockup">
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="phone-notch">
+                            <div class="phone-notch-inner"></div>
+                        </div>
+                        <div class="phone-content">
+                            <div class="phone-balance">
+                                <div class="phone-balance-label">Total Balance</div>
+                                <div class="phone-balance-value">$16,540.25</div>
+                            </div>
+                            
+                            <div class="phone-currencies">
+                                <div class="phone-currency">
+                                    <div class="phone-currency-left">
+                                        <span class="phone-currency-flag">🇺🇸</span>
+                                        <span class="phone-currency-code">USD</span>
+                                    </div>
+                                    <span class="phone-currency-amount">$1,250.00</span>
+                                    <span class="phone-currency-status">Active</span>
+                                </div>
+                                <div class="phone-currency">
+                                    <div class="phone-currency-left">
+                                        <span class="phone-currency-flag">🇪🇺</span>
+                                        <span class="phone-currency-code">EUR</span>
+                                    </div>
+                                    <span class="phone-currency-amount">€890.50</span>
+                                    <span class="phone-currency-status">Active</span>
+                                </div>
+                                <div class="phone-currency">
+                                    <div class="phone-currency-left">
+                                        <span class="phone-currency-flag">🇬🇧</span>
+                                        <span class="phone-currency-code">GBP</span>
+                                    </div>
+                                    <span class="phone-currency-amount">£650.25</span>
+                                    <span class="phone-currency-status">Active</span>
+                                </div>
+                                <div class="phone-currency">
+                                    <div class="phone-currency-left">
+                                        <span class="phone-currency-flag">🇲🇦</span>
+                                        <span class="phone-currency-code">MAD</span>
+                                    </div>
+                                    <span class="phone-currency-amount">د.م.12,500</span>
+                                    <span class="phone-currency-status">Active</span>
+                                </div>
+                            </div>
+                            
+                            <div class="phone-actions">
+                                <div class="phone-action">
+                                    <div class="phone-action-icon">
+                                        <i data-lucide="arrow-down" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <span>Withdraw</span>
+                                </div>
+                                <div class="phone-action">
+                                    <div class="phone-action-icon">
+                                        <i data-lucide="repeat" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <span>Exchange</span>
+                                </div>
+                                <div class="phone-action">
+                                    <div class="phone-action-icon">
+                                        <i data-lucide="send" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <span>Send</span>
+                                </div>
+                            </div>
+                            
+                            <p class="phone-footer">Coming to iOS & Android Q2 2025</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ CTA SECTION ============ -->
+    <section class="cta" id="faq">
         <div class="section-container">
-            <h2 class="cta-title">Prêt à économiser sur chaque échange ?</h2>
-            <p class="cta-subtitle">
-                Rejoignez 50 000+ utilisateurs qui font confiance à SarfX pour leurs transferts internationaux
-            </p>
-            <div class="hero-buttons" style="justify-content: center;">
-                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-hero btn-hero-primary">
+            <h2>Ready to Save on Every Exchange?</h2>
+            <p>Join 50,000+ users who trust SarfX for their international transfers</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('auth.login') }}" class="btn-hero btn-hero-primary">
                     <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
-                    Créer un compte gratuit
+                    Create Free Account
                 </a>
                 <a href="mailto:contact@sarfx.io" class="btn-hero btn-hero-secondary">
                     <i data-lucide="mail" style="width: 20px; height: 20px;"></i>
-                    Contacter les ventes
+                    Contact Sales
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="landing-footer" id="contact">
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer" id="atms">
         <div class="footer-container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <a href="{{ url_for('landing.home') }}" class="nav-logo">
-                        <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
-                    </a>
-                    <p>Retraits sans carte et échange de devises avec comparaison de taux alimentée par IA.</p>
+                    <a href="/" class="nav-logo">Sarf<span>X</span></a>
+                    <p>Cardless withdrawals and currency exchange with AI-powered rate comparison.</p>
                 </div>
                 
                 <div>
-                    <h4 class="footer-title">Produit</h4>
+                    <h4 class="footer-title">Product</h4>
                     <ul class="footer-links">
-                        <li><a href="#features">Taux de change</a></li>
-                        <li><a href="#features">Envoyer de l'argent</a></li>
-                        <li><a href="#features">Localisateur DAB</a></li>
-                        <li><a href="#features">Vérification</a></li>
+                        <li><a href="#rates">Exchange Rates</a></li>
+                        <li><a href="#send-money">Send Money</a></li>
+                        <li><a href="#atms">ATM Locator</a></li>
+                        <li><a href="{{ url_for('auth.login') }}">Verification</a></li>
                     </ul>
                 </div>
                 
                 <div>
-                    <h4 class="footer-title">Entreprise</h4>
+                    <h4 class="footer-title">Company</h4>
                     <ul class="footer-links">
-                        <li><a href="#about">À propos</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                        <li><a href="#features">FAQ</a></li>
-                        <li><a href="#features">Documentation</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#">Documentation</a></li>
                     </ul>
                 </div>
                 
                 <div>
-                    <h4 class="footer-title">Légal</h4>
+                    <h4 class="footer-title">Legal</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Conditions d'utilisation</a></li>
-                        <li><a href="#">Politique de confidentialité</a></li>
-                        <li><a href="#">Cookies</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
                     </ul>
                 </div>
             </div>
             
             <div class="footer-bottom">
-                <p class="footer-copyright">© 2026 SarfX. Tous droits réservés.</p>
+                <p class="footer-copyright">© 2026 SarfX. All rights reserved.</p>
                 <div class="footer-socials">
                     <a href="#" aria-label="Twitter">
                         <i data-lucide="twitter" style="width: 20px; height: 20px;"></i>
@@ -976,36 +1578,25 @@
             }
         });
         
-        // Theme toggle
-        function toggleTheme() {
-            const html = document.documentElement;
-            const current = html.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            
-            // Update icon
-            const icon = document.querySelector('.theme-toggle i');
-            icon.setAttribute('data-lucide', next === 'dark' ? 'sun' : 'moon');
-            lucide.createIcons();
-        }
-        
-        // Load saved theme
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        
         // Mobile menu toggle
         function toggleMobileMenu() {
-            // Implement mobile menu logic if needed
-            alert('Menu mobile - à implémenter');
+            alert('Mobile menu coming soon!');
+        }
+        
+        // Notify form handler
+        function handleNotify(e) {
+            e.preventDefault();
+            alert('Thank you! We will notify you when the app launches.');
+            e.target.reset();
+            return false;
         }
         
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
-                e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
+                    e.preventDefault();
                     target.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'

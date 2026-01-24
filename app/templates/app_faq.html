@@ -1,0 +1,507 @@
+{% extends "app_base.html" %}
+
+{% block title %}FAQ - SarfX{% endblock %}
+
+{% block content %}
+<div class="wise-main-content">
+    <!-- Page Header -->
+    <div class="wise-page-header wise-faq-header">
+        <div class="wise-page-header-content">
+            <h1 class="wise-page-title">Frequently Asked Questions</h1>
+            <p class="wise-page-subtitle">Everything you need to know about SarfX</p>
+        </div>
+    </div>
+
+    <!-- Search Box -->
+    <div class="wise-faq-search">
+        <div class="wise-search-box">
+            <i data-lucide="search" class="wise-search-icon"></i>
+            <input type="text" id="faqSearch" class="wise-search-input" placeholder="Search questions...">
+        </div>
+    </div>
+
+    <!-- FAQ Categories -->
+    <div class="wise-faq-grid">
+        <!-- Getting Started -->
+        <div class="wise-faq-category">
+            <div class="wise-faq-category-header">
+                <h3>Getting Started</h3>
+                <span class="wise-faq-count">3 questions</span>
+            </div>
+            
+            <div class="wise-faq-items">
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>How do I create an account?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Creating an account is simple! Click "Get Started" on our homepage, enter your email address, and follow the verification steps. You can also sign up using your GitHub account for faster onboarding. The entire process takes less than 2 minutes.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>What currencies do you support?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>SarfX supports over 150 currencies worldwide, including USD, EUR, GBP, MAD, CHF, CAD, AUD, JPY, and many more. We're constantly adding new currencies based on user demand.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Is SarfX free to use?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Creating an account and comparing rates is completely free. We only charge a small transparent fee when you make a transfer or withdrawal. Our fees are clearly displayed before you confirm any transaction - no hidden costs!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions & Withdrawals -->
+        <div class="wise-faq-category">
+            <div class="wise-faq-category-header">
+                <h3>Transactions & Withdrawals</h3>
+                <span class="wise-faq-count">4 questions</span>
+            </div>
+            
+            <div class="wise-faq-items">
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>How do cardless withdrawals work?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Cardless withdrawals are simple: 1) Generate a secure withdrawal code in your SarfX dashboard, 2) Visit any of our 1,000+ partner ATMs, 3) Enter your code on the ATM screen, 4) Collect your cash! The code is valid for 24 hours and can only be used once for security.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>What are the transaction limits?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Transaction limits depend on your verification level. Unverified accounts: 500 USD/day. Verified accounts: 10,000 USD/day. Business accounts: Custom limits. You can increase your limits by completing additional verification steps in your profile.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>How long does a transfer take?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Transfer times depend on the provider you choose. Our AI comparison shows estimated delivery times for each option. Typically: Wise - instant to 2 hours, Revolut - 1-2 hours, Bank transfers - 1-5 business days.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Can I cancel a transaction?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>You can cancel a transaction if it hasn't been processed yet. Go to your Transactions page, find the pending transaction, and click "Cancel". Once a transaction is completed or funds have been sent, it cannot be reversed. Contact support for assistance with completed transactions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security & Verification -->
+        <div class="wise-faq-category">
+            <div class="wise-faq-category-header">
+                <h3>Security & Verification</h3>
+                <span class="wise-faq-count">4 questions</span>
+            </div>
+            
+            <div class="wise-faq-items">
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>How do you protect my money?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Your security is our priority. We use bank-level encryption (256-bit SSL), two-factor authentication, one-time withdrawal codes, and real-time fraud monitoring. Your funds are held in segregated accounts with licensed financial institutions.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>What is KYC verification?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>KYC (Know Your Customer) is a regulatory requirement to verify your identity. This helps prevent fraud, money laundering, and protects both you and other users. Complete KYC by uploading a valid ID and proof of address in your Profile settings.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Why do you need my ID?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>We require ID verification to comply with international financial regulations and to protect you from fraud. Your documents are encrypted and securely stored. We never share your personal information with third parties without your consent.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Is my data safe?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Absolutely. We use industry-leading security measures including end-to-end encryption, secure data centers, and regular security audits. We're GDPR compliant and never sell your data. You can request a copy or deletion of your data at any time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rates & Fees -->
+        <div class="wise-faq-category">
+            <div class="wise-faq-category-header">
+                <h3>Rates & Fees</h3>
+                <span class="wise-faq-count">4 questions</span>
+            </div>
+            
+            <div class="wise-faq-items">
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>How do you get the best rates?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Our AI-powered system scans rates from 6+ providers every 60 seconds, comparing exchange rates and fees to find you the best deal. We show you all options transparently so you can make an informed choice.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Are there hidden fees?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Never! We believe in complete transparency. All fees are clearly displayed before you confirm any transaction. The rate you see is the rate you get - no surprises, no hidden charges.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Do rates change after I confirm?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Once you confirm a transaction, the rate is locked in for a specific period (usually 24-48 hours depending on the provider). This protects you from market fluctuations. The locked rate will be clearly shown on your confirmation screen.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Can I set rate alerts?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Yes! Go to your Wallets page, select a currency, and click on the "Alerts" tab. Set your target rate and we'll notify you via email and push notification when it's reached. This helps you exchange at the perfect moment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Support & Help -->
+        <div class="wise-faq-category">
+            <div class="wise-faq-category-header">
+                <h3>Support & Help</h3>
+                <span class="wise-faq-count">4 questions</span>
+            </div>
+            
+            <div class="wise-faq-items">
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>How do I contact support?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>You can reach our support team through: Email - support@sarfx.io, Live chat - available 24/7 in the app, or by visiting our Help Center. We typically respond within 2 hours during business hours.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>What if my transaction fails?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>If a transaction fails, your funds will be automatically returned to your SarfX wallet within 1-3 business days. You'll receive an email explaining why the transaction failed. Common reasons include incorrect recipient details or temporary provider issues.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Can I get a refund?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Refund policies depend on the transaction status. Pending transactions can be cancelled with a full refund. For completed transactions, contact our support team and we'll review your case. Refunds for completed transfers may be subject to provider policies.</p>
+                    </div>
+                </div>
+                
+                <div class="wise-faq-item">
+                    <button class="wise-faq-question" onclick="toggleFaq(this)">
+                        <span>Do you have a mobile app?</span>
+                        <i data-lucide="chevron-down" class="wise-faq-chevron"></i>
+                    </button>
+                    <div class="wise-faq-answer">
+                        <p>Our mobile app is coming soon! It will be available for both iOS and Android in Q2 2025. You can sign up for launch notifications on our homepage. In the meantime, our web app is fully optimized for mobile browsers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact CTA -->
+    <div class="wise-faq-cta">
+        <div class="wise-faq-cta-content">
+            <h3>Still have questions?</h3>
+            <p>Can't find the answer you're looking for? Our support team is here to help.</p>
+            <a href="mailto:support@sarfx.io" class="wise-btn wise-btn-primary">
+                <i data-lucide="mail"></i>
+                Contact Support
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* FAQ Header */
+.wise-faq-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+/* FAQ Search */
+.wise-faq-search {
+    max-width: 600px;
+    margin: 0 auto 40px;
+}
+
+.wise-search-box {
+    position: relative;
+}
+
+.wise-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+}
+
+.wise-search-input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.wise-search-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+/* FAQ Grid */
+.wise-faq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+@media (max-width: 640px) {
+    .wise-faq-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* FAQ Category */
+.wise-faq-category {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.wise-faq-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.wise-faq-category-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-faq-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wise-faq-items {
+    padding: 8px;
+}
+
+/* FAQ Item */
+.wise-faq-item {
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.wise-faq-item:last-child {
+    margin-bottom: 0;
+}
+
+.wise-faq-question {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-faq-question:hover {
+    background: var(--bg-secondary);
+}
+
+.wise-faq-chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.wise-faq-item.active .wise-faq-chevron {
+    transform: rotate(180deg);
+}
+
+.wise-faq-answer {
+    display: none;
+    padding: 0 16px 16px;
+}
+
+.wise-faq-item.active .wise-faq-answer {
+    display: block;
+}
+
+.wise-faq-answer p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+/* Contact CTA */
+.wise-faq-cta {
+    background: linear-gradient(135deg, var(--brand-primary), #ff8c42);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    color: white;
+}
+
+.wise-faq-cta h3 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.wise-faq-cta p {
+    margin: 0 0 24px 0;
+    opacity: 0.9;
+}
+
+.wise-faq-cta .wise-btn {
+    background: white;
+    color: var(--brand-primary);
+}
+
+.wise-faq-cta .wise-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
+function toggleFaq(button) {
+    const item = button.closest('.wise-faq-item');
+    const wasActive = item.classList.contains('active');
+    
+    // Close all items in the same category
+    const category = item.closest('.wise-faq-category');
+    category.querySelectorAll('.wise-faq-item').forEach(i => {
+        i.classList.remove('active');
+    });
+    
+    // Toggle current item
+    if (!wasActive) {
+        item.classList.add('active');
+    }
+}
+
+// Search functionality
+document.getElementById('faqSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const items = document.querySelectorAll('.wise-faq-item');
+    
+    items.forEach(item => {
+        const question = item.querySelector('.wise-faq-question span').textContent.toLowerCase();
+        const answer = item.querySelector('.wise-faq-answer p').textContent.toLowerCase();
+        
+        if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+            item.style.display = 'block';
+            if (searchTerm.length > 2) {
+                item.classList.add('active');
+            }
+        } else {
+            item.style.display = searchTerm ? 'none' : 'block';
+        }
+    });
+    
+    // Show/hide categories if no items visible
+    document.querySelectorAll('.wise-faq-category').forEach(category => {
+        const visibleItems = category.querySelectorAll('.wise-faq-item[style="display: block;"], .wise-faq-item:not([style])');
+        category.style.display = visibleItems.length > 0 ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}

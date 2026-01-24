@@ -2157,7 +2157,7 @@ body, .card, .wise-card, .btn, input, select {
 }
 
 .wise-nav-item.active {
-    background: var(--wise-green);
+    background: rgb(255 214 187);
     color: var(--wise-navy);
     font-weight: 600;
 }
@@ -2267,11 +2267,11 @@ body, .card, .wise-card, .btn, input, select {
 }
 
 .wise-bottom-item.active {
-    color: var(--wise-green);
+    color: rgb(255 214 187);
 }
 
 .wise-bottom-item.active .wise-bottom-icon {
-    color: var(--wise-green);
+    color: rgb(255 214 187);
 }
 
 /* Desktop breakpoint */
@@ -2304,7 +2304,7 @@ body, .card, .wise-card, .btn, input, select {
 
 [data-theme="dark"] .wise-nav-item.active,
 .theme-dark .wise-nav-item.active {
-    background: var(--wise-green);
+    background: rgb(255 214 187);
     color: var(--wise-navy);
 }
 
@@ -2341,7 +2341,7 @@ body, .card, .wise-card, .btn, input, select {
 }
 
 .wise-breadcrumb a:hover {
-    color: var(--wise-green);
+    color: rgb(255 214 187);
 }
 
 .wise-page-title {
@@ -2386,7 +2386,7 @@ body, .card, .wise-card, .btn, input, select {
 .wise-section-icon {
     width: 20px;
     height: 20px;
-    color: var(--wise-green);
+    color: rgb(255 214 187);
 }
 
 /* List Items */
@@ -2498,8 +2498,8 @@ body, .card, .wise-card, .btn, input, select {
 }
 
 .wise-filter-btn.active {
-    background: var(--wise-green);
-    border-color: var(--wise-green);
+    background: rgb(255 214 187);
+    border-color: rgb(255 214 187);
     color: var(--wise-navy);
     font-weight: 600;
 }
@@ -2551,7 +2551,7 @@ body, .card, .wise-card, .btn, input, select {
 }
 
 .wise-btn-primary {
-    background: var(--wise-green);
+    background: rgb(255 214 187);
     color: var(--wise-navy);
 }
 
@@ -2595,7 +2595,7 @@ body, .card, .wise-card, .btn, input, select {
 .wise-profile-avatar {
     width: 80px;
     height: 80px;
-    background: var(--wise-green);
+    background: rgb(255 214 187);
     color: var(--wise-navy);
     font-size: 32px;
     font-weight: 700;
@@ -2646,7 +2646,7 @@ body, .card, .wise-card, .btn, input, select {
     right: -50%;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, var(--wise-green) 0%, transparent 70%);
+    background: radial-gradient(circle, rgb(255 214 187) 0%, transparent 70%);
     opacity: 0.1;
 }
 
@@ -2911,7 +2911,7 @@ body, .card, .wise-card, .btn, input, select {
     inset: -4px;
     border-radius: 50%;
     border: 2px solid transparent;
-    background: linear-gradient(135deg, rgb(224, 90, 3), var(--wise-green)) border-box;
+    background: linear-gradient(135deg, rgb(224, 90, 3), rgb(255 214 187)) border-box;
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
