@@ -1,4 +1,20 @@
-from flask import Blueprint, render_template, session, redirect, url_for
+@app_bp.route('/associate-bank', methods=['GET', 'POST'])
+@login_required
+def associate_bank():
+    """Associer un user banque à une banque et donner accès à l'API banque"""
+    user = get_current_user()
+    db = get_db()
+    banks = list(db.banks.find({"is_active": True})) if db is not None else []
+    if request.method == 'POST':
+        bank_code = request.form.get('bank_code')
+        if bank_code:
+            db.users.update_one({"_id": user['_id']}, {"$set": {"bank_code": bank_code, "role": "bank_user"}})
+            flash("Association à la banque réussie !", "success")
+            return redirect(url_for('app.bank_settings'))
+        else:
+            flash("Veuillez sélectionner une banque.", "error")
+    return render_template('app_associate_bank.html', user=user, banks=banks)
+from flask import Blueprint, render_template, session, redirect, url_for, request, flash
 from functools import wraps
 from app.services.db_service import get_db
 
@@ -12,6 +28,27 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+def role_required(*allowed_roles):
+    """Décorateur pour vérifier les rôles utilisateurs"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'user_id' not in session:
+                return redirect(url_for('auth.login'))
+            
+            user = get_current_user()
+            if not user:
+                return redirect(url_for('auth.login'))
+            
+            user_role = user.get('role', 'user')
+            if user_role not in allowed_roles:
+                flash('Accès non autorisé', 'error')
+                return redirect(url_for('app.home'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def get_current_user():
     """Récupère l'utilisateur connecté"""
@@ -240,27 +277,40 @@ def transactions():
 @login_required
 def beneficiaries():
     """Page des bénéficiaires et leur historique"""
-    user = get_current_user()
-    db = get_db()
-    
-    # Récupérer les bénéficiaires de l'utilisateur
-    user_beneficiaries = []
-    if db is not None:
-        user_beneficiaries = list(db.beneficiaries.find({"user_id": str(session['user_id'])}))
+    try:
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('auth.login'))
+            
+        db = get_db()
         
-        # Pour chaque bénéficiaire, récupérer son historique de transactions
-        for benef in user_beneficiaries:
-            benef['_id'] = str(benef['_id'])
-            benef['transactions'] = list(db.transactions.find({
-                "user_id": str(session['user_id']),
-                "beneficiary_id": benef['_id']
-            }).sort("created_at", -1).limit(5))
-    
-    return render_template('app_beneficiaries.html',
-        active_tab='beneficiaries',
-        user=user,
-        beneficiaries=user_beneficiaries
-    )
+        # Récupérer les bénéficiaires de l'utilisateur
+        user_beneficiaries = []
+        if db is not None:
+            try:
+                user_beneficiaries = list(db.beneficiaries.find({"user_id": str(session['user_id'])}))
+                
+                # Pour chaque bénéficiaire, récupérer son historique de transactions
+                for benef in user_beneficiaries:
+                    benef['_id'] = str(benef['_id'])
+                    benef['transactions'] = list(db.transactions.find({
+                        "user_id": str(session['user_id']),
+                        "beneficiary_id": benef['_id']
+                    }).sort("created_at", -1).limit(5))
+            except Exception as e:
+                print(f"Erreur lors de la récupération des bénéficiaires: {e}")
+                user_beneficiaries = []
+        
+        return render_template('app_beneficiaries.html',
+            active_tab='beneficiaries',
+            user=user,
+            beneficiaries=user_beneficiaries
+        )
+    except Exception as e:
+        print(f"Erreur dans la route beneficiaries: {e}")
+        from flask import flash
+        flash('Erreur lors du chargement des bénéficiaires', 'error')
+        return redirect(url_for('app.home'))
 
 
 @app_bp.route('/bank-settings')
@@ -343,3 +393,127 @@ def faq():
         active_tab='faq',
         user=user
     )
+
+
+# ==================== ROUTES POUR LES RÔLES ADMINISTRATIFS ====================
+
+@app_bp.route('/admin-sr-bank')
+@role_required('admin', 'admin_sr_bank')
+def admin_sr_bank():
+    """Dashboard pour les administrateurs senior de banque"""
+    user = get_current_user()
+    db = get_db()
+    
+    # Statistiques bancaires
+    stats = {
+        'total_banks': 0,
+        'total_atms': 0,
+        'total_users': 0,
+        'total_transactions': 0,
+        'total_volume': 0
+    }
+    
+    if db is not None:
+        stats['total_banks'] = db.banks.count_documents({})
+        stats['total_atms'] = db.atms.count_documents({}) if 'atms' in db.list_collection_names() else 0
+        stats['total_users'] = db.users.count_documents({'role': {'$in': ['user', 'bank_user']}})
+        stats['total_transactions'] = db.transactions.count_documents({})
+        
+        # Calculer le volume total
+        transactions = db.transactions.find({'status': 'completed'})
+        for tx in transactions:
+            stats['total_volume'] += float(tx.get('amount', 0))
+    
+    return render_template('admin_sr_bank_dashboard.html',
+        user=user,
+        stats=stats
+    )
+
+
+@app_bp.route('/admin-associate-bank')
+@role_required('admin', 'admin_sr_bank', 'admin_associate_bank')
+def admin_associate_bank():
+    """Dashboard pour les administrateurs associés de banque avec contrôle API"""
+    user = get_current_user()
+    db = get_db()
+    
+    # Récupérer la banque associée à l'utilisateur
+    user_bank = None
+    bank_stats = {
+        'atm_count': 0,
+        'user_count': 0,
+        'transaction_count': 0,
+        'api_calls': 0
+    }
+    
+    if db is not None and user.get('bank_code'):
+        user_bank = db.banks.find_one({'code': user['bank_code']})
+        if user_bank:
+            user_bank['_id'] = str(user_bank['_id'])
+            bank_stats['atm_count'] = db.atms.count_documents({'bank_code': user['bank_code']}) if 'atms' in db.list_collection_names() else 0
+            bank_stats['user_count'] = db.users.count_documents({'bank_code': user['bank_code']})
+            bank_stats['transaction_count'] = db.transactions.count_documents({'bank_code': user['bank_code']})
+            # En production, récupérer depuis une collection api_logs
+            bank_stats['api_calls'] = 0
+    
+    return render_template('admin_associate_bank_dashboard.html',
+        user=user,
+        bank=user_bank,
+        stats=bank_stats
+    )
+
+
+@app_bp.route('/admin-associate-bank/api-control')
+@role_required('admin', 'admin_sr_bank', 'admin_associate_bank')
+def admin_api_control():
+    """Page de contrôle API pour les administrateurs associés de banque"""
+    user = get_current_user()
+    db = get_db()
+    
+    # Récupérer les informations API de la banque
+    api_info = {
+        'api_key': None,
+        'api_secret': None,
+        'webhook_url': None,
+        'is_active': False,
+        'rate_limit': 1000,
+        'last_sync': None
+    }
+    
+    if db is not None and user.get('bank_code'):
+        bank = db.banks.find_one({'code': user['bank_code']})
+        if bank:
+            api_info.update({
+                'api_key': bank.get('api_key'),
+                'api_secret': bank.get('api_secret'),
+                'webhook_url': bank.get('webhook_url'),
+                'is_active': bank.get('api_active', False),
+                'rate_limit': bank.get('api_rate_limit', 1000),
+                'last_sync': bank.get('last_api_sync')
+            })
+    
+    return render_template('admin_api_control.html',
+        user=user,
+        api_info=api_info
+    )
+
+
+@app_bp.route('/admin-associate-bank/atm-management')
+@role_required('admin', 'admin_sr_bank', 'admin_associate_bank')
+def admin_atm_management():
+    """Gestion des ATMs pour les administrateurs de banque"""
+    user = get_current_user()
+    db = get_db()
+    
+    atms = []
+    if db is not None and user.get('bank_code'):
+        if 'atms' in db.list_collection_names():
+            atms = list(db.atms.find({'bank_code': user['bank_code']}))
+            for atm in atms:
+                atm['_id'] = str(atm['_id'])
+    
+    return render_template('admin_atm_management.html',
+        user=user,
+        atms=atms
+    )
+

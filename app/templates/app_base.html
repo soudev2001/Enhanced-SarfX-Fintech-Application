@@ -52,6 +52,7 @@
         </div>
         
         <nav class="wise-sidebar-nav">
+            <!-- Navigation pour tous les utilisateurs -->
             <a href="{{ url_for('app.home') }}" class="wise-nav-item {{ 'active' if active_tab == 'home' else '' }}">
                 <i data-lucide="home" class="wise-nav-icon"></i>
                 <span>Accueil</span>
@@ -88,10 +89,47 @@
                 <i data-lucide="user" class="wise-nav-icon"></i>
                 <span>Profil</span>
             </a>
-            {% if user and user.role == 'bank_respo' %}
-            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_settings' else '' }}">
+
+            <!-- Section ADMIN (admin, super admin banque) -->
+            {% if user and (user.role == 'admin' or user.role == 'bank_superadmin') %}
+            <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Administration</div>
+            <a href="{{ url_for('admin.dashboard') }}" class="wise-nav-item">
+                <i data-lucide="shield" class="wise-nav-icon"></i>
+                <span>Admin Dashboard</span>
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="wise-nav-item">
+                <i data-lucide="users" class="wise-nav-icon"></i>
+                <span>Utilisateurs</span>
+            </a>
+            <a href="{{ url_for('admin.banks') }}" class="wise-nav-item">
+                <i data-lucide="landmark" class="wise-nav-icon"></i>
+                <span>Banques</span>
+            </a>
+            <a href="{{ url_for('admin.atms') }}" class="wise-nav-item">
+                <i data-lucide="map-pin" class="wise-nav-icon"></i>
+                <span>ATMs</span>
+            </a>
+            {% endif %}
+
+            <!-- Section ADMIN ASSOCIE (admin associé banque) -->
+            {% if user and user.role == 'bank_admin' %}
+            <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Gestion Banque</div>
+            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item">
                 <i data-lucide="building-2" class="wise-nav-icon"></i>
                 <span>Config Banque</span>
+            </a>
+            <a href="{{ url_for('admin.atms') }}" class="wise-nav-item">
+                <i data-lucide="map-pin" class="wise-nav-icon"></i>
+                <span>ATMs Banque</span>
+            </a>
+            {% endif %}
+
+            <!-- Section USER BANQUE (user banque) -->
+            {% if user and user.role == 'bank_user' %}
+            <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Espace Banque</div>
+            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item">
+                <i data-lucide="building-2" class="wise-nav-icon"></i>
+                <span>API Banque</span>
             </a>
             {% endif %}
         </nav>
@@ -255,5 +293,8 @@
     </script>
     
     {% block scripts %}{% endblock %}
+    
+    <!-- Chatbot SarfX avec API Gemini -->
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 </body>
 </html>

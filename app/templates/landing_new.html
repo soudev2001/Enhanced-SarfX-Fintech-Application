@@ -1250,4 +1250,70 @@
         });
     </script>
 </body>
+</body>
+
+<!-- Gemini AI Chatbot Widget -->
+<div id="chatbot-widget" style="position: fixed; bottom: 32px; right: 32px; z-index: 9999;">
+    <button id="chatbot-open-btn" style="background: linear-gradient(90deg,#e05a03,#a855f7); color: #fff; border: none; border-radius: 50%; width: 64px; height: 64px; box-shadow: 0 4px 24px #e05a0340; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer;">
+        <i data-lucide="bot"></i>
+    </button>
+    <div id="chatbot-modal" style="display:none; position: absolute; bottom: 80px; right: 0; width: 350px; max-width: 90vw; background: #181f2a; border-radius: 1.5rem; box-shadow: 0 8px 32px #0008; border: 1px solid #e05a0340; overflow: hidden;">
+        <div style="padding: 1rem; background: #232946; color: #fff; font-weight: bold; display: flex; align-items: center; justify-content: space-between;">
+            <span><i data-lucide="bot" style="vertical-align: middle;"></i> IA Chatbot</span>
+            <button onclick="closeChatbot()" style="background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer;"><i data-lucide="x"></i></button>
+        </div>
+        <div id="chatbot-messages" style="height: 260px; overflow-y: auto; background: #181f2a; padding: 1rem; font-size: 0.95rem; color: #fff;"></div>
+        <form id="chatbot-form" style="display: flex; border-top: 1px solid #232946; background: #181f2a;">
+            <input id="chatbot-input" type="text" placeholder="Posez votre question à l'IA..." style="flex:1; border:none; outline:none; background:transparent; color:#fff; padding:1rem; font-size:1rem;" required>
+            <button type="submit" style="background:#e05a03; color:#fff; border:none; border-radius:0 0 1.5rem 0; padding:0 1.2rem; font-weight:bold; cursor:pointer;"><i data-lucide="send"></i></button>
+        </form>
+    </div>
+</div>
+<script>
+// Chatbot widget logic
+const chatbotBtn = document.getElementById('chatbot-open-btn');
+const chatbotModal = document.getElementById('chatbot-modal');
+const chatbotForm = document.getElementById('chatbot-form');
+const chatbotInput = document.getElementById('chatbot-input');
+const chatbotMessages = document.getElementById('chatbot-messages');
+
+function closeChatbot() { chatbotModal.style.display = 'none'; }
+chatbotBtn.onclick = () => {
+    chatbotModal.style.display = chatbotModal.style.display === 'block' ? 'none' : 'block';
+    chatbotInput.focus();
+};
+
+chatbotForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const question = chatbotInput.value.trim();
+    if (!question) return;
+    chatbotMessages.innerHTML += `<div style='margin-bottom:8px;'><b>Vous:</b> ${question}</div>`;
+    chatbotInput.value = '';
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    chatbotMessages.innerHTML += `<div id='chatbot-typing' style='color:#e05a03;margin-bottom:8px;'>L'IA réfléchit...</div>`;
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    try {
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyB5LeO-IZ2OHzec8XgxqVxXMgWMHOwQKag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: question }] }] })
+        });
+        const data = await res.json();
+        document.getElementById('chatbot-typing').remove();
+        let answer = (data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Réponse indisponible.');
+        chatbotMessages.innerHTML += `<div style='margin-bottom:12px;'><b>IA:</b> ${answer}</div>`;
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    } catch (err) {
+        document.getElementById('chatbot-typing').remove();
+        chatbotMessages.innerHTML += `<div style='color:#e05a03;margin-bottom:8px;'>Erreur de connexion à l'IA.</div>`;
+    }
+};
+// Fermer le chatbot si clic extérieur
+document.addEventListener('click', function(e) {
+    if (!document.getElementById('chatbot-widget').contains(e.target) && chatbotModal.style.display === 'block') {
+        closeChatbot();
+    }
+});
+setTimeout(() => lucide.createIcons(), 100);
+</script>
 </html>

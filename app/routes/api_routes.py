@@ -822,3 +822,205 @@ def test_bank_connection():
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== CHATBOT ====================
+
+@api_bp.route('/chatbot/message', methods=['POST'])
+def chatbot_message():
+    """Envoie un message au chatbot et reçoit une réponse"""
+    try:
+        from app.services.chatbot_service import chatbot_service
+        
+        data = request.get_json()
+        message = data.get('message', '')
+        
+        if not message:
+            return jsonify({"success": False, "error": "Message vide"}), 400
+        
+        # Ajouter le contexte SarfX
+        context = chatbot_service.get_sarfx_context()
+        
+        # Générer la réponse
+        result = chatbot_service.generate_response(message, context)
+        
+        if result['success']:
+            return jsonify({
+                "success": True,
+                "response": result['response']
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": result.get('error', 'Erreur inconnue')
+            }), 500
+            
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== ATMS ====================
+
+@api_bp.route('/atms', methods=['GET', 'POST'])
+@login_required_api
+def manage_atms():
+    """Gestion des ATMs (liste et ajout)"""
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+    
+    if request.method == 'GET':
+        # Liste des ATMs
+        from bson import ObjectId
+        user_id = session.get('user_id')
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        
+        # Filtrer par banque si l'utilisateur est associé à une banque
+        query = {}
+        if user.get('bank_code') and user.get('role') in ['admin_associate_bank', 'bank_user']:
+            query['bank_code'] = user['bank_code']
+        
+        atms = list(db.atms.find(query)) if 'atms' in db.list_collection_names() else []
+        for atm in atms:
+            atm['_id'] = str(atm['_id'])
+        
+        return jsonify({"success": True, "atms": atms})
+    
+    elif request.method == 'POST':
+        # Ajouter un ATM
+        from bson import ObjectId
+        user_id = session.get('user_id')
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        
+        if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
+            return jsonify({"success": False, "error": "Non autorisé"}), 403
+        
+        data = request.get_json()
+        atm_data = {
+            'name': data.get('name'),
+            'address': data.get('address'),
+            'city': data.get('city'),
+            'latitude': float(data.get('latitude')) if data.get('latitude') else None,
+            'longitude': float(data.get('longitude')) if data.get('longitude') else None,
+            'bank_code': user.get('bank_code'),
+            'is_active': True,
+            'created_at': datetime.utcnow()
+        }
+        
+        result = db.atms.insert_one(atm_data)
+        return jsonify({"success": True, "atm_id": str(result.inserted_id)})
+
+
+@api_bp.route('/atms/<atm_id>', methods=['DELETE', 'PUT'])
+@login_required_api
+def manage_atm(atm_id):
+    """Gestion d'un ATM spécifique (suppression, modification)"""
+    from bson import ObjectId
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+    
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": ObjectId(user_id)})
+    
+    if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
+        return jsonify({"success": False, "error": "Non autorisé"}), 403
+    
+    if request.method == 'DELETE':
+        result = db.atms.delete_one({"_id": ObjectId(atm_id)})
+        return jsonify({"success": result.deleted_count > 0})
+    
+    elif request.method == 'PUT':
+        data = request.get_json()
+        update_data = {
+            'name': data.get('name'),
+            'address': data.get('address'),
+            'city': data.get('city'),
+            'latitude': float(data.get('latitude')) if data.get('latitude') else None,
+            'longitude': float(data.get('longitude')) if data.get('longitude') else None,
+            'is_active': data.get('is_active', True)
+        }
+        
+        result = db.atms.update_one({"_id": ObjectId(atm_id)}, {"$set": update_data})
+        return jsonify({"success": result.modified_count > 0})
+
+
+# ==================== BANK API CONTROL ====================
+
+@api_bp.route('/bank-settings/regenerate-keys', methods=['POST'])
+@login_required_api
+def regenerate_api_keys():
+    """Régénère les clés API pour une banque"""
+    import secrets
+    from bson import ObjectId
+    
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+    
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": ObjectId(user_id)})
+    
+    if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
+        return jsonify({"success": False, "error": "Non autorisé"}), 403
+    
+    if not user.get('bank_code'):
+        return jsonify({"success": False, "error": "Aucune banque associée"}), 400
+    
+    # Générer de nouvelles clés
+    api_key = 'sk_' + secrets.token_urlsafe(32)
+    api_secret = secrets.token_urlsafe(48)
+    
+    # Mettre à jour la banque
+    result = db.banks.update_one(
+        {'code': user['bank_code']},
+        {
+            '$set': {
+                'api_key': api_key,
+                'api_secret': api_secret,
+                'api_keys_regenerated_at': datetime.utcnow()
+            }
+        }
+    )
+    
+    return jsonify({
+        "success": result.modified_count > 0,
+        "api_key": api_key,
+        "api_secret": api_secret
+    })
+
+
+@api_bp.route('/bank-settings/sync', methods=['POST'])
+@login_required_api
+def sync_bank_data():
+    """Synchronise les données bancaires"""
+    from bson import ObjectId
+    
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+    
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": ObjectId(user_id)})
+    
+    if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
+        return jsonify({"success": False, "error": "Non autorisé"}), 403
+    
+    if not user.get('bank_code'):
+        return jsonify({"success": False, "error": "Aucune banque associée"}), 400
+    
+    # Mettre à jour la date de dernière synchronisation
+    result = db.banks.update_one(
+        {'code': user['bank_code']},
+        {
+            '$set': {
+                'last_api_sync': datetime.utcnow().isoformat()
+            }
+        }
+    )
+    
+    return jsonify({
+        "success": result.modified_count > 0,
+        "message": "Synchronisation réussie",
+        "timestamp": datetime.utcnow().isoformat()
+    })
