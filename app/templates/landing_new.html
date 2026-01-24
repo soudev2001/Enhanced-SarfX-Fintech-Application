@@ -380,19 +380,22 @@
                 <p class="text-slate-400" data-i18n="login_subtitle">Accédez à votre compte SarfX</p>
             </div>
 
-            <form id="login-form" class="space-y-6">
+            <form id="login-form" method="POST" action="/login" class="space-y-6">
+                <!-- Error Message -->
+                <div id="login-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm"></div>
+                
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1" data-i18n="login_email">Email</label>
                     <div class="relative">
                         <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                        <input type="email" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="nom@exemple.com">
+                        <input type="email" name="email" id="login-email" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="nom@exemple.com" value="user@demo.com">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1" data-i18n="login_password">Mot de passe</label>
                     <div class="relative">
                         <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                        <input type="password" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="••••••••">
+                        <input type="password" name="password" id="login-password" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="••••••••" value="demo123">
                     </div>
                 </div>
                 
@@ -429,6 +432,22 @@
                     <span data-i18n="login_no_account">Pas encore de compte ?</span>
                     <a href="#" class="text-[#e05a03] hover:underline ml-1" data-i18n="login_signup">S'inscrire</a>
                 </p>
+
+                <!-- Quick Demo Login -->
+                <div class="mt-8 pt-6 border-t border-slate-700">
+                    <p class="text-xs text-slate-500 text-center mb-4">Connexion rapide (Démo)</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" onclick="quickLogin('user@demo.com', 'demo123')" class="flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl py-2.5 text-emerald-400 text-sm font-medium transition">
+                            <i data-lucide="user" class="w-4 h-4"></i> User
+                        </button>
+                        <button type="button" onclick="quickLogin('bank@attijariwafa.ma', 'bank123')" class="flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl py-2.5 text-blue-400 text-sm font-medium transition">
+                            <i data-lucide="landmark" class="w-4 h-4"></i> Bank
+                        </button>
+                        <button type="button" onclick="quickLogin('admin@sarfx.io', 'admin123')" class="flex items-center justify-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-xl py-2.5 text-purple-400 text-sm font-medium transition">
+                            <i data-lucide="shield" class="w-4 h-4"></i> Admin
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -1147,11 +1166,64 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        // Login form
+        // Quick login function for demo accounts
+        function quickLogin(email, password) {
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').value = password;
+            document.getElementById('login-form').dispatchEvent(new Event('submit'));
+        }
+
+        // Login form - Submit to server
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Redirect to app login
-            window.location.href = '/app/login';
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Connexion...';
+            submitBtn.disabled = true;
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('password', password);
+                
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.redirected) {
+                    // Login successful - redirect to app
+                    window.location.href = response.url;
+                } else {
+                    // Check if we got HTML back (error page)
+                    const text = await response.text();
+                    if (text.includes('Identifiants incorrects') || text.includes('incorrect')) {
+                        errorDiv.textContent = 'Email ou mot de passe incorrect';
+                        errorDiv.classList.remove('hidden');
+                    } else if (text.includes('Erreur')) {
+                        errorDiv.textContent = 'Erreur de connexion. Veuillez réessayer.';
+                        errorDiv.classList.remove('hidden');
+                    } else {
+                        // Might be successful, try redirecting
+                        window.location.href = '/app';
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Erreur de connexion au serveur';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                lucide.createIcons();
+            }
         });
 
         // ATM Code animation
