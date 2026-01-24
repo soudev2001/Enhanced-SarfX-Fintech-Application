@@ -1,0 +1,39 @@
+graph TD
+    subgraph "User"
+        A[User]
+    end
+
+    subgraph "SarfX Fintech Application (Flask)"
+        B[Web Browser]
+        C[Flask Web App]
+        D[API Routes]
+        E[Web Routes]
+        F[AI Service]
+        G[DB Service]
+    end
+
+    subgraph "SarfX Core Engine (FastAPI)"
+        H[AI Backend]
+    end
+
+    subgraph "Database"
+        I[MongoDB]
+    end
+    
+    subgraph "External Services"
+        J[Yahoo Finance]
+        K[Frankfurter API]
+    end
+
+    A --> B;
+    B --> C;
+    C --> D;
+    C --> E;
+    D --> F;
+    D --> G;
+    E --> G;
+    F --> H;
+    G -- "CRUD Operations" --> I;
+    H -- "Fetches Data" --> J;
+    H -- "Fetches Data" --> K;
+    H -- "Caches Data" --> I;

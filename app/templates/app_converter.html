@@ -1635,19 +1635,23 @@
 
         if (amount <= 0) {
             [resSection, sumSection, recSection, bankSection, atmSection].forEach(sec => {
-                sec.classList.add('hidden-opacity');
-                sec.classList.remove('visible-opacity');
+                if (sec) {
+                    sec.classList.add('hidden-opacity');
+                    sec.classList.remove('visible-opacity');
+                }
             });
             return;
         }
 
         // Show sections
         [resSection, sumSection, recSection, bankSection].forEach(sec => {
-            sec.classList.remove('hidden-opacity');
-            sec.classList.add('visible-opacity');
+            if (sec) {
+                sec.classList.remove('hidden-opacity');
+                sec.classList.add('visible-opacity');
+            }
         });
         
-        if (selectedBank) {
+        if (selectedBank && atmSection) {
             atmSection.classList.remove('hidden-opacity');
             atmSection.classList.add('visible-opacity');
         }

@@ -615,7 +615,7 @@ function submitBeneficiary(e) {
         body: JSON.stringify({
             name: formData.get('name'),
             bank_code: formData.get('bank_code'),
-            account_number: formData.get('account_number')
+            iban: formData.get('account_number')
         })
     })
     .then(res => res.json())

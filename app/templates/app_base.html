@@ -26,6 +26,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     {% block head %}{% endblock %}
+    {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col overflow-x-hidden relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
 
@@ -69,10 +70,12 @@
                 <i data-lucide="map-pin" class="wise-nav-icon"></i>
                 <span>Find ATMs</span>
             </a>
+            {% if not user or user.role not in ['admin', 'bank_superadmin', 'bank_associate'] %}
             <a href="{{ url_for('app.beneficiaries') }}" class="wise-nav-item {{ 'active' if active_tab == 'beneficiaries' else '' }}">
                 <i data-lucide="users" class="wise-nav-icon"></i>
                 <span>Bénéficiaires</span>
             </a>
+            {% endif %}
             <a href="{{ url_for('app.transactions') }}" class="wise-nav-item {{ 'active' if active_tab == 'transactions' else '' }}">
                 <i data-lucide="receipt" class="wise-nav-icon"></i>
                 <span>Historique</span>

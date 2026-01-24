@@ -416,22 +416,26 @@ def get_wallet_balance():
 @api_bp.route('/theme', methods=['POST'])
 def set_theme():
     """Enregistre la préférence de thème"""
-    data = request.json
-    theme = data.get('theme', 'dark')
-    
-    session['theme'] = theme
-    
-    # Si l'utilisateur est connecté, sauvegarder dans la DB
-    if 'user_id' in session:
-        db = get_db()
-        if db:
-            from bson import ObjectId
-            db.users.update_one(
-                {"_id": ObjectId(session['user_id'])},
-                {"$set": {"theme": theme}}
-            )
-    
-    return jsonify({"success": True, "theme": theme})
+    try:
+        data = request.json or {}
+        theme = data.get('theme', 'dark')
+        
+        session['theme'] = theme
+        
+        # Si l'utilisateur est connecté, sauvegarder dans la DB
+        if 'user_id' in session:
+            db = get_db()
+            if db:
+                from bson import ObjectId
+                db.users.update_one(
+                    {"_id": ObjectId(session['user_id'])},
+                    {"$set": {"theme": theme}}
+                )
+        
+        return jsonify({"success": True, "theme": theme})
+    except Exception as e:
+        print(f"Theme error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ==================== SETTINGS ====================

@@ -177,8 +177,18 @@ def wallets():
     
     # Enrichir avec les infos utilisateur
     for wallet in all_wallets:
-        user = db.users.find_one({"_id": ObjectId(wallet['user_id'])}) if wallet.get('user_id') else None
-        wallet['user_email'] = user['email'] if user else 'Unknown'
+        try:
+            user_id = wallet.get('user_id')
+            if user_id:
+                if isinstance(user_id, str) and len(user_id) == 24:
+                    user = db.users.find_one({"_id": ObjectId(user_id)})
+                else:
+                    user = db.users.find_one({"_id": user_id})
+                wallet['user_email'] = user.get('email', 'Unknown') if user else 'Unknown'
+            else:
+                wallet['user_email'] = 'Unknown'
+        except Exception:
+            wallet['user_email'] = 'Unknown'
     
     return render_template('admin_wallets.html', wallets=all_wallets)
 
