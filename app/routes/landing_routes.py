@@ -11,7 +11,7 @@ landing_bp = Blueprint('landing', __name__)
 @landing_bp.route('/')
 def home():
     """Landing page - Home"""
-    return render_template('landing.html')
+    return render_template('landing_new.html')
 
 
 @landing_bp.route('/about')

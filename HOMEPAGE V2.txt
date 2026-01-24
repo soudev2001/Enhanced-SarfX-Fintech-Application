@@ -1,0 +1,982 @@
+
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SarfX - Le Futur du Change</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc; 
+            overflow-x: hidden; 
+        }
+
+        html[dir="rtl"] body { font-family: 'Noto Kufi Arabic', sans-serif; }
+        
+        /* Background Grid Effect */
+        .bg-grid {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
+            -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(224, 90, 3, 0.4);
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 20px 40px -10px rgba(224, 90, 3, 0.15);
+        }
+
+        /* Neon Glow Text */
+        .text-glow {
+            text-shadow: 0 0 25px rgba(224, 90, 3, 0.6);
+        }
+
+        .odometer {
+            display: inline-block;
+            position: relative;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.3s;
+        }
+        .odometer.changed { color: #e05a03; transform: scale(1.1); }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #e05a03 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .blob {
+            position: absolute; filter: blur(90px); z-index: -2; opacity: 0.4;
+            animation: float 15s ease-in-out infinite;
+        }
+        .blob-1 { background: #2563eb; animation-delay: 0s; }
+        .blob-2 { background: #e05a03; animation-delay: -5s; }
+        .blob-3 { background: #059669; animation-delay: -2s; }
+
+        @keyframes float { 
+            0% { transform: translate(0,0) scale(1); } 
+            33% { transform: translate(30px, -50px) scale(1.1); } 
+            66% { transform: translate(-20px, 20px) scale(0.9); } 
+            100% { transform: translate(0,0) scale(1); } 
+        }
+
+        .btn-shimmer {
+            background: linear-gradient(110deg, #e05a03 45%, #fb923c 55%, #e05a03);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* PHONE MOCKUP */
+        .phone-mockup {
+            box-shadow: 0 0 0 12px #1e293b, 0 0 0 14px #334155, 0 30px 60px rgba(0,0,0,0.6);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s;
+            transform: scale(0.8) translateY(50px);
+            opacity: 0;
+        }
+        .phone-visible .phone-mockup { transform: scale(1) translateY(0); opacity: 1; }
+
+        /* MODAL */
+        .modal { transition: opacity 0.3s ease-in-out; opacity: 0; pointer-events: none; z-index: 100; }
+        .modal.open { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease-in-out; }
+        .modal.open .modal-content { transform: scale(1); }
+        
+        /* Custom Scrollbar for Modals */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+    </style>
+</head>
+<body class="antialiased selection:bg-[#e05a03]/30">
+
+    <!-- SUCCESS MODAL (Phone) -->
+    <div id="success-modal" class="fixed inset-0 hidden items-center justify-center bg-slate-900/95 backdrop-blur-md p-4 z-[100]">
+        <div class="phone-mockup relative w-full max-w-[320px] bg-[#0f172a] rounded-[3rem] overflow-hidden border-4 border-slate-800 h-[650px] flex flex-col">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-xl z-20"></div>
+            <div class="flex-1 flex flex-col relative z-10 bg-gradient-to-b from-slate-900 to-[#020617]">
+                <div class="h-12 w-full flex justify-between items-end px-6 pb-2 text-[10px] text-white font-mono">
+                    <span>9:41</span>
+                    <div class="flex gap-1"><i data-lucide="signal" class="w-3 h-3"></i><i data-lucide="wifi" class="w-3 h-3"></i><i data-lucide="battery-full" class="w-3 h-3"></i></div>
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
+                    <div class="w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center relative mb-4">
+                        <div class="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping"></div>
+                        <div class="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+                            <i data-lucide="check" class="w-8 h-8 text-white stroke-[3]"></i>
+                        </div>
+                    </div>
+                    <div><h2 class="text-2xl font-bold text-white mb-2">Bienvenue !</h2><p class="text-sm text-slate-400">Votre place est réservée.</p></div>
+                    <div class="w-full bg-slate-800/50 rounded-2xl p-4 border border-slate-700 backdrop-blur-md shadow-inner">
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Votre Position</p>
+                        <div class="flex items-baseline justify-center gap-1"><span class="text-3xl font-bold text-white">#</span><span class="text-4xl font-extrabold text-[#e05a03] text-glow" id="user-rank">--</span></div>
+                        <div class="mt-3 text-[10px] text-emerald-400 bg-emerald-500/10 py-1 px-2 rounded-full inline-block border border-emerald-500/20">Accès Prioritaire Validé</div>
+                    </div>
+                </div>
+                <div class="p-6"><button onclick="closeModal('success-modal')" class="w-full bg-white text-slate-900 font-bold py-3.5 rounded-xl hover:bg-slate-200 transition shadow-lg">Continuer</button></div>
+                <div class="h-1 w-1/3 bg-slate-700 rounded-full mx-auto mb-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT US MODAL -->
+    <div id="about-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('about-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+            
+            <div class="text-center mb-16 relative">
+                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#e05a03]/10 rounded-full blur-[80px] pointer-events-none"></div>
+                <span class="font-bold text-4xl tracking-tight text-white flex items-center justify-center gap-2 mb-6 relative z-10">
+                    Sarf<span class="text-[#e05a03] text-glow">X</span>
+                </span>
+                <h2 class="text-4xl md:text-6xl font-extrabold text-white mb-6 relative z-10 leading-tight">Making Global Money <br/><span class="gradient-text">Transfers Simple</span></h2>
+                <p class="text-slate-400 max-w-2xl mx-auto text-lg relative z-10">SarfX was founded with a simple mission: eliminate hidden fees and complexity from international money transfers.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-20 text-center">
+                <div class="p-8 bg-slate-800/40 rounded-3xl border border-slate-700 hover:border-[#e05a03]/50 transition duration-300">
+                    <div class="text-4xl font-extrabold text-[#e05a03] mb-2">150+</div>
+                    <div class="text-sm text-slate-400 font-medium uppercase tracking-wide">Supported Currencies</div>
+                </div>
+                <div class="p-8 bg-slate-800/40 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition duration-300">
+                    <div class="text-4xl font-extrabold text-blue-400 mb-2">10K+</div>
+                    <div class="text-sm text-slate-400 font-medium uppercase tracking-wide">Active Users</div>
+                </div>
+                <div class="p-8 bg-slate-800/40 rounded-3xl border border-slate-700 hover:border-emerald-500/50 transition duration-300">
+                    <div class="text-4xl font-extrabold text-emerald-400 mb-2">$50M+</div>
+                    <div class="text-sm text-slate-400 font-medium uppercase tracking-wide">Transferred</div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-16 mb-20 items-center">
+                <div>
+                    <h3 class="text-3xl font-bold text-white mb-6 flex items-center gap-3"><span class="w-8 h-1 bg-[#e05a03] rounded-full"></span> Our Story</h3>
+                    <p class="text-slate-400 leading-relaxed mb-6 text-lg">Founded in 2023, SarfX emerged from a frustrating experience our founders had with traditional money transfer services. Hidden fees, poor exchange rates, and complicated processes were costing users thousands in unnecessary charges.</p>
+                    <p class="text-slate-400 leading-relaxed text-lg">We built SarfX to solve this problem. By aggregating rates from multiple sources and leveraging modern technology, we provide users with the best possible rates and a seamless experience.</p>
+                </div>
+                <div class="bg-slate-800/20 p-8 rounded-3xl border border-white/5">
+                    <h3 class="text-2xl font-bold text-white mb-6">Our Values</h3>
+                    <div class="space-y-6">
+                        <div class="flex gap-5">
+                            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 flex-shrink-0 border border-blue-500/20"><i data-lucide="shield" class="w-6 h-6"></i></div>
+                            <div><h4 class="text-white font-bold text-lg">Security First</h4><p class="text-sm text-slate-400 mt-1">Bank-level encryption and compliance.</p></div>
+                        </div>
+                        <div class="flex gap-5">
+                            <div class="w-12 h-12 rounded-xl bg-[#e05a03]/10 flex items-center justify-center text-[#e05a03] flex-shrink-0 border border-[#e05a03]/20"><i data-lucide="heart" class="w-6 h-6"></i></div>
+                            <div><h4 class="text-white font-bold text-lg">Customer Focused</h4><p class="text-sm text-slate-400 mt-1">Your success is our success.</p></div>
+                        </div>
+                        <div class="flex gap-5">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0 border border-emerald-500/20"><i data-lucide="globe" class="w-6 h-6"></i></div>
+                            <div><h4 class="text-white font-bold text-lg">Global Reach</h4><p class="text-sm text-slate-400 mt-1">Access to 150+ currencies worldwide.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <h3 class="text-3xl font-bold text-white mb-10">Meet Our Team</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-[#e05a03]/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">👨‍💼</div>
+                        <h4 class="text-white font-bold mb-1">Mohammed Aggoram</h4>
+                        <p class="text-[#e05a03] text-xs font-bold uppercase tracking-wider">CEO & Co-Founder</p>
+                    </div>
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-blue-500/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">👨‍💻</div>
+                        <h4 class="text-white font-bold mb-1">Issam Aggoram</h4>
+                        <p class="text-blue-400 text-xs font-bold uppercase tracking-wider">CTO & Co-Founder</p>
+                    </div>
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-purple-500/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">👩‍💼</div>
+                        <h4 class="text-white font-bold mb-1">Soukaina Rami</h4>
+                        <p class="text-purple-400 text-xs font-bold uppercase tracking-wider">Head of Compliance</p>
+                    </div>
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">🚀</div>
+                        <h4 class="text-white font-bold mb-1">Soufiane ANIBA</h4>
+                        <p class="text-emerald-400 text-xs font-bold uppercase tracking-wider">VP of Engineering</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTACT & FAQ MODAL -->
+    <div id="contact-modal" class="modal fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8">
+            <button onclick="closeModal('contact-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+            
+            <div class="grid md:grid-cols-2 gap-16">
+                <div>
+                    <h2 class="text-4xl font-bold text-white mb-4">Get in Touch</h2>
+                    <p class="text-slate-400 mb-10 text-lg">Have questions? We'd love to hear from you.</p>
+                    
+                    <div class="space-y-8">
+                        <div class="flex items-start gap-6 group">
+                            <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 transition"><i data-lucide="mail" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-lg">Email</h4>
+                                <p class="text-slate-400">support@sarfx.com</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-6 group">
+                            <div class="w-12 h-12 bg-[#e05a03]/10 rounded-2xl flex items-center justify-center text-[#e05a03] border border-[#e05a03]/20 group-hover:bg-[#e05a03]/20 transition"><i data-lucide="phone" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-lg">Phone</h4>
+                                <p class="text-slate-400">+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-6 group">
+                            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition"><i data-lucide="map-pin" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-lg">Office</h4>
+                                <p class="text-slate-400">San Francisco, CA</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-16">
+                        <h3 class="text-2xl font-bold text-white mb-6">FAQ</h3>
+                        <div class="space-y-4">
+                            <details class="group bg-slate-800/30 rounded-2xl p-5 cursor-pointer border border-white/5 hover:border-white/10 transition">
+                                <summary class="flex justify-between items-center font-medium text-slate-200 list-none text-lg">
+                                    Is SarfX free?
+                                    <span class="transition group-open:rotate-180 text-slate-500 group-open:text-white"><i data-lucide="chevron-down" class="w-5 h-5"></i></span>
+                                </summary>
+                                <p class="text-slate-400 mt-4 leading-relaxed">Yes, signing up for the waitlist is completely free. You'll get exclusive access when we launch.</p>
+                            </details>
+                            <details class="group bg-slate-800/30 rounded-2xl p-5 cursor-pointer border border-white/5 hover:border-white/10 transition">
+                                <summary class="flex justify-between items-center font-medium text-slate-200 list-none text-lg">
+                                    When will it launch?
+                                    <span class="transition group-open:rotate-180 text-slate-500 group-open:text-white"><i data-lucide="chevron-down" class="w-5 h-5"></i></span>
+                                </summary>
+                                <p class="text-slate-400 mt-4 leading-relaxed">We are targeting a global launch in Q2 2026, starting with Morocco, Africa, and Europe.</p>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass p-10 rounded-[2rem] border border-white/5 h-fit">
+                    <h3 class="text-2xl font-bold text-white mb-8">Send us a message</h3>
+                    <form class="space-y-5">
+                        <div class="grid grid-cols-2 gap-5">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Name</label>
+                                <input type="text" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-blue-500 transition" placeholder="John Doe">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
+                                <input type="email" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-blue-500 transition" placeholder="john@example.com">
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase ml-1">Message</label>
+                            <textarea class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-blue-500 h-40 resize-none" placeholder="How can we help?"></textarea>
+                        </div>
+                        <button type="button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-blue-600/20 transform active:scale-95">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TERMS OF SERVICE MODAL -->
+    <div id="terms-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('terms-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+            
+            <div class="mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="terms_title">Conditions d'utilisation</h2>
+                <p class="text-slate-400 text-lg" data-i18n="terms_subtitle">Veuillez lire attentivement avant d'utiliser nos services.</p>
+            </div>
+
+            <div class="space-y-8 text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">1. Acceptation des conditions</h3>
+                    <p data-i18n="terms_p1">En accédant et en utilisant SarfX, vous acceptez d'être lié par ces conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre plateforme.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">2. Utilisation de la plateforme</h3>
+                    <p data-i18n="terms_p2">Vous acceptez d'utiliser SarfX uniquement à des fins légales et de ne pas violer les lois applicables. Vous êtes responsable de toutes les activités effectuées sous votre compte.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">3. Compte utilisateur</h3>
+                    <p data-i18n="terms_p3">Vous êtes responsable du maintien de la confidentialité de vos identifiants de compte. Vous acceptez de notifier immédiatement SarfX de toute utilisation non autorisée de votre compte.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">4. Limitation de responsabilité</h3>
+                    <p data-i18n="terms_p4">SarfX ne sera pas responsable des dommages indirects, accessoires, spéciaux ou consécutifs résultant de votre utilisation ou de l'impossibilité d'utiliser notre plateforme.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">5. Modifications des conditions</h3>
+                    <p data-i18n="terms_p5">SarfX se réserve le droit de modifier ces conditions à tout moment. Les modifications seront effectives immédiatement après la publication sur notre site.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRIVACY POLICY MODAL -->
+    <div id="privacy-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('privacy-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+            
+            <div class="mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="privacy_title">Politique de confidentialité</h2>
+                <p class="text-slate-400 text-lg" data-i18n="privacy_subtitle">Nous prenons la protection de vos données au sérieux.</p>
+            </div>
+
+            <div class="space-y-8 text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">1. Collecte d'informations</h3>
+                    <p data-i18n="privacy_p1">Nous collectons des informations que vous nous fournissez directement, notamment votre nom, adresse e-mail et numéro de téléphone, ainsi que les données générées lors de votre utilisation de notre plateforme.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">2. Utilisation des informations</h3>
+                    <p data-i18n="privacy_p2">Nous utilisons vos informations pour fournir, maintenir et améliorer nos services, ainsi que pour communiquer avec vous concernant votre compte et nos services.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">3. Partage des informations</h3>
+                    <p data-i18n="privacy_p3">Nous ne partageons vos informations personnelles qu'avec des tiers de confiance nécessaires pour fournir nos services, conformément aux lois applicables.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">4. Sécurité des données</h3>
+                    <p data-i18n="privacy_p4">Nous mettons en œuvre des mesures de sécurité de pointe pour protéger vos données contre l'accès non autorisé, la divulgation ou la modification.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">5. Vos droits</h3>
+                    <p data-i18n="privacy_p5">Vous avez le droit d'accéder, de rectifier ou de supprimer vos données personnelles. Contactez-nous pour exercer ces droits.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COOKIES POLICY MODAL -->
+    <div id="cookies-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('cookies-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+            
+            <div class="mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="cookies_title">Politique des Cookies</h2>
+                <p class="text-slate-400 text-lg" data-i18n="cookies_subtitle">Informations sur l'utilisation des cookies sur notre plateforme.</p>
+            </div>
+
+            <div class="space-y-8 text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">1. Qu'est-ce qu'un cookie?</h3>
+                    <p data-i18n="cookies_p1">Les cookies sont de petits fichiers texte stockés sur votre appareil qui nous permettent de mémoriser vos préférences et d'améliorer votre expérience.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">2. Types de cookies</h3>
+                    <p data-i18n="cookies_p2">Nous utilisons des cookies essentiels (nécessaires au fonctionnement du site) et des cookies analytiques (pour comprendre comment vous utilisez notre plateforme).</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">3. Cookies tiers</h3>
+                    <p data-i18n="cookies_p3">Certains cookies peuvent être définis par des tiers partenaires pour des services d'analyse et de publicité. Vous pouvez contrôler ces cookies via vos paramètres de navigateur.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">4. Contrôle des cookies</h3>
+                    <p data-i18n="cookies_p4">Vous pouvez modifier vos paramètres de cookies dans votre navigateur. Cependant, désactiver certains cookies peut affecter la fonctionnalité de notre plateforme.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">5. Consentement</h3>
+                    <p data-i18n="cookies_p5">En continuant à utiliser notre plateforme, vous consentez à notre utilisation de cookies conformément à cette politique.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-2">
+                    <div class="relative group cursor-pointer">
+                        <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-[#e05a03] rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
+                        <img src="Logo_navbar.jpg" alt="SarfX Logo" class="relative h-10 w-auto rounded-lg object-contain bg-slate-900/50" onerror="this.style.display='none'">
+                    </div>
+                    <span class="font-bold text-2xl tracking-tight text-white flex items-center">
+                        Sarf<span class="text-[#e05a03] text-4xl leading-none text-glow">X</span>
+                    </span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300 rtl:space-x-reverse">
+                    <a href="#home" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_home">
+                        <i data-lucide="home" class="w-4 h-4 text-[#e05a03] group-hover:animate-bounce"></i> Accueil
+                    </a>
+                    <button onclick="openModal('about-modal')" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_about">
+                        <i data-lucide="info" class="w-4 h-4 text-blue-400 group-hover:rotate-12 transition"></i> À Propos
+                    </button>
+                    <a href="#roadmap" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_roadmap">
+                        <i data-lucide="map" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i> Roadmap
+                    </a>
+                    <button onclick="openModal('contact-modal')" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_contact">
+                        <i data-lucide="mail" class="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition"></i> Contact
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="relative group">
+                        <button class="flex items-center gap-1 text-sm font-medium text-slate-300 hover:text-white focus:outline-none">
+                            <img id="current-lang-flag" src="https://flagcdn.com/w40/fr.png" class="h-4 w-6 object-cover rounded-sm border border-white/10"> <span id="current-lang-code">FR</span> <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-32 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform z-50 overflow-hidden">
+                            <a href="#" onclick="changeLanguage('fr')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3"><img src="https://flagcdn.com/w40/fr.png" class="h-3 w-5 object-cover rounded-sm"> FR</a>
+                            <a href="#" onclick="changeLanguage('en')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3"><img src="https://flagcdn.com/w40/us.png" class="h-3 w-5 object-cover rounded-sm"> EN</a>
+                            <a href="#" onclick="changeLanguage('ar')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3"><img src="https://flagcdn.com/w40/ma.png" class="h-3 w-5 object-cover rounded-sm"> AR</a>
+                        </div>
+                    </div>
+                    <a href="#join" class="bg-white text-slate-900 px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#e05a03] hover:text-white transition duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-[#e05a03]/50" data-i18n="btn_join">Rejoindre</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative pt-40 pb-20 overflow-hidden min-h-screen flex items-center">
+        <!-- Animated Background Grid -->
+        <div class="bg-grid"></div>
+        <div class="blob blob-1 w-[500px] h-[500px] rounded-full top-0 left-0 -translate-x-1/3 -translate-y-1/3"></div>
+        <div class="blob blob-2 w-[400px] h-[400px] rounded-full bottom-0 right-0 translate-x-1/3 translate-y-1/3"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-slate-800/50 border border-slate-700/50 text-[#e05a03] text-xs font-bold uppercase tracking-wider mb-8 hover:bg-slate-800 transition cursor-default shadow-xl backdrop-blur-md">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e05a03] opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-[#e05a03]"></span>
+                </span>
+                <span data-i18n="hero_tag">Le futur du change de devises</span>
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl lg:text-9xl font-extrabold tracking-tight mb-8 leading-tight text-white drop-shadow-2xl">
+                <span data-i18n="hero_title_1">Le Premier Bureau de Change</span> <br/>
+                <span class="text-[#e05a03] text-glow" data-i18n="hero_title_2">100% Digitalisé</span> <br/>
+                <span data-i18n="hero_title_3">Dans ta poche.</span>
+            </h1>
+            
+            <p class="mt-6 max-w-2xl mx-auto text-xl text-slate-400 font-light leading-relaxed" data-i18n="hero_desc">
+                Obtenez les meilleurs taux de change en temps réel grâce à l'IA. Plus de files d'attente, plus de frais cachés.
+            </p>
+
+            <div class="mt-14 flex flex-col sm:flex-row justify-center gap-6">
+                <a href="#join" class="btn-shimmer px-10 py-5 text-white rounded-2xl font-bold text-xl shadow-2xl shadow-orange-600/30 transition transform hover:-translate-y-1 hover:shadow-orange-600/50 flex items-center justify-center gap-3 group">
+                    <span data-i18n="hero_cta_1">Accès Anticipé</span> 
+                    <i data-lucide="arrow-right" class="w-6 h-6 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition"></i>
+                </a>
+            </div>
+
+            <!-- DYNAMIC ODOMETER COUNTER -->
+            <div class="mt-20 flex flex-col items-center justify-center gap-4 animate-fade-in-up">
+                <div class="flex -space-x-4 rtl:space-x-reverse">
+                    <img class="w-12 h-12 rounded-full border-4 border-[#0f172a]" src="https://i.pravatar.cc/100?img=11">
+                    <img class="w-12 h-12 rounded-full border-4 border-[#0f172a]" src="https://i.pravatar.cc/100?img=33">
+                    <img class="w-12 h-12 rounded-full border-4 border-[#0f172a]" src="https://i.pravatar.cc/100?img=12">
+                    <div class="w-12 h-12 rounded-full border-4 border-[#0f172a] bg-slate-800 flex items-center justify-center text-sm font-bold text-white shadow-lg">+<span id="mini-counter">20</span></div>
+                </div>
+                <p class="text-sm text-slate-500 font-medium">
+                    <span data-i18n="joined_text">Rejoint par</span> 
+                    <span class="text-white font-bold text-xl odometer mx-2" id="counter">--</span> 
+                    <span data-i18n="early_adopters">early adopters</span>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ... (Features & Stats sections keep existing structure but benefit from new global styles) ... -->
+    <!-- Re-injecting improved Stats section for consistency -->
+    <section class="py-32 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glass rounded-[3rem] p-8 md:p-20 border border-white/10 relative overflow-hidden bg-slate-900/40">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-[#e05a03]/10 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none"></div>
+                
+                <div class="grid md:grid-cols-2 gap-20 items-center relative z-10">
+                    <div>
+                        <h2 class="text-4xl md:text-5xl font-bold mb-10 leading-tight">
+                            <span data-i18n="stats_title_1">Analyse en temps réel &</span> <br/>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-[#e05a03]" data-i18n="stats_title_2">Prédictions IA</span>
+                        </h2>
+                        
+                        <div class="grid grid-cols-2 gap-6 mb-12">
+                            <div class="glass p-6 rounded-3xl border border-white/5 hover:bg-slate-800/50 transition">
+                                <div class="text-4xl font-extrabold text-emerald-400 mb-2">+12.5%</div>
+                                <div class="text-sm text-slate-400 font-medium" data-i18n="stat_growth">Croissance mensuelle</div>
+                            </div>
+                            <div class="glass p-6 rounded-3xl border border-white/5 hover:bg-slate-800/50 transition">
+                                <div class="text-4xl font-extrabold text-blue-400 mb-2">24/7</div>
+                                <div class="text-sm text-slate-400 font-medium" data-i18n="stat_monitor">Surveillance active</div>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-6">
+                            <li class="flex items-center gap-5 text-slate-200 text-lg group">
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:scale-110 transition"><i data-lucide="check" class="w-5 h-5"></i></div>
+                                <span data-i18n="list_realtime">Taux en temps réel (Forex & Crypto)</span>
+                            </li>
+                            <li class="flex items-center gap-5 text-slate-200 text-lg group">
+                                <div class="w-10 h-10 rounded-xl bg-[#e05a03]/10 flex items-center justify-center text-[#e05a03] border border-[#e05a03]/20 group-hover:scale-110 transition"><i data-lucide="check" class="w-5 h-5"></i></div>
+                                <span data-i18n="list_ai">Prédictions IA J+7 (Modèle LSTM)</span>
+                            </li>
+                            <li class="flex items-center gap-5 text-slate-200 text-lg group">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition"><i data-lucide="check" class="w-5 h-5"></i></div>
+                                <span data-i18n="list_history">Historique complet et exportable</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Abstract Graph -->
+                    <div class="relative">
+                         <div class="bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] p-8 border border-slate-700 shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500">
+                            <div class="flex justify-between mb-8">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Paire</div>
+                                    <div class="text-2xl font-bold text-white">EUR / MAD</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Tendance</div>
+                                    <div class="text-2xl font-bold text-emerald-400 flex items-center gap-1 justify-end">
+                                        <i data-lucide="trending-up" class="w-6 h-6"></i> +0.45%
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Bars code same as previous but cleaner style -->
+                            <div class="h-56 flex items-end justify-between gap-3">
+                                <div class="w-full bg-slate-700/30 rounded-t-lg h-[40%] hover:bg-blue-500/50 transition duration-300"></div>
+                                <div class="w-full bg-slate-700/30 rounded-t-lg h-[50%] hover:bg-blue-500/50 transition duration-300"></div>
+                                <div class="w-full bg-slate-700/30 rounded-t-lg h-[35%] hover:bg-blue-500/50 transition duration-300"></div>
+                                <div class="w-full bg-slate-700/30 rounded-t-lg h-[60%] hover:bg-blue-500/50 transition duration-300"></div>
+                                <div class="w-full bg-slate-700/30 rounded-t-lg h-[55%] hover:bg-blue-500/50 transition duration-300"></div>
+                                <div class="w-full bg-slate-700/30 rounded-t-lg h-[75%] hover:bg-blue-500/50 transition duration-300"></div>
+                                <div class="w-full bg-gradient-to-t from-blue-600 to-[#e05a03] rounded-t-lg h-[90%] relative group cursor-pointer shadow-[0_0_20px_#e05a0340]">
+                                    <div class="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-slate-900 text-sm font-bold px-3 py-1.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition transform translate-y-2 group-hover:translate-y-0">10.95</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW ROADMAP -->
+    <section id="roadmap" class="py-32 border-t border-white/5 bg-slate-900/30 relative">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">Roadmap</h2>
+                <p class="text-slate-400 text-lg">Le futur se construit aujourd'hui.</p>
+            </div>
+            
+            <div class="relative">
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-px bg-gradient-to-b from-[#e05a03] via-blue-500 to-transparent opacity-50"></div>
+
+                <!-- T4 2026 -->
+                <div class="relative flex justify-center items-center mb-24 group">
+                    <div class="w-full md:w-[45%] text-right pr-12 md:pr-0 md:mr-auto">
+                        <h3 class="text-2xl font-bold text-[#e05a03] mb-2">T2 2026</h3>
+                        <h4 class="text-white font-bold text-xl mb-2">Lancement de SarfX Pro</h4>
+                    </div>
+                    <div class="absolute w-6 h-6 bg-[#e05a03] rounded-full z-10 border-4 border-slate-900 shadow-[0_0_20px_#e05a03]"></div>
+                    <div class="w-full md:w-[45%] hidden md:block"></div>
+                </div>
+
+                <!-- T1 2027 -->
+                <div class="relative flex justify-center items-center mb-24 group">
+                    <div class="w-full md:w-[45%] hidden md:block"></div>
+                    <div class="absolute w-4 h-4 bg-blue-500 rounded-full z-10 border-4 border-slate-900"></div>
+                    <div class="w-full md:w-[45%] text-left pl-12 md:pl-0 md:ml-auto">
+                        <h3 class="text-xl font-bold text-blue-500 mb-2">T1 2027</h3>
+                        <h4 class="text-white font-bold text-xl mb-2">DeFi Exchange</h4>
+                        <p class="text-slate-400">Déploiement de la plateforme de finance décentralisée.</p>
+                    </div>
+                </div>
+
+                <!-- T2 2027 -->
+                <div class="relative flex justify-center items-center mb-24 group">
+                    <div class="w-full md:w-[45%] text-right pr-12 md:pr-0 md:mr-auto">
+                        <h3 class="text-xl font-bold text-purple-500 mb-2">T2 2027</h3>
+                        <h4 class="text-white font-bold text-xl mb-2">Expansion internationale</h4>
+                        <p class="text-slate-400">Partenariats bancaires mondiaux.</p>
+                    </div>
+                    <div class="absolute w-4 h-4 bg-purple-500 rounded-full z-10 border-4 border-slate-900"></div>
+                    <div class="w-full md:w-[45%] hidden md:block"></div>
+                </div>
+
+                <!-- STARKX ECOSYSTEM -->
+                <div class="glass p-10 rounded-3xl border border-white/10 mt-24 relative z-10 mx-auto max-w-5xl bg-slate-900/50 backdrop-blur-xl">
+                    <h3 class="text-3xl font-bold text-center text-white mb-10">L'écosystème <span class="text-slate-400">StarkX</span></h3>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <!-- Example Projects -->
+                         <div class="p-6 bg-slate-800/40 rounded-2xl hover:bg-slate-800 transition border border-white/5 hover:border-[#e05a03]/30 group">
+                            <h4 class="text-[#e05a03] font-bold text-xl mb-3 group-hover:scale-105 transition origin-left">SarfX </h4>
+                            <p class="text-sm text-slate-400 leading-relaxed">Application mobile de bureau de change digitalisé avec IA intégrée.</p>
+                        </div>
+
+                       
+                        <div class="p-6 bg-slate-800/40 rounded-2xl hover:bg-slate-800 transition border border-white/5 hover:border-blue-500/30 group">
+                            <h4 class="text-blue-400 font-bold text-xl mb-3 group-hover:scale-105 transition origin-left">Niya Drive</h4>
+                            <p class="text-sm text-slate-400 leading-relaxed">Application mobile de covoiturage nouvelle génération pour passagers.</p>
+                        </div>
+                        
+                        <div class="p-6 bg-slate-800/40 rounded-2xl hover:bg-slate-800 transition border border-white/5 hover:border-emerald-500/30 group">
+                            <h4 class="text-emerald-400 font-bold text-xl mb-3 group-hover:scale-105 transition origin-left">Blablatrip</h4>
+                            <p class="text-sm text-slate-400 leading-relaxed">Découvrez le monde avec des guides locaux. Expériences authentiques, véhicules locaux, souvenirs inoubliables.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Registration Form (Fix: Badge not clipped) -->
+    <section id="join" class="py-32 relative">
+        <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+             <!-- Removed overflow-hidden from container to allow badge to float -->
+            <div class="glass p-8 md:p-12 rounded-[2.5rem] border-t border-[#e05a03]/50 shadow-2xl relative">
+                <!-- Inner Shine with overflow hidden -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-transparent pointer-events-none rounded-[2.5rem] overflow-hidden"></div>
+
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-[#e05a03] text-white px-8 py-2.5 rounded-full text-sm font-bold uppercase tracking-widest shadow-xl z-20 border border-white/20 whitespace-nowrap">
+                    Lancement Q2 2026
+                </div>
+
+                <div class="text-center mb-12 mt-6">
+                    <h2 class="text-5xl font-bold text-white mb-4 tracking-tight">Rejoignez Sarf<span class="text-[#e05a03]">X</span></h2>
+                    <p class="text-slate-400 text-lg" data-i18n="join_subtitle">Inscrivez-vous pour obtenir un accès anticipé VIP.</p>
+                </div>
+
+                <form id="signup-form" class="space-y-6 relative z-10">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Email Professionnel</label>
+                        <input type="email" id="email" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600 shadow-inner" placeholder="nom@entreprise.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Nom complet</label>
+                        <input type="text" id="name" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600 shadow-inner" placeholder="Votre nom">
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                             <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Téléphone</label>
+                            <input type="tel" id="phone" class="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#e05a03] transition placeholder-slate-600 shadow-inner" placeholder="+212...">
+                        </div>
+                        <div>
+                             <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Ville</label>
+                            <input type="text" id="city" class="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#e05a03] transition placeholder-slate-600 shadow-inner" placeholder="Casablanca">
+                        </div>
+                    </div>
+                    <button type="submit" id="submit-btn" class="w-full btn-shimmer text-white font-bold py-5 rounded-xl shadow-xl hover:shadow-orange-600/30 transition transform active:scale-95 flex justify-center items-center gap-3 mt-6 text-xl">
+                        <span data-i18n="form_btn">S'inscrire maintenant</span>
+                        <i data-lucide="arrow-right" class="w-6 h-6 rtl:rotate-180"></i>
+                    </button>
+                    <p class="text-xs text-center text-slate-500 mt-8 flex justify-center items-center gap-2">
+                        <i data-lucide="lock" class="inline w-3 h-3"></i> Vos données sont chiffrées et sécurisées.
+                    </p>
+                </form>
+                <div id="success-msg" class="hidden text-center py-20">
+                    <h3 class="text-4xl font-bold text-white mb-4" data-i18n="success_title">Félicitations !</h3>
+                    <p class="text-slate-400 text-xl" data-i18n="success_desc">Vous êtes sur la liste d'attente.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW FOOTER -->
+    <footer class="bg-slate-950 border-t border-white/10 pt-20 pb-10" id="contact">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-2 md:col-span-1">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="font-bold text-2xl text-white tracking-tight">Sarf<span class="text-[#e05a03]">X</span></span>
+                    </div>
+                    <p class="text-slate-500 text-sm mb-6 leading-relaxed" data-i18n="footer_tagline">Votre plateforme de change de devises de confiance, conçue pour la rapidité et la sécurité.</p>
+                    <div class="flex gap-4" id="social-links">
+                        <!-- Links injected by JS -->
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg">Produits</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-[#e05a03] transition block">SarfX</a></li>
+                        <li><a href="#" class="hover:text-[#e05a03] transition block">Niya Drive</a></li>
+                        <li><a href="#" class="hover:text-[#e05a03] transition block">Blablatrip</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg">Entreprise</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        <li><button onclick="openModal('about-modal')" class="hover:text-[#e05a03] transition text-left block">À propos</button></li>
+                        <li><button onclick="openModal('contact-modal')" class="hover:text-[#e05a03] transition text-left block">Contact</button></li>
+                        <li><button onclick="openModal('contact-modal')" class="hover:text-[#e05a03] transition text-left block">FAQ</button></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg">Légal</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        <li><button onclick="openModal('terms-modal')" class="hover:text-[#e05a03] transition text-left block" data-i18n="footer_terms">Conditions d'utilisation</button></li>
+                        <li><button onclick="openModal('privacy-modal')" class="hover:text-[#e05a03] transition text-left block" data-i18n="footer_privacy">Politique de confidentialité</button></li>
+                        <li><button onclick="openModal('cookies-modal')" class="hover:text-[#e05a03] transition text-left block" data-i18n="footer_cookies">Cookies</button></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/5 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-600">
+                <p>&copy; 2026 SarfX by StarkX. Tous droits réservés.</p>
+                <p class="flex items-center gap-2">Powered by <span class="text-slate-400 font-bold uppercase tracking-wider">StarkX LLC</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // --- I18N SYSTEM ---
+        const translations = {
+            fr: { 
+                nav_home: "Accueil", nav_about: "À Propos", nav_roadmap: "Roadmap", nav_contact: "Contact", btn_join: "Rejoindre", 
+                hero_tag: "Le futur du change de devises", hero_title_1: "Le Premier Bureau de change", hero_title_2: "100% Digitalisé", hero_title_3: "Dans ta poche.", 
+                hero_desc: "Obtenez les meilleurs taux de change en temps réel grâce à l'IA. Plus de files d'attente, plus de frais cachés.",
+                hero_cta_1: "Accès Anticipé", 
+                joined_text: "Rejoint par", early_adopters: "early adopters", join_title: "Rejoignez SarfX", join_subtitle: "Accès VIP", form_btn: "S'inscrire maintenant", 
+                success_title: "Félicitations !", success_desc: "Vous êtes sur la liste d'attente.",
+                feat_1_title: "Meilleurs Taux", feat_1_desc: "Notre IA scanne le marché en permanence.", 
+                feat_2_title: "100% Sécurisé", feat_2_desc: "Chiffrement militaire.", 
+                feat_3_title: "Instantané", feat_3_desc: "Fini le cash et les déplacements.",
+                stats_title_1: "Analyse en temps réel &", stats_title_2: "Prédictions IA",
+                list_realtime: "Taux en temps réel", list_ai: "Prédictions IA", list_history: "Historique complet",
+                stat_growth: "Croissance mensuelle", stat_monitor: "Surveillance active",
+                footer_tagline: "Votre plateforme de change de devises de confiance",
+                footer_terms: "Conditions d'utilisation", footer_privacy: "Politique de confidentialité", footer_cookies: "Cookies",
+                terms_title: "Conditions d'utilisation", terms_subtitle: "Veuillez lire attentivement avant d'utiliser nos services.",
+                terms_p1: "En accédant et en utilisant SarfX, vous acceptez d'être lié par ces conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre plateforme.",
+                terms_p2: "Vous acceptez d'utiliser SarfX uniquement à des fins légales et de ne pas violer les lois applicables. Vous êtes responsable de toutes les activités effectuées sous votre compte.",
+                terms_p3: "Vous êtes responsable du maintien de la confidentialité de vos identifiants de compte. Vous acceptez de notifier immédiatement SarfX de toute utilisation non autorisée de votre compte.",
+                terms_p4: "SarfX ne sera pas responsable des dommages indirects, accessoires, spéciaux ou consécutifs résultant de votre utilisation ou de l'impossibilité d'utiliser notre plateforme.",
+                terms_p5: "SarfX se réserve le droit de modifier ces conditions à tout moment. Les modifications seront effectives immédiatement après la publication sur notre site.",
+                privacy_title: "Politique de confidentialité", privacy_subtitle: "Nous prenons la protection de vos données au sérieux.",
+                privacy_p1: "Nous collectons des informations que vous nous fournissez directement, notamment votre nom, adresse e-mail et numéro de téléphone, ainsi que les données générées lors de votre utilisation de notre plateforme.",
+                privacy_p2: "Nous utilisons vos informations pour fournir, maintenir et améliorer nos services, ainsi que pour communiquer avec vous concernant votre compte et nos services.",
+                privacy_p3: "Nous ne partageons vos informations personnelles qu'avec des tiers de confiance nécessaires pour fournir nos services, conformément aux lois applicables.",
+                privacy_p4: "Nous mettons en œuvre des mesures de sécurité de pointe pour protéger vos données contre l'accès non autorisé, la divulgation ou la modification.",
+                privacy_p5: "Vous avez le droit d'accéder, de rectifier ou de supprimer vos données personnelles. Contactez-nous pour exercer ces droits.",
+                cookies_title: "Politique des Cookies", cookies_subtitle: "Informations sur l'utilisation des cookies sur notre plateforme.",
+                cookies_p1: "Les cookies sont de petits fichiers texte stockés sur votre appareil qui nous permettent de mémoriser vos préférences et d'améliorer votre expérience.",
+                cookies_p2: "Nous utilisons des cookies essentiels (nécessaires au fonctionnement du site) et des cookies analytiques (pour comprendre comment vous utilisez notre plateforme).",
+                cookies_p3: "Certains cookies peuvent être définis par des tiers partenaires pour des services d'analyse et de publicité. Vous pouvez contrôler ces cookies via vos paramètres de navigateur.",
+                cookies_p4: "Vous pouvez modifier vos paramètres de cookies dans votre navigateur. Cependant, désactiver certains cookies peut affecter la fonctionnalité de notre plateforme.",
+                cookies_p5: "En continuant à utiliser notre plateforme, vous consentez à notre utilisation de cookies conformément à cette politique."
+            },
+            en: { 
+                nav_home: "Home", nav_about: "About", nav_roadmap: "Roadmap", nav_contact: "Contact", btn_join: "Join", 
+                hero_tag: "The future of exchange", hero_title_1: "The First Bureau of Exchange", hero_title_2: "100% Digital", hero_title_3: "In your pocket.", 
+                hero_desc: "Get the best real-time rates.", hero_cta_1: "Early Access", 
+                joined_text: "Joined by", early_adopters: "early adopters", join_title: "Join SarfX", join_subtitle: "VIP Access", form_btn: "Join Now", 
+                success_title: "Congratulations!", success_desc: "You are on the list.",
+                feat_1_title: "Best Rates", feat_1_desc: "AI market scanning.", 
+                feat_2_title: "100% Secure", feat_2_desc: "Military-grade encryption.", 
+                feat_3_title: "Instant", feat_3_desc: "No more cash or travel.",
+                stats_title_1: "Real-time Analysis &", stats_title_2: "AI Predictions",
+                list_realtime: "Real-time Rates", list_ai: "AI Predictions", list_history: "Full History",
+                stat_growth: "Monthly Growth", stat_monitor: "Active Monitoring",
+                footer_tagline: "Your trusted currency exchange platform",
+                footer_terms: "Terms of Service", footer_privacy: "Privacy Policy", footer_cookies: "Cookies",
+                terms_title: "Terms of Service", terms_subtitle: "Please read carefully before using our services.",
+                terms_p1: "By accessing and using SarfX, you agree to be bound by these terms of service. If you do not accept these terms, please do not use our platform.",
+                terms_p2: "You agree to use SarfX only for legal purposes and not to violate applicable laws. You are responsible for all activities carried out under your account.",
+                terms_p3: "You are responsible for maintaining the confidentiality of your account credentials. You agree to notify SarfX immediately of any unauthorized use of your account.",
+                terms_p4: "SarfX will not be liable for indirect, incidental, special, or consequential damages arising from your use or inability to use our platform.",
+                terms_p5: "SarfX reserves the right to modify these terms at any time. Changes will be effective immediately upon posting to our site.",
+                privacy_title: "Privacy Policy", privacy_subtitle: "We take the protection of your data seriously.",
+                privacy_p1: "We collect information you provide directly to us, including your name, email address, and phone number, as well as data generated from your use of our platform.",
+                privacy_p2: "We use your information to provide, maintain, and improve our services, as well as to communicate with you about your account and our services.",
+                privacy_p3: "We only share your personal information with trusted third parties necessary to provide our services, in accordance with applicable laws.",
+                privacy_p4: "We implement state-of-the-art security measures to protect your data against unauthorized access, disclosure, or modification.",
+                privacy_p5: "You have the right to access, correct, or delete your personal data. Contact us to exercise these rights.",
+                cookies_title: "Cookie Policy", cookies_subtitle: "Information about cookie usage on our platform.",
+                cookies_p1: "Cookies are small text files stored on your device that allow us to remember your preferences and improve your experience.",
+                cookies_p2: "We use essential cookies (necessary for site functionality) and analytical cookies (to understand how you use our platform).",
+                cookies_p3: "Some cookies may be set by partner third parties for analytics and advertising services. You can control these cookies through your browser settings.",
+                cookies_p4: "You can modify your cookie settings in your browser. However, disabling certain cookies may affect the functionality of our platform.",
+                cookies_p5: "By continuing to use our platform, you consent to our use of cookies in accordance with this policy."
+            },
+            ar: { 
+                nav_home: "الرئيسية", nav_about: "حول", nav_roadmap: "خارطة الطريق", nav_contact: "اتصل بنا", btn_join: "انضم", 
+                hero_tag: "مستقبل الصرف", hero_title_1: "أول مكتب صرف", hero_title_2: "رقمي 100٪", hero_title_3: "في جيبك.", 
+                hero_desc: "أفضل الأسعار في الوقت الفعلي.", hero_cta_1: "دخول مبكر", 
+                joined_text: "انضم إليهم", early_adopters: "مستخدمين أوائل", join_title: "انضم إلى SarfX", join_subtitle: "وصول VIP", form_btn: "سجل الآن", 
+                success_title: "تهانينا!", success_desc: "أنت في القائمة.",
+                feat_1_title: "أفضل الأسعار", feat_1_desc: "مسح السوق بالذكاء الاصطناعي.", 
+                feat_2_title: "آمن 100٪", feat_2_desc: "تشفير عسكري.", 
+                feat_3_title: "فوري", feat_3_desc: "لا مزيد من النقود أو السفر.",
+                stats_title_1: "تحليل فوري و", stats_title_2: "توقعات الذكاء الاصطناعي",
+                list_realtime: "أسعار فورية", list_ai: "توقعات الذكاء الاصطناعي", list_history: "سجل كامل",
+                stat_growth: "النمو الشهري", stat_monitor: "مراقبة نشطة",
+                footer_tagline: "منصتك الموثوقة لتبادل العملات",
+                footer_terms: "شروط الخدمة", footer_privacy: "سياسة الخصوصية", footer_cookies: "ملفات تعريف الارتباط",
+                terms_title: "شروط الخدمة", terms_subtitle: "يرجى قراءة بعناية قبل استخدام خدماتنا.",
+                terms_p1: "بالوصول واستخدام SarfX، فإنك توافق على الالتزام بشروط الخدمة هذه. إذا كنت لا توافق على هذه الشروط، يرجى عدم استخدام منصتنا.",
+                terms_p2: "توافق على استخدام SarfX فقط لأغراض قانونية وعدم انتهاك القوانين المعمول بها. أنت مسؤول عن جميع الأنشطة التي تتم تحت حسابك.",
+                terms_p3: "أنت مسؤول عن الحفاظ على سرية بيانات اعتماد حسابك. توافق على إخطار SarfX فوراً بأي استخدام غير مصرح به لحسابك.",
+                terms_p4: "لن تكون SarfX مسؤولة عن الأضرار غير المباشرة أو العرضية أو الخاصة أو الناتجة عن استخدامك أو عدم قدرتك على استخدام منصتنا.",
+                terms_p5: "تحتفظ SarfX بالحق في تعديل هذه الشروط في أي وقت. ستكون التعديلات فعالة فوراً عند النشر على موقعنا.",
+                privacy_title: "سياسة الخصوصية", privacy_subtitle: "نحن نأخذ حماية بيانات العملاء بجدية.",
+                privacy_p1: "نجمع المعلومات التي تزودنا بها مباشرة، بما في ذلك اسمك وعنوان بريدك الإلكتروني ورقم هاتفك، بالإضافة إلى البيانات المرتبطة باستخدامك لمنصتنا.",
+                privacy_p2: "نستخدم معلوماتك لتوفير وتحسين خدماتنا، وكذلك للتواصل معك بشأن حسابك وخدماتنا.",
+                privacy_p3: "نشارك معلوماتك الشخصية فقط مع أطراف ثالثة موثوقة ضرورية لتقديم خدماتنا، وفقاً للقوانين المعمول بها.",
+                privacy_p4: "ننفذ تدابير أمان متقدمة لحماية بيانات من الوصول غير المصرح به أو الكشف عنها أو التعديل عليها.",
+                privacy_p5: "لديك الحق في الوصول إلى بيانات الشخصية أو تصحيحها أو حذفها. اتصل بنا لممارسة هذه الحقوق.",
+                cookies_title: "سياسة ملفات تعريف الارتباط", cookies_subtitle: "معلومات عن استخدام ملفات تعريف الارتباط على منصتنا.",
+                cookies_p1: "ملفات تعريف الارتباط هي ملفات نصية صغيرة مخزنة على جهازك تسمح لنا بتذكر تفضيلاتك وتحسين تجربتك.",
+                cookies_p2: "نستخدم ملفات تعريف الارتباط الأساسية (الضرورية لعمل الموقع) والملفات التحليلية (لفهم كيفية استخدامك لمنصتنا).",
+                cookies_p3: "قد تقوم أطراف ثالثة شريكة بتعيين بعض ملفات تعريف الارتباط لخدمات التحليلات والإعلانات. يمكنك التحكم في هذه الملفات من خلال إعدادات متصفحك.",
+                cookies_p4: "يمكنك تعديل إعدادات ملفات تعريف الارتباط في متصفحك. ومع ذلك، قد يؤثر تعطيل ملفات تعريف معينة على وظائف منصتنا.",
+                cookies_p5: "بمتابعة استخدام منصتنا، فإنك توافق على استخدامنا لملفات تعريف الارتباط وفقاً لهذه السياسة."
+            }
+        };
+
+        const flags = { fr: "https://flagcdn.com/w40/fr.png", en: "https://flagcdn.com/w40/us.png", ar: "https://flagcdn.com/w40/ma.png" };
+
+        function changeLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('current-lang-flag').src = flags[lang];
+            document.getElementById('current-lang-code').textContent = lang.toUpperCase();
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) el.textContent = translations[lang][key];
+            });
+            lucide.createIcons();
+        }
+
+        // --- FETCH STATS (API + FALLBACK) ---
+        async function fetchStats() {
+            // Default random fallback
+            const randomFallback = Math.floor(Math.random() * (500 - 150 + 1)) + 150;
+            let data = { real_count: randomFallback, count: randomFallback, socials: {} };
+
+            try {
+                const res = await fetch('/api/public-data');
+                if (res.ok) {
+                    const realData = await res.json();
+                    if (realData.real_count !== undefined && realData.real_count !== null) {
+                         data.real_count = realData.real_count;
+                    }
+                    if (realData.count !== undefined && realData.count !== null) {
+                         data.count = realData.count;
+                    }
+                    if (realData.socials) data.socials = realData.socials;
+                }
+            } catch(e) { } 
+            
+            const counter = document.getElementById('counter');
+            const end = data.real_count; // Utiliser le nombre réel au lieu du total
+            document.getElementById('user-rank').innerText = end + 1;
+            
+            let current = 0;
+            const step = Math.ceil(end / 40) || 1; 
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= end) { current = end; clearInterval(timer); }
+                counter.innerText = "+" + current;
+                const mini = document.getElementById('mini-counter');
+                if(mini) mini.innerText = current;
+            }, 30);
+
+            const soc = document.getElementById('social-links');
+            if (soc) {
+                soc.innerHTML = '';
+                const s = data.socials;
+                if(s.instagram) soc.innerHTML += `<a href="${s.instagram}" target="_blank" class="hover:text-[#e05a03] transition"><i data-lucide="instagram"></i></a>`;
+                if(s.linkedin) soc.innerHTML += `<a href="${s.linkedin}" target="_blank" class="hover:text-[#e05a03] transition"><i data-lucide="linkedin"></i></a>`;
+                if(s.twitter) soc.innerHTML += `<a href="${s.twitter}" target="_blank" class="hover:text-[#e05a03] transition"><i data-lucide="twitter"></i></a>`;
+                lucide.createIcons();
+            }
+        }
+        fetchStats();
+
+        // Modals
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('open'), 10);
+        }
+        function closeModal(id) {
+            if(id === 'success-modal') {
+                 const modal = document.getElementById('success-modal');
+                 const phone = modal.querySelector('.phone-mockup');
+                 phone.classList.remove('phone-visible');
+                 setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 500);
+            } else {
+                const modal = document.getElementById(id);
+                modal.classList.remove('open');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        // Form
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = "Traitement...";
+            const formData = { name: document.getElementById('name').value, email: document.getElementById('email').value, phone: document.getElementById('phone').value, city: document.getElementById('city').value };
+            try {
+                const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+                if (response.ok) {
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#e05a03', '#10b981', '#3b82f6'] });
+                    const modal = document.getElementById('success-modal');
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    setTimeout(() => modal.querySelector('.phone-mockup').classList.add('phone-visible'), 50);
+                    fetchStats(); 
+                } else { alert("Erreur."); }
+            } catch (err) { alert("Erreur connexion."); } finally { btn.disabled = false; btn.innerHTML = originalText; }
+        });
+    </script>
+</body>
+</html>
