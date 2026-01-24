@@ -23,7 +23,7 @@ def seed_banks_data():
     db.banks.delete_many({})
     print("🗑️  Suppression des anciennes données...")
     
-    # Données des 6 banques marocaines
+    # Données des 6 banques marocaines avec nombres réels d'ATMs
     banks = [
         {
             "name": "Attijariwafa Bank",
@@ -31,6 +31,7 @@ def seed_banks_data():
             "website": "https://www.attijariwafabank.com",
             "description": "Leader du secteur bancaire marocain et africain",
             "logo": "/static/images/banks/attijariwafa.svg",
+            "atm_count": 1242,
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
@@ -41,6 +42,7 @@ def seed_banks_data():
             "website": "https://www.bankofafrica.ma",
             "description": "BMCE Bank of Africa, banque panafricaine",
             "logo": "/static/images/banks/boa.svg",
+            "atm_count": 660,
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
@@ -51,6 +53,7 @@ def seed_banks_data():
             "website": "https://www.gbp.ma",
             "description": "Groupe Banque Populaire, première banque coopérative au Maroc",
             "logo": "/static/images/banks/banque-populaire.svg",
+            "atm_count": 1800,
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
@@ -61,6 +64,7 @@ def seed_banks_data():
             "website": "https://www.cih.co.ma",
             "description": "Crédit Immobilier et Hôtelier",
             "logo": "/static/images/banks/cih.svg",
+            "atm_count": 626,
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
@@ -71,6 +75,7 @@ def seed_banks_data():
             "website": "https://www.albaridbank.ma",
             "description": "Banque postale du Maroc",
             "logo": "/static/images/banks/albarid.svg",
+            "atm_count": 510,
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
@@ -81,6 +86,7 @@ def seed_banks_data():
             "website": "https://www.bmcinet.co.ma",
             "description": "Banque Marocaine pour le Commerce et l'Industrie",
             "logo": "/static/images/banks/bmci.svg",
+            "atm_count": 249,
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()

@@ -732,3 +732,123 @@ body.theme-light {
         min-height: 100px;
     }
 }
+
+/* --- ENHANCED MOBILE RESPONSIVE --- */
+@media (max-width: 640px) {
+    .wise-main-content {
+        padding: 16px !important;
+        padding-bottom: 90px !important;
+    }
+    
+    .wise-page-title {
+        font-size: 1.5rem !important;
+    }
+    
+    .wise-page-subtitle {
+        font-size: 0.875rem !important;
+    }
+    
+    .wise-section {
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
+    
+    .wise-section-title {
+        font-size: 1rem !important;
+    }
+    
+    /* Cards grid responsive */
+    .wise-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+    
+    .wise-stat-card {
+        padding: 14px !important;
+    }
+    
+    .wise-stat-value {
+        font-size: 1.25rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .wise-main-content {
+        padding: 12px !important;
+        padding-bottom: 85px !important;
+    }
+    
+    .wise-page-header {
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
+    
+    .wise-page-title {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Provider cards responsive */
+    .wise-provider-card {
+        padding: 12px !important;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .wise-provider-logo {
+        font-size: 1.5rem !important;
+    }
+    
+    .wise-provider-info {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .wise-provider-amount {
+        width: 100%;
+        text-align: left;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-light);
+    }
+    
+    /* ATM cards responsive */
+    .wise-atm-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    
+    .wise-atm-stat-card {
+        padding: 14px 10px !important;
+    }
+    
+    .wise-atm-stat-value {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Banks grid responsive */
+    .wise-banks-select-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    /* Navigation bottom */
+    .wise-nav-bottom {
+        padding: 10px 8px !important;
+    }
+    
+    .wise-nav-bottom-item span {
+        font-size: 9px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .wise-main-content {
+        padding: 10px !important;
+    }
+    
+    .wise-stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .wise-atm-stats {
+        grid-template-columns: 1fr !important;
+    }
+}

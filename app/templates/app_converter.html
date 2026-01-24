@@ -1474,6 +1474,150 @@
 .wise-beneficiary-clear:hover {
     background: var(--error-bg);
 }
+
+/* ========== RESPONSIVE STYLES ========== */
+@media (max-width: 640px) {
+    .wise-rate-header {
+        padding: 16px 0;
+    }
+    
+    .wise-rate-title {
+        font-size: 20px;
+    }
+    
+    .wise-rate-subtitle {
+        font-size: 13px;
+    }
+    
+    .wise-exchange-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+    
+    .wise-amount-input {
+        font-size: 18px;
+        padding: 10px 12px;
+    }
+    
+    .wise-currency-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .wise-exchange-arrow {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .wise-providers-tabs {
+        gap: 4px;
+        padding: 4px;
+    }
+    
+    .wise-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    
+    .wise-provider-card {
+        padding: 14px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .wise-provider-logo {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    .wise-provider-name {
+        font-size: 14px;
+    }
+    
+    .wise-provider-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+    
+    .wise-provider-result {
+        font-size: 16px !important;
+    }
+    
+    .wise-provider-details {
+        font-size: 11px;
+    }
+    
+    .wise-pairs-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .wise-pair-card {
+        padding: 14px 12px;
+    }
+    
+    .wise-pair-flags {
+        font-size: 20px;
+    }
+    
+    .wise-pair-rate {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wise-rate-badge {
+        font-size: 11px;
+        padding: 6px 12px;
+    }
+    
+    .wise-rate-title {
+        font-size: 18px;
+    }
+    
+    .wise-exchange-card {
+        padding: 14px;
+    }
+    
+    .wise-amount-input {
+        font-size: 16px;
+    }
+    
+    .wise-provider-card {
+        padding: 12px;
+    }
+    
+    .wise-provider-amount {
+        width: 100%;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-light);
+        text-align: left;
+    }
+    
+    .wise-tab {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+    
+    .wise-pairs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .wise-alert-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .wise-section {
+        padding: 14px;
+    }
+    
+    .wise-section-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
 </style>
 
 {% endblock %}
@@ -1705,21 +1849,62 @@
         document.getElementById('form-final-amount').value = finalAmount.toFixed(2);
         document.getElementById('form-supplier-id').value = bestSupplier.name;
 
-        // Render providers - HOMEPAGE.txt style
+        // Render providers - SarfX as the best, others for comparison only
         const list = document.getElementById('suppliers-list');
         list.innerHTML = '';
         
+        // Calculate SarfX rate (best rate)
+        const sarfxRate = baseRate * 1.005;
+        const sarfxFinalAmount = (amountToConvert - sarfxFee) * sarfxRate;
+        
+        // SarfX Card - Always the best option
+        const sarfxDiv = document.createElement('div');
+        sarfxDiv.className = 'wise-provider-card best selected';
+        sarfxDiv.innerHTML = `
+            <div class="wise-provider-logo">🔶</div>
+            <div class="wise-provider-info">
+                <div class="wise-provider-header">
+                    <span class="wise-provider-name">SarfX</span>
+                    <span class="wise-provider-badge" style="background: linear-gradient(135deg, #e05a03, #f97316);">Meilleur Taux</span>
+                </div>
+                <div class="wise-provider-meta">
+                    <span class="wise-provider-rating">⭐ 5.0</span>
+                    <span class="wise-provider-delivery">⚡ Instantané</span>
+                </div>
+            </div>
+            <div class="wise-provider-amount">
+                <div class="wise-provider-result" style="color: var(--success); font-size: 18px; font-weight: 700;">${sarfxFinalAmount.toFixed(2)} ${toCurrency}</div>
+                <div class="wise-provider-details">Taux: ${sarfxRate.toFixed(4)} • Frais: ${sarfxFee.toFixed(2)} ${fromCurrency}</div>
+            </div>
+            <div style="background: var(--success-bg, rgba(16,185,129,0.1)); color: var(--success, #10b981); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 13px; text-align: center;">
+                ✓ Votre choix
+            </div>
+        `;
+        list.appendChild(sarfxDiv);
+        
+        // Update form with SarfX values
+        document.getElementById('form-supplier-id').value = 'SarfX';
+        document.getElementById('form-rate').value = sarfxRate;
+        document.getElementById('form-final-amount').value = sarfxFinalAmount.toFixed(2);
+        document.getElementById('recipient-amount').value = sarfxFinalAmount.toFixed(2);
+        
+        // Comparison label
+        const compLabel = document.createElement('div');
+        compLabel.style.cssText = 'padding: 16px 0 12px; font-size: 13px; color: var(--text-tertiary); font-weight: 500; border-top: 1px solid var(--border-light); margin-top: 16px;';
+        compLabel.innerHTML = '📊 Comparaison avec les autres services <span style="color: var(--error);">(plus chers)</span>';
+        list.appendChild(compLabel);
+        
+        // Other providers - comparison only (no select button)
         providers.forEach((p, i) => {
-            const isBest = i === 0;
+            const savings = sarfxFinalAmount - p.finalAmount;
             const div = document.createElement('div');
-            div.className = `wise-provider-card ${isBest ? 'best' : ''}`;
-            div.onclick = () => selectProvider(p);
+            div.className = 'wise-provider-card';
+            div.style.opacity = '0.75';
             div.innerHTML = `
                 <div class="wise-provider-logo">${p.icon}</div>
                 <div class="wise-provider-info">
                     <div class="wise-provider-header">
                         <span class="wise-provider-name">${p.name}</span>
-                        ${isBest ? '<span class="wise-provider-badge">Best Rate</span>' : ''}
                     </div>
                     <div class="wise-provider-meta">
                         <span class="wise-provider-rating">⭐ ${p.rating}</span>
@@ -1728,11 +1913,9 @@
                 </div>
                 <div class="wise-provider-amount">
                     <div class="wise-provider-result">${p.finalAmount.toFixed(2)} ${toCurrency}</div>
-                    <div class="wise-provider-details">Rate: ${p.rate.toFixed(4)} • Fee: $${p.fee.toFixed(2)}</div>
+                    <div class="wise-provider-details">Taux: ${p.rate.toFixed(4)} • Frais: $${p.fee.toFixed(2)}</div>
+                    <div style="color: var(--error, #ef4444); font-size: 11px; margin-top: 4px; font-weight: 500;">−${savings.toFixed(2)} ${toCurrency} vs SarfX</div>
                 </div>
-                <button class="wise-provider-select" onclick="event.stopPropagation(); selectProvider(${JSON.stringify(p).replace(/"/g, '&quot;')})">
-                    Select Provider
-                </button>
             `;
             list.appendChild(div);
         });
