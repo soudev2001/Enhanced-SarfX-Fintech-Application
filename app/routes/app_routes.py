@@ -230,7 +230,59 @@ def transactions():
     all_transactions = get_user_transactions(session['user_id'], limit=50)
     
     return render_template('app_transactions.html',
-        active_tab='profile',
+        active_tab='transactions',
         user=user,
         transactions=all_transactions
+    )
+
+
+@app_bp.route('/beneficiaries')
+@login_required
+def beneficiaries():
+    """Page des bénéficiaires et leur historique"""
+    user = get_current_user()
+    db = get_db()
+    
+    # Récupérer les bénéficiaires de l'utilisateur
+    user_beneficiaries = []
+    if db is not None:
+        user_beneficiaries = list(db.beneficiaries.find({"user_id": str(session['user_id'])}))
+        
+        # Pour chaque bénéficiaire, récupérer son historique de transactions
+        for benef in user_beneficiaries:
+            benef['_id'] = str(benef['_id'])
+            benef['transactions'] = list(db.transactions.find({
+                "user_id": str(session['user_id']),
+                "beneficiary_id": benef['_id']
+            }).sort("created_at", -1).limit(5))
+    
+    return render_template('app_beneficiaries.html',
+        active_tab='beneficiaries',
+        user=user,
+        beneficiaries=user_beneficiaries
+    )
+
+
+@app_bp.route('/bank-settings')
+@login_required
+def bank_settings():
+    """Page de configuration API pour les responsables banque"""
+    user = get_current_user()
+    
+    # Vérifier que l'utilisateur est bank_respo
+    if user.get('role') != 'bank_respo':
+        return redirect(url_for('app.home'))
+    
+    db = get_db()
+    bank = None
+    if db is not None:
+        # Récupérer la banque associée à ce responsable
+        bank_code = user.get('bank_code')
+        if bank_code:
+            bank = db.banks.find_one({"code": bank_code})
+    
+    return render_template('app_bank_settings.html',
+        active_tab='bank_settings',
+        user=user,
+        bank=bank
     )

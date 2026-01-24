@@ -60,6 +60,10 @@
                 <i data-lucide="repeat" class="wise-nav-icon"></i>
                 <span>Convertir</span>
             </a>
+            <a href="{{ url_for('app.beneficiaries') }}" class="wise-nav-item {{ 'active' if active_tab == 'beneficiaries' else '' }}">
+                <i data-lucide="users" class="wise-nav-icon"></i>
+                <span>Bénéficiaires</span>
+            </a>
             <a href="{{ url_for('app.transactions') }}" class="wise-nav-item {{ 'active' if active_tab == 'transactions' else '' }}">
                 <i data-lucide="receipt" class="wise-nav-icon"></i>
                 <span>Historique</span>
@@ -72,6 +76,12 @@
                 <i data-lucide="user" class="wise-nav-icon"></i>
                 <span>Profil</span>
             </a>
+            {% if user and user.role == 'bank_respo' %}
+            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_settings' else '' }}">
+                <i data-lucide="building-2" class="wise-nav-icon"></i>
+                <span>Config Banque</span>
+            </a>
+            {% endif %}
         </nav>
         
         <div class="wise-sidebar-footer">
@@ -84,6 +94,10 @@
                 <i data-lucide="moon" id="theme-icon-dark" class="wise-nav-icon" style="display: none;"></i>
                 <span id="theme-label">Mode sombre</span>
             </button>
+            <a href="{{ url_for('auth.logout') }}" class="wise-nav-item wise-logout-btn">
+                <i data-lucide="log-out" class="wise-nav-icon"></i>
+                <span>Déconnexion</span>
+            </a>
         </div>
     </aside>
 
@@ -104,17 +118,17 @@
             <i data-lucide="repeat" class="wise-bottom-icon"></i>
             <span>Convertir</span>
         </a>
+        <a href="{{ url_for('app.beneficiaries') }}" class="wise-bottom-item {{ 'active' if active_tab == 'beneficiaries' else '' }}">
+            <i data-lucide="users" class="wise-bottom-icon"></i>
+            <span>Bénéfic.</span>
+        </a>
         <a href="{{ url_for('app.transactions') }}" class="wise-bottom-item {{ 'active' if active_tab == 'transactions' else '' }}">
             <i data-lucide="receipt" class="wise-bottom-icon"></i>
             <span>Historique</span>
         </a>
-        <a href="{{ url_for('app.ai_forecast') }}" class="wise-bottom-item {{ 'active' if active_tab == 'ai' else '' }}">
-            <i data-lucide="brain-circuit" class="wise-bottom-icon"></i>
-            <span>IA</span>
-        </a>
-        <a href="{{ url_for('app.profile') }}" class="wise-bottom-item {{ 'active' if active_tab == 'profile' else '' }}">
-            <i data-lucide="user" class="wise-bottom-icon"></i>
-            <span>Profil</span>
+        <a href="{{ url_for('auth.logout') }}" class="wise-bottom-item wise-logout-mobile">
+            <i data-lucide="log-out" class="wise-bottom-icon"></i>
+            <span>Sortir</span>
         </a>
     </nav>
 

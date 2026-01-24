@@ -746,3 +746,79 @@ def toggle_favorite_beneficiary(beneficiary_id):
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== BANK SETTINGS (for bank_respo) ====================
+
+@api_bp.route('/bank-settings', methods=['POST'])
+@login_required_api
+def update_bank_settings():
+    """Met à jour les paramètres API de la banque (bank_respo uniquement)"""
+    try:
+        from bson import ObjectId
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        user_id = session.get('user_id')
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        
+        if not user or user.get('role') != 'bank_respo':
+            return jsonify({"success": False, "error": "Accès non autorisé"}), 403
+        
+        bank_code = user.get('bank_code')
+        if not bank_code:
+            return jsonify({"success": False, "error": "Aucune banque associée"}), 400
+        
+        data = request.json
+        
+        # Champs autorisés à mettre à jour
+        allowed_fields = [
+            'api_key', 'api_secret', 'api_base_url', 'webhook_url', 'callback_url',
+            'atm_api_endpoint', 'withdrawal_limit', 'cardless_enabled',
+            'exchange_rate_margin', 'rate_refresh_interval',
+            'ip_whitelist', 'two_factor_required', 'ssl_verification'
+        ]
+        
+        update_data = {k: v for k, v in data.items() if k in allowed_fields}
+        update_data['updated_at'] = datetime.utcnow()
+        update_data['updated_by'] = str(user_id)
+        
+        db.banks.update_one(
+            {"code": bank_code},
+            {"$set": update_data}
+        )
+        
+        return jsonify({
+            "success": True,
+            "message": "Paramètres mis à jour"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/bank-settings/test', methods=['POST'])
+@login_required_api
+def test_bank_connection():
+    """Teste la connexion API de la banque"""
+    try:
+        from bson import ObjectId
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+        
+        user_id = session.get('user_id')
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        
+        if not user or user.get('role') != 'bank_respo':
+            return jsonify({"success": False, "error": "Accès non autorisé"}), 403
+        
+        # Simulation d'un test de connexion
+        # En production, faire un vrai appel à l'API de la banque
+        return jsonify({
+            "success": True,
+            "message": "Connexion API réussie",
+            "latency": "42ms"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

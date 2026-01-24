@@ -2184,6 +2184,34 @@ body, .card, .wise-card, .btn, input, select {
     background: var(--bg-secondary);
 }
 
+/* Logout Button */
+.wise-logout-btn {
+    color: #ef4444 !important;
+    margin-top: 8px;
+}
+
+.wise-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+}
+
+.wise-logout-btn .wise-nav-icon {
+    color: #ef4444;
+}
+
+.wise-logout-mobile {
+    color: #ef4444 !important;
+}
+
+.wise-logout-mobile:hover,
+.wise-logout-mobile.active {
+    color: #dc2626 !important;
+}
+
+.wise-logout-mobile .wise-bottom-icon {
+    color: #ef4444;
+}
+
 /* Main Content */
 .wise-main-content {
     flex: 1;

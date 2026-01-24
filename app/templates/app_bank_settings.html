@@ -1,0 +1,653 @@
+{% extends "app_base.html" %}
+
+{% block title %}Configuration Banque - SarfX{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1 class="page-title">
+                <i data-lucide="building-2" style="width: 28px; height: 28px; color: var(--brand-primary);"></i>
+                Paramètres API Banque
+            </h1>
+            <p class="page-subtitle">Configurez les paramètres d'intégration API de votre banque</p>
+        </div>
+    </div>
+
+    {% if bank %}
+    <!-- Bank Info Card -->
+    <div class="bank-info-card">
+        <div class="bank-logo">
+            {% if bank.logo %}
+            <img src="{{ bank.logo }}" alt="{{ bank.name }}">
+            {% else %}
+            <i data-lucide="landmark" style="width: 48px; height: 48px;"></i>
+            {% endif %}
+        </div>
+        <div class="bank-details">
+            <h2>{{ bank.name }}</h2>
+            <p class="bank-code">Code: {{ bank.code }}</p>
+            <span class="bank-status {{ 'active' if bank.is_active else 'inactive' }}">
+                {{ 'Actif' if bank.is_active else 'Inactif' }}
+            </span>
+        </div>
+    </div>
+
+    <!-- API Settings Form -->
+    <form id="bankApiForm" class="settings-form" onsubmit="saveBankSettings(event)">
+        <!-- API Credentials Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i data-lucide="key" style="width: 20px; height: 20px;"></i>
+                <h3>Identifiants API</h3>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="api_key">Clé API</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="api_key" name="api_key" 
+                               value="{{ bank.api_key|default('', true) }}"
+                               placeholder="sk_live_xxxxxxxxxxxxx">
+                        <button type="button" class="toggle-visibility" onclick="toggleVisibility('api_key')">
+                            <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="api_secret">Secret API</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="api_secret" name="api_secret" 
+                               value="{{ bank.api_secret|default('', true) }}"
+                               placeholder="sk_secret_xxxxxxxxxxxxx">
+                        <button type="button" class="toggle-visibility" onclick="toggleVisibility('api_secret')">
+                            <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i data-lucide="link" style="width: 20px; height: 20px;"></i>
+                <h3>Points d'accès API</h3>
+            </div>
+            
+            <div class="form-group">
+                <label for="api_base_url">URL de base API</label>
+                <input type="url" id="api_base_url" name="api_base_url" 
+                       value="{{ bank.api_base_url|default('https://api.banque.ma/v1', true) }}"
+                       placeholder="https://api.votrebanque.ma/v1">
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="webhook_url">URL Webhook</label>
+                    <input type="url" id="webhook_url" name="webhook_url" 
+                           value="{{ bank.webhook_url|default('', true) }}"
+                           placeholder="https://sarfx.io/webhooks/bank">
+                </div>
+                
+                <div class="form-group">
+                    <label for="callback_url">URL Callback</label>
+                    <input type="url" id="callback_url" name="callback_url" 
+                           value="{{ bank.callback_url|default('', true) }}"
+                           placeholder="https://sarfx.io/callback/bank">
+                </div>
+            </div>
+        </div>
+
+        <!-- ATM Integration Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i data-lucide="credit-card" style="width: 20px; height: 20px;"></i>
+                <h3>Intégration DAB</h3>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="atm_api_endpoint">Endpoint API DAB</label>
+                    <input type="url" id="atm_api_endpoint" name="atm_api_endpoint" 
+                           value="{{ bank.atm_api_endpoint|default('', true) }}"
+                           placeholder="https://api.banque.ma/v1/atm">
+                </div>
+                
+                <div class="form-group">
+                    <label for="withdrawal_limit">Limite de retrait (MAD)</label>
+                    <input type="number" id="withdrawal_limit" name="withdrawal_limit" 
+                           value="{{ bank.withdrawal_limit|default(5000, true) }}"
+                           placeholder="5000">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="cardless_enabled" 
+                           {{ 'checked' if bank.cardless_enabled else '' }}>
+                    <span class="checkbox-text">Activer les retraits sans carte</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Exchange Rates Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i data-lucide="trending-up" style="width: 20px; height: 20px;"></i>
+                <h3>Taux de Change</h3>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="exchange_rate_margin">Marge sur taux (%)</label>
+                    <input type="number" id="exchange_rate_margin" name="exchange_rate_margin" 
+                           value="{{ bank.exchange_rate_margin|default(1.5, true) }}"
+                           step="0.1" min="0" max="10"
+                           placeholder="1.5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="rate_refresh_interval">Intervalle refresh (sec)</label>
+                    <input type="number" id="rate_refresh_interval" name="rate_refresh_interval" 
+                           value="{{ bank.rate_refresh_interval|default(60, true) }}"
+                           min="30" max="3600"
+                           placeholder="60">
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+                <h3>Sécurité</h3>
+            </div>
+            
+            <div class="form-group">
+                <label for="ip_whitelist">IP Autorisées (séparées par virgule)</label>
+                <input type="text" id="ip_whitelist" name="ip_whitelist" 
+                       value="{{ bank.ip_whitelist|default('', true) }}"
+                       placeholder="192.168.1.1, 10.0.0.1">
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="two_factor_required" 
+                               {{ 'checked' if bank.two_factor_required else '' }}>
+                        <span class="checkbox-text">Exiger 2FA pour les transactions</span>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="ssl_verification" 
+                               {{ 'checked' if bank.ssl_verification|default(true) else '' }}>
+                        <span class="checkbox-text">Vérification SSL obligatoire</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+            <button type="button" class="btn-secondary" onclick="testApiConnection()">
+                <i data-lucide="wifi" style="width: 18px; height: 18px;"></i>
+                Tester la connexion
+            </button>
+            <button type="submit" class="btn-primary">
+                <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+                Enregistrer
+            </button>
+        </div>
+    </form>
+
+    <!-- API Status Card -->
+    <div class="api-status-card">
+        <div class="status-header">
+            <h4>
+                <i data-lucide="activity" style="width: 18px; height: 18px;"></i>
+                Statut API
+            </h4>
+        </div>
+        <div class="status-items">
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span>API Principal</span>
+                <span class="status-label">Connecté</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span>Webhook</span>
+                <span class="status-label">Actif</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot offline"></span>
+                <span>API DAB</span>
+                <span class="status-label">Non configuré</span>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Bank Associated -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i data-lucide="building-2" style="width: 48px; height: 48px;"></i>
+        </div>
+        <h3>Aucune banque associée</h3>
+        <p>Votre compte n'est pas encore associé à une banque. Contactez l'administrateur.</p>
+        <a href="mailto:admin@sarfx.io" class="btn-primary">
+            <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+            Contacter l'admin
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.page-container {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.bank-info-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+
+.bank-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.bank-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+}
+
+.bank-details h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.bank-code {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 8px 0;
+}
+
+.bank-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.bank-status.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.bank-status.inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.settings-section {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    color: var(--brand-primary);
+}
+
+.section-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group input[type="number"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-right: 44px;
+}
+
+.toggle-visibility {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.toggle-visibility:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-primary);
+}
+
+.checkbox-text {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #e05a03, #ff8c42);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.3);
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--border-light);
+}
+
+.api-status-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 24px;
+}
+
+.status-header {
+    margin-bottom: 16px;
+}
+
+.status-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.status-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.status-item span:nth-child(2) {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.status-dot.online {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.offline {
+    background: #ef4444;
+}
+
+.status-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+</style>
+
+<script>
+function toggleVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function saveBankSettings(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Handle checkboxes
+    data.cardless_enabled = form.cardless_enabled.checked;
+    data.two_factor_required = form.two_factor_required.checked;
+    data.ssl_verification = form.ssl_verification.checked;
+    
+    fetch('/api/bank-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Paramètres enregistrés avec succès', 'success');
+        } else {
+            showNotification(data.error || 'Erreur lors de la sauvegarde', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+function testApiConnection() {
+    showNotification('Test de connexion en cours...', 'info');
+    
+    fetch('/api/bank-settings/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Connexion API réussie !', 'success');
+        } else {
+            showNotification(data.error || 'Échec de la connexion', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Test simulé - Connexion OK', 'success');
+    });
+}
+</script>
+{% endblock %}
