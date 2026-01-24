@@ -17,7 +17,23 @@
             </h1>
             <p class="text-muted text-sm">{{ banks | length }} banques enregistrées</p>
         </div>
-        <a href="{{ url_for('admin_banks.create_bank') }}" class="btn-primary px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
+        <a href="{{ url_for('admin.add_bank') }}" class="btn-primary px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Ajouter
+        </a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="p-4 rounded-xl mb-4 {% if category == 'success' %}bg-green-500/20 text-green-400 border border-green-500/30{% elif category == 'error' %}bg-red-500/20 text-red-400 border border-red-500/30{% else %}bg-blue-500/20 text-blue-400 border border-blue-500/30{% endif %}">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'error' %}x-circle{% else %}info{% endif %}" class="w-5 h-5"></i>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+            {% endfor %}
         {% endif %}
     {% endwith %}
 
@@ -69,8 +85,8 @@
             
             <!-- Actions - Improved Button Styles -->
             <div class="flex gap-2 mt-4">
-                <a href="{{ url_for('admin_banks.edit_bank', bank_id=bank._id) }}" 
-                   class="flex-1 btn-secondary py-2 rounded-lg text-center font-bold text-sm transition flex items-center justify-center gap-2">
+                <a href="{{ url_for('admin.edit_bank', bank_id=bank._id) }}" 
+                   class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-lg text-center font-bold text-sm transition flex items-center justify-center gap-2">
                     <i data-lucide="edit" class="w-4 h-4"></i>
                     Modifier
                 </a>
@@ -92,7 +108,7 @@
                 <i data-lucide="building-2" class="w-8 h-8 text-slate-500"></i>
             </div>
             <p class="text-muted mb-4">Aucune banque partenaire</p>
-            <a href="{{ url_for('admin_banks.create_bank') }}" class="text-blue-500 font-bold">
+            <a href="{{ url_for('admin.add_bank') }}" class="text-blue-500 font-bold">
                 Ajouter la première banque
             </a>
         </div>
@@ -115,7 +131,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Txns</span>
         </a>
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-primary">
+        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-primary">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Banques</span>
         </a>
@@ -140,7 +156,7 @@ function filterBanks() {
 
 function toggleBank(bankId) {
     if (confirm('Voulez-vous activer/désactiver cette banque?')) {
-        fetch(`/admin/banks/toggle/${bankId}`, {
+        fetch(`/admin/banks/${bankId}/toggle`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -165,7 +181,7 @@ function deleteBank(bankId, bankName) {
     if (confirm(`Êtes-vous sûr de vouloir supprimer "${bankName}"?\n\nCette action est irréversible.`)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/admin/banks/delete/${bankId}`;
+        form.action = `/admin/banks/${bankId}/delete`;
         document.body.appendChild(form);
         form.submit();
     }

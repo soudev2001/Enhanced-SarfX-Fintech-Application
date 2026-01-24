@@ -6,9 +6,9 @@
 <div class="space-y-6 pb-24">
     <!-- Header -->
     <div class="pt-2">
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+        <a href="{{ url_for('admin.banks') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            Retour
+            Retour aux banques
         </a>
         <h1 class="text-2xl font-bold text-default">
             {% if action == 'create' %}
@@ -127,7 +127,7 @@
                 Enregistrer
                 {% endif %}
             </button>
-            <a href="{{ url_for('admin_banks.list_banks') }}" class="px-6 py-3 card rounded-xl font-bold text-muted hover:text-default transition">
+            <a href="{{ url_for('admin.banks') }}" class="px-6 py-3 card rounded-xl font-bold text-muted hover:text-default transition">
                 Annuler
             </a>
         </div>
@@ -149,7 +149,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Txns</span>
         </a>
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-primary">
+        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-primary">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Banques</span>
         </a>

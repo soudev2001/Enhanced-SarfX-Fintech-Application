@@ -340,6 +340,227 @@
             border: 1px solid rgba(34, 197, 94, 0.2);
         }
         
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 0;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        .modal-header {
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 24px;
+            right: 24px;
+            height: 1px;
+            background: var(--border-light);
+        }
+        
+        .modal-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 16px;
+        }
+        
+        .modal-avatar.admin { 
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%); 
+            border: 2px solid rgba(239, 68, 68, 0.3);
+        }
+        .modal-avatar.bank { 
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%); 
+            border: 2px solid rgba(59, 130, 246, 0.3);
+        }
+        .modal-avatar.user { 
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%); 
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .modal-subtitle {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .credential-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .credential-item:first-child {
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .credential-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .credential-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Monaco', 'Menlo', monospace;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .copy-btn {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            transition: color 0.2s;
+        }
+        
+        .copy-btn:hover { color: #667eea; }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding: 0 24px 24px;
+        }
+        
+        .btn-use-account {
+            flex: 1;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-use-account:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-close-modal {
+            padding: 14px 20px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-close-modal:hover {
+            background: var(--bg-primary);
+            border-color: var(--text-tertiary);
+        }
+        
+        .role-permissions {
+            margin-top: 12px;
+        }
+        
+        .role-permissions h5 {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .permission-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .permission-tag {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .permission-tag i { width: 12px; height: 12px; }
+        
         @media (max-width: 1024px) {
             .login-bg { display: none; }
             .login-form-side { width: 100%; min-width: auto; }
@@ -348,10 +569,57 @@
         @media (max-width: 480px) {
             .login-form-side { padding: 20px; }
             .login-card { padding: 24px; }
+            .modal-content { width: 95%; margin: 0 10px; }
         }
     </style>
 </head>
 <body>
+    <!-- Modal for Demo Account Details -->
+    <div class="modal-overlay" id="demoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-avatar" id="modalAvatar">👑</div>
+                <h3 class="modal-title" id="modalTitle">Compte Admin</h3>
+                <p class="modal-subtitle" id="modalSubtitle">Accès complet à l'administration</p>
+            </div>
+            <div class="modal-body">
+                <div class="credential-box">
+                    <div class="credential-item">
+                        <span class="credential-label">Email</span>
+                        <span class="credential-value">
+                            <span id="modalEmail">admin@sarfx.io</span>
+                            <button class="copy-btn" onclick="copyToClipboard('modalEmail')" title="Copier">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                        </span>
+                    </div>
+                    <div class="credential-item">
+                        <span class="credential-label">Mot de passe</span>
+                        <span class="credential-value">
+                            <span id="modalPassword">admin123</span>
+                            <button class="copy-btn" onclick="copyToClipboard('modalPassword')" title="Copier">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                        </span>
+                    </div>
+                </div>
+                <div class="role-permissions">
+                    <h5>Permissions</h5>
+                    <div class="permission-list" id="modalPermissions">
+                        <span class="permission-tag"><i data-lucide="check"></i> Dashboard</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-close-modal" onclick="closeModal()">Annuler</button>
+                <button class="btn-use-account" onclick="useAccount()">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    Utiliser ce compte
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Left Side - Background -->
     <div class="login-bg">
         <div class="login-bg-content">
@@ -440,37 +708,37 @@
                         Comptes de démonstration
                     </h4>
                     
-                    <div class="demo-user" onclick="fillCredentials('admin@sarfx.io', 'admin123')">
+                    <div class="demo-user" onclick="showDemoModal('admin')">
                         <div class="demo-user-info">
                             <div class="demo-user-avatar admin">👑</div>
                             <div class="demo-user-details">
-                                <h5>admin@sarfx.io</h5>
-                                <p>admin123</p>
+                                <h5>Compte Admin</h5>
+                                <p>Accès complet</p>
                             </div>
                         </div>
                         <span class="demo-user-role admin">Admin</span>
                     </div>
                     
-                    <div class="demo-user" onclick="fillCredentials('bank@sarfx.io', 'bank123')">
+                    <div class="demo-user" onclick="showDemoModal('bank')">
                         <div class="demo-user-info">
                             <div class="demo-user-avatar bank">🏦</div>
                             <div class="demo-user-details">
-                                <h5>bank@sarfx.io</h5>
-                                <p>bank123</p>
+                                <h5>Compte Banque</h5>
+                                <p>Gestion des taux</p>
                             </div>
                         </div>
                         <span class="demo-user-role bank">Banque</span>
                     </div>
                     
-                    <div class="demo-user" onclick="fillCredentials('user@sarfx.io', 'user123')">
+                    <div class="demo-user" onclick="showDemoModal('user')">
                         <div class="demo-user-info">
                             <div class="demo-user-avatar user">👤</div>
                             <div class="demo-user-details">
-                                <h5>user@sarfx.io</h5>
-                                <p>user123</p>
+                                <h5>Compte Utilisateur</h5>
+                                <p>Accès standard</p>
                             </div>
                         </div>
-                        <span class="demo-user-role user">Utilisateur</span>
+                        <span class="demo-user-role user">User</span>
                     </div>
                 </div>
             </div>
@@ -486,6 +754,137 @@
     
     <script>
         lucide.createIcons();
+        
+        // Demo accounts data
+        const demoAccounts = {
+            admin: {
+                email: 'admin@sarfx.io',
+                password: 'admin123',
+                avatar: '👑',
+                title: 'Compte Administrateur',
+                subtitle: 'Accès complet à toutes les fonctionnalités',
+                type: 'admin',
+                permissions: [
+                    { icon: 'layout-dashboard', label: 'Dashboard Admin' },
+                    { icon: 'users', label: 'Gestion Utilisateurs' },
+                    { icon: 'building-2', label: 'Gestion Banques' },
+                    { icon: 'map-pin', label: 'Gestion ATMs' },
+                    { icon: 'receipt', label: 'Transactions' },
+                    { icon: 'settings', label: 'Configuration' }
+                ]
+            },
+            bank: {
+                email: 'bank@sarfx.io',
+                password: 'bank123',
+                avatar: '🏦',
+                title: 'Compte Banque Partenaire',
+                subtitle: 'Gestion des taux et des ATMs',
+                type: 'bank',
+                permissions: [
+                    { icon: 'trending-up', label: 'Gestion Taux' },
+                    { icon: 'map-pin', label: 'Gestion ATMs' },
+                    { icon: 'bar-chart-2', label: 'Statistiques' },
+                    { icon: 'bell', label: 'Notifications' }
+                ]
+            },
+            user: {
+                email: 'user@sarfx.io',
+                password: 'user123',
+                avatar: '👤',
+                title: 'Compte Utilisateur',
+                subtitle: 'Accès aux fonctionnalités standard',
+                type: 'user',
+                permissions: [
+                    { icon: 'repeat', label: 'Conversion' },
+                    { icon: 'wallet', label: 'Portefeuilles' },
+                    { icon: 'map-pin', label: 'Recherche ATMs' },
+                    { icon: 'history', label: 'Historique' },
+                    { icon: 'bot', label: 'Assistant IA' }
+                ]
+            }
+        };
+        
+        let currentAccount = null;
+        
+        function showDemoModal(accountType) {
+            const account = demoAccounts[accountType];
+            currentAccount = account;
+            
+            // Update modal content
+            document.getElementById('modalAvatar').textContent = account.avatar;
+            document.getElementById('modalAvatar').className = 'modal-avatar ' + account.type;
+            document.getElementById('modalTitle').textContent = account.title;
+            document.getElementById('modalSubtitle').textContent = account.subtitle;
+            document.getElementById('modalEmail').textContent = account.email;
+            document.getElementById('modalPassword').textContent = account.password;
+            
+            // Update permissions
+            const permissionsHtml = account.permissions.map(p => 
+                `<span class="permission-tag"><i data-lucide="${p.icon}"></i> ${p.label}</span>`
+            ).join('');
+            document.getElementById('modalPermissions').innerHTML = permissionsHtml;
+            
+            // Show modal
+            document.getElementById('demoModal').classList.add('active');
+            
+            // Refresh icons
+            lucide.createIcons();
+        }
+        
+        function closeModal() {
+            document.getElementById('demoModal').classList.remove('active');
+            currentAccount = null;
+        }
+        
+        function useAccount() {
+            if (currentAccount) {
+                document.getElementById('email').value = currentAccount.email;
+                document.getElementById('password').value = currentAccount.password;
+                closeModal();
+                
+                // Highlight the filled fields
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                
+                emailInput.style.borderColor = '#22c55e';
+                passwordInput.style.borderColor = '#22c55e';
+                
+                setTimeout(() => {
+                    emailInput.style.borderColor = '';
+                    passwordInput.style.borderColor = '';
+                }, 2000);
+            }
+        }
+        
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show feedback
+                const btn = event.currentTarget;
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4" style="color: #22c55e;"></i>';
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalIcon;
+                    lucide.createIcons();
+                }, 1500);
+            });
+        }
+        
+        // Close modal on outside click
+        document.getElementById('demoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
         
         function fillCredentials(email, password) {
             document.getElementById('email').value = email;

@@ -505,6 +505,156 @@ MOROCCAN_CITIES = [
 ]
 
 
+# ==================== BANK MANAGEMENT ====================
+
+@admin_bp.route('/banks')
+@admin_required
+def banks():
+    """Liste toutes les banques partenaires"""
+    db = get_db()
+    banks_list = list(db.banks.find().sort("name", 1))
+    
+    # Convertir ObjectId en string
+    for bank in banks_list:
+        bank['_id'] = str(bank['_id'])
+    
+    return render_template('admin_banks.html', banks=banks_list, active_tab='banks')
+
+
+@admin_bp.route('/banks/add', methods=['GET', 'POST'])
+@admin_required
+def add_bank():
+    """Ajouter une nouvelle banque partenaire"""
+    if request.method == 'POST':
+        db = get_db()
+        
+        name = request.form.get('name')
+        code = request.form.get('code')
+        website = request.form.get('website', '')
+        description = request.form.get('description', '')
+        is_active = request.form.get('is_active') == 'on'
+        
+        # Upload du logo
+        logo_path = None
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(f"{code.lower()}.{file.filename.rsplit('.', 1)[1].lower()}")
+                filepath = os.path.join('app/static/images/banks', filename)
+                os.makedirs('app/static/images/banks', exist_ok=True)
+                file.save(filepath)
+                logo_path = f"/static/images/banks/{filename}"
+        
+        bank_data = {
+            "name": name,
+            "code": code.upper(),
+            "website": website,
+            "description": description,
+            "logo": logo_path,
+            "is_active": is_active,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        db.banks.insert_one(bank_data)
+        flash(f'Banque "{name}" créée avec succès!', 'success')
+        return redirect(url_for('admin.banks'))
+    
+    return render_template('admin_bank_form.html', bank=None, action='create')
+
+
+@admin_bp.route('/banks/<bank_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_bank(bank_id):
+    """Éditer une banque partenaire"""
+    db = get_db()
+    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
+    
+    if not bank:
+        flash('Banque introuvable', 'error')
+        return redirect(url_for('admin.banks'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        code = request.form.get('code')
+        website = request.form.get('website', '')
+        description = request.form.get('description', '')
+        is_active = request.form.get('is_active') == 'on'
+        
+        update_data = {
+            "name": name,
+            "code": code.upper(),
+            "website": website,
+            "description": description,
+            "is_active": is_active,
+            "updated_at": datetime.utcnow()
+        }
+        
+        # Upload nouveau logo si fourni
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(f"{code.lower()}.{file.filename.rsplit('.', 1)[1].lower()}")
+                filepath = os.path.join('app/static/images/banks', filename)
+                os.makedirs('app/static/images/banks', exist_ok=True)
+                file.save(filepath)
+                update_data["logo"] = f"/static/images/banks/{filename}"
+        
+        db.banks.update_one({"_id": ObjectId(bank_id)}, {"$set": update_data})
+        flash(f'Banque "{name}" modifiée avec succès!', 'success')
+        return redirect(url_for('admin.banks'))
+    
+    bank['_id'] = str(bank['_id'])
+    return render_template('admin_bank_form.html', bank=bank, action='edit')
+
+
+@admin_bp.route('/banks/<bank_id>/delete', methods=['POST'])
+@admin_required
+def delete_bank(bank_id):
+    """Supprimer une banque partenaire"""
+    db = get_db()
+    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
+    
+    if not bank:
+        flash('Banque introuvable', 'error')
+        return redirect(url_for('admin.banks'))
+    
+    # Vérifier s'il y a des ATMs liés
+    atm_count = db.atm_locations.count_documents({"bank_code": bank.get('code')})
+    if atm_count > 0:
+        flash(f'Impossible de supprimer: {atm_count} ATMs sont liés à cette banque.', 'error')
+        return redirect(url_for('admin.banks'))
+    
+    db.banks.delete_one({"_id": ObjectId(bank_id)})
+    flash(f'Banque "{bank.get("name")}" supprimée avec succès!', 'success')
+    return redirect(url_for('admin.banks'))
+
+
+@admin_bp.route('/banks/<bank_id>/toggle', methods=['POST'])
+@admin_required
+def toggle_bank(bank_id):
+    """Activer/Désactiver une banque"""
+    db = get_db()
+    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
+    
+    if not bank:
+        return jsonify({"success": False, "message": "Banque introuvable"})
+    
+    new_status = not bank.get('is_active', True)
+    db.banks.update_one(
+        {"_id": ObjectId(bank_id)}, 
+        {"$set": {"is_active": new_status, "updated_at": datetime.utcnow()}}
+    )
+    
+    return jsonify({
+        "success": True, 
+        "message": f"Banque {'activée' if new_status else 'désactivée'}",
+        "is_active": new_status
+    })
+
+
+# ==================== ATM MANAGEMENT ====================
+
 @admin_bp.route('/atms')
 @admin_required
 def atms():
