@@ -16,6 +16,73 @@ def login_required_api(f):
     return decorated_function
 
 
+# ==================== SEED DEMO USERS ====================
+
+@api_bp.route('/seed-demo-users')
+def seed_demo_users():
+    """Crée les utilisateurs de démonstration"""
+    from werkzeug.security import generate_password_hash
+    
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+    
+    demo_users = [
+        {"email": "admin@sarfx.io", "password": "admin123", "name": "Admin SarfX", "role": "admin"},
+        {"email": "bank@sarfx.io", "password": "bank123", "name": "Bank Manager", "role": "bank_admin"},
+        {"email": "user@sarfx.io", "password": "user123", "name": "Demo User", "role": "user"}
+    ]
+    
+    created = []
+    updated = []
+    
+    for user_data in demo_users:
+        existing = db.users.find_one({"email": user_data["email"]})
+        
+        if existing:
+            db.users.update_one(
+                {"email": user_data["email"]},
+                {"$set": {
+                    "password": generate_password_hash(user_data["password"]),
+                    "role": user_data["role"],
+                    "is_active": True,
+                    "is_verified": True
+                }}
+            )
+            updated.append(user_data["email"])
+        else:
+            new_user = {
+                "email": user_data["email"],
+                "password": generate_password_hash(user_data["password"]),
+                "name": user_data["name"],
+                "role": user_data["role"],
+                "is_active": True,
+                "is_verified": True,
+                "created_at": datetime.utcnow()
+            }
+            result = db.users.insert_one(new_user)
+            
+            # Create wallet
+            db.wallets.insert_one({
+                "user_id": str(result.inserted_id),
+                "balances": {"USD": 1000.0, "EUR": 500.0, "MAD": 5000.0},
+                "created_at": datetime.utcnow()
+            })
+            created.append(user_data["email"])
+    
+    return jsonify({
+        "success": True,
+        "created": created,
+        "updated": updated,
+        "message": "Demo users seeded successfully",
+        "accounts": [
+            {"email": "admin@sarfx.io", "password": "admin123", "role": "admin"},
+            {"email": "bank@sarfx.io", "password": "bank123", "role": "bank_admin"},
+            {"email": "user@sarfx.io", "password": "user123", "role": "user"}
+        ]
+    })
+
+
 # ==================== RATES ====================
 
 @api_bp.route('/rates')
