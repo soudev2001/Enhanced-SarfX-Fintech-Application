@@ -1,0 +1,215 @@
+{% extends "app_base.html" %}
+
+{% block title %}Import ATM - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.atms') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour à la liste
+            </a>
+            <h1 class="text-2xl font-bold text-default">Importer des ATM</h1>
+            <p class="text-muted text-sm">Importez des données ATM depuis un fichier CSV</p>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="card p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+        <div class="flex items-start gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5"></i>
+            <div>
+                <h4 class="font-bold text-blue-500 mb-2">Format du fichier CSV</h4>
+                <p class="text-sm text-muted mb-3">
+                    Le fichier CSV doit contenir les colonnes suivantes (en-têtes obligatoires) :
+                </p>
+                <div class="bg-slate-800 rounded-lg p-3 overflow-x-auto">
+                    <code class="text-xs text-green-400">
+                        ATM ID,Banque,Nom,Adresse,Ville,District,Latitude,Longitude,Type,Services,Statut,24h,Horaires,Accès PMR,NFC
+                    </code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="card p-6 rounded-xl">
+        <form method="POST" enctype="multipart/form-data" id="import-form">
+            <div id="dropzone" class="border-2 border-dashed border-border rounded-xl p-12 text-center cursor-pointer hover:border-primary transition">
+                <input type="file" name="file" id="file-input" accept=".csv" class="hidden" required>
+                <i data-lucide="upload-cloud" class="w-16 h-16 mx-auto text-muted mb-4"></i>
+                <p class="text-lg text-default mb-2">Glissez-déposez votre fichier CSV ici</p>
+                <p class="text-sm text-muted">ou cliquez pour sélectionner un fichier</p>
+                <p id="file-name" class="text-primary font-bold mt-4 hidden"></p>
+            </div>
+            
+            <div class="mt-6 flex gap-4">
+                <a href="{{ url_for('admin.export_atms') }}" class="flex-1 btn btn-ghost py-4 rounded-xl text-center">
+                    <i data-lucide="download" class="w-5 h-5 mr-2 inline"></i>
+                    Télécharger le modèle
+                </a>
+                <button type="submit" id="submit-btn" class="flex-1 btn btn-primary py-4 rounded-xl font-bold" disabled>
+                    <i data-lucide="upload" class="w-5 h-5 mr-2 inline"></i>
+                    Importer
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sample Data -->
+    <div class="card p-4 rounded-xl">
+        <h3 class="font-bold text-default mb-4">Exemple de données</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-border">
+                        <th class="text-left py-2 px-2 text-muted font-normal">ATM ID</th>
+                        <th class="text-left py-2 px-2 text-muted font-normal">Banque</th>
+                        <th class="text-left py-2 px-2 text-muted font-normal">Nom</th>
+                        <th class="text-left py-2 px-2 text-muted font-normal">Ville</th>
+                        <th class="text-left py-2 px-2 text-muted font-normal">Latitude</th>
+                        <th class="text-left py-2 px-2 text-muted font-normal">Longitude</th>
+                    </tr>
+                </thead>
+                <tbody class="text-muted">
+                    <tr class="border-b border-border/50">
+                        <td class="py-2 px-2 font-mono text-xs">ATW_CAS_00001</td>
+                        <td class="py-2 px-2">attijariwafa</td>
+                        <td class="py-2 px-2">ATM Twin Center</td>
+                        <td class="py-2 px-2">Casablanca</td>
+                        <td class="py-2 px-2">33.591370</td>
+                        <td class="py-2 px-2">-7.626690</td>
+                    </tr>
+                    <tr class="border-b border-border/50">
+                        <td class="py-2 px-2 font-mono text-xs">BCP_RAB_00001</td>
+                        <td class="py-2 px-2">banque_populaire</td>
+                        <td class="py-2 px-2">ATM Agdal</td>
+                        <td class="py-2 px-2">Rabat</td>
+                        <td class="py-2 px-2">33.984560</td>
+                        <td class="py-2 px-2">-6.847890</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bank Codes Reference -->
+    <div class="card p-4 rounded-xl">
+        <h3 class="font-bold text-default mb-4">Codes des banques partenaires</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: #E30613">AT</div>
+                <div>
+                    <p class="text-default text-sm font-bold">attijariwafa</p>
+                    <p class="text-xs text-muted">Attijariwafa Bank</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: #00843D">BO</div>
+                <div>
+                    <p class="text-default text-sm font-bold">boa</p>
+                    <p class="text-xs text-muted">Bank of Africa</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: #005BAA">BP</div>
+                <div>
+                    <p class="text-default text-sm font-bold">banque_populaire</p>
+                    <p class="text-xs text-muted">Banque Populaire</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: #C41E3A">CI</div>
+                <div>
+                    <p class="text-default text-sm font-bold">cih</p>
+                    <p class="text-xs text-muted">CIH Bank</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: #DC0032">BM</div>
+                <div>
+                    <p class="text-default text-sm font-bold">bmci</p>
+                    <p class="text-xs text-muted">BMCI</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.atms') }}" class="flex flex-col items-center gap-1 text-primary">
+            <i data-lucide="landmark" class="w-5 h-5"></i>
+            <span class="text-xs font-bold">ATMs</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Transactions</span>
+        </a>
+        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+            <span class="text-xs">Banques</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const fileName = document.getElementById('file-name');
+const submitBtn = document.getElementById('submit-btn');
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('border-primary');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('border-primary');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-primary');
+    if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect();
+    }
+});
+
+fileInput.addEventListener('change', handleFileSelect);
+
+function handleFileSelect() {
+    if (fileInput.files.length) {
+        const file = fileInput.files[0];
+        if (file.name.endsWith('.csv')) {
+            fileName.textContent = file.name;
+            fileName.classList.remove('hidden');
+            submitBtn.disabled = false;
+        } else {
+            alert('Veuillez sélectionner un fichier CSV');
+            fileInput.value = '';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

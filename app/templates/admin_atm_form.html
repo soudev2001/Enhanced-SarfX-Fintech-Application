@@ -1,0 +1,414 @@
+{% extends "app_base.html" %}
+
+{% block title %}{{ 'Modifier' if atm else 'Ajouter' }} ATM - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.atms') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour à la liste
+            </a>
+            <h1 class="text-2xl font-bold text-default">{{ 'Modifier' if atm else 'Ajouter' }} un ATM</h1>
+            {% if atm %}
+            <p class="text-muted text-sm font-mono">{{ atm.atm_id }}</p>
+            {% endif %}
+        </div>
+        {% if atm %}
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] px-2 py-1 rounded-full 
+                {{ 'badge badge-success' if atm.status == 'active' else 'badge badge-error' }}">
+                {{ atm.status | upper }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-6" id="atm-form">
+        <!-- Bank Selection -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="building-2" class="w-5 h-5 text-primary"></i>
+                Banque
+            </h3>
+            <div class="grid grid-cols-5 gap-3">
+                {% for bank in banks %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="bank_code" value="{{ bank.code }}" 
+                           {{ 'checked' if (atm and atm.bank_code == bank.code) or (not atm and loop.first) else '' }}
+                           class="hidden bank-radio" required>
+                    <div class="card p-3 rounded-xl text-center border-2 border-transparent bank-option transition"
+                         style="--bank-color: {{ bank.color }}">
+                        <div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center text-white font-bold mb-2"
+                             style="background: {{ bank.color }}">
+                            {{ bank.code[:2] | upper }}
+                        </div>
+                        <p class="text-xs text-muted">{{ bank.name.split()[0] }}</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Basic Info -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="info" class="w-5 h-5 text-primary"></i>
+                Informations générales
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm text-muted block mb-1">Nom de l'ATM *</label>
+                    <input type="text" name="name" value="{{ atm.name if atm else '' }}" required
+                           placeholder="Ex: ATM Attijariwafa Morocco Mall"
+                           class="input w-full px-4 py-3 rounded-xl">
+                </div>
+                <div>
+                    <label class="text-sm text-muted block mb-1">Adresse *</label>
+                    <input type="text" name="address" value="{{ atm.address if atm else '' }}" required
+                           placeholder="Ex: Boulevard Zerktouni, Twin Center"
+                           class="input w-full px-4 py-3 rounded-xl">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm text-muted block mb-1">Ville *</label>
+                        <select name="city" required class="input w-full px-4 py-3 rounded-xl bg-transparent">
+                            <option value="">Sélectionner...</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}" {{ 'selected' if atm and atm.city == city else '' }}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm text-muted block mb-1">Quartier/District</label>
+                        <input type="text" name="district" value="{{ atm.district if atm else '' }}"
+                               placeholder="Ex: Maarif"
+                               class="input w-full px-4 py-3 rounded-xl">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-5 h-5 text-primary"></i>
+                Géolocalisation
+            </h3>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="text-sm text-muted block mb-1">Latitude *</label>
+                    <input type="number" name="latitude" id="latitude" step="0.000001" 
+                           value="{{ atm.location.coordinates[1] if atm and atm.location else '' }}" required
+                           placeholder="33.591370"
+                           class="input w-full px-4 py-3 rounded-xl">
+                </div>
+                <div>
+                    <label class="text-sm text-muted block mb-1">Longitude *</label>
+                    <input type="number" name="longitude" id="longitude" step="0.000001"
+                           value="{{ atm.location.coordinates[0] if atm and atm.location else '' }}" required
+                           placeholder="-7.626690"
+                           class="input w-full px-4 py-3 rounded-xl">
+                </div>
+            </div>
+            <button type="button" onclick="getCurrentLocation()" class="btn btn-ghost text-primary text-sm flex items-center gap-2">
+                <i data-lucide="locate" class="w-4 h-4"></i>
+                Utiliser ma position actuelle
+            </button>
+            <!-- Map Preview -->
+            <div id="map-preview" class="h-48 rounded-xl mt-4 bg-slate-800 flex items-center justify-center">
+                <p class="text-muted text-sm">Carte de prévisualisation</p>
+            </div>
+        </div>
+
+        <!-- Location Type -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="building" class="w-5 h-5 text-primary"></i>
+                Type d'emplacement
+            </h3>
+            <div class="grid grid-cols-4 gap-3">
+                {% set location_types = [
+                    ('branch', 'Agence', 'building-2'),
+                    ('mall', 'Centre Commercial', 'shopping-bag'),
+                    ('supermarket', 'Supermarché', 'shopping-cart'),
+                    ('station', 'Station Service', 'fuel'),
+                    ('hospital', 'Hôpital', 'heart-pulse'),
+                    ('university', 'Université', 'graduation-cap'),
+                    ('airport', 'Aéroport', 'plane'),
+                    ('standalone', 'Kiosque', 'box')
+                ] %}
+                {% for type_code, type_name, icon in location_types %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="location_type" value="{{ type_code }}"
+                           {{ 'checked' if (atm and atm.location_type == type_code) or (not atm and type_code == 'branch') else '' }}
+                           class="hidden location-radio">
+                    <div class="card p-3 rounded-xl text-center border-2 border-transparent location-option transition">
+                        <i data-lucide="{{ icon }}" class="w-6 h-6 mx-auto text-muted mb-2"></i>
+                        <p class="text-xs text-muted">{{ type_name }}</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Services -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5 text-primary"></i>
+                Services disponibles
+            </h3>
+            <div class="grid grid-cols-3 gap-3">
+                {% set services = [
+                    ('withdrawal', 'Retrait', 'banknote'),
+                    ('deposit', 'Dépôt', 'wallet'),
+                    ('balance', 'Solde', 'eye'),
+                    ('transfer', 'Virement', 'arrow-left-right'),
+                    ('bill_payment', 'Factures', 'receipt'),
+                    ('mobile_topup', 'Recharge Mobile', 'smartphone')
+                ] %}
+                {% for svc_code, svc_name, icon in services %}
+                <label class="cursor-pointer flex items-center gap-3 card p-3 rounded-xl">
+                    <input type="checkbox" name="services" value="{{ svc_code }}"
+                           {{ 'checked' if atm and svc_code in atm.services else '' }}
+                           {{ 'checked' if not atm and svc_code in ['withdrawal', 'balance'] else '' }}
+                           class="w-4 h-4 rounded text-primary">
+                    <i data-lucide="{{ icon }}" class="w-4 h-4 text-muted"></i>
+                    <span class="text-sm text-default">{{ svc_name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="clock" class="w-5 h-5 text-primary"></i>
+                Disponibilité
+            </h3>
+            <div class="space-y-4">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="available_24h" id="available_24h"
+                           {{ 'checked' if (atm and atm.available_24h) or not atm else '' }}
+                           onchange="toggle24h()"
+                           class="w-5 h-5 rounded text-primary">
+                    <span class="text-default">Disponible 24h/24</span>
+                </label>
+                <div id="hours-section" class="{{ 'hidden' if (atm and atm.available_24h) or not atm else '' }}">
+                    <label class="text-sm text-muted block mb-1">Horaires d'ouverture</label>
+                    <input type="text" name="hours" value="{{ atm.hours if atm and atm.hours else '' }}"
+                           placeholder="Ex: 08:00 - 18:00"
+                           class="input w-full px-4 py-3 rounded-xl">
+                </div>
+            </div>
+        </div>
+
+        <!-- Accessibility -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="accessibility" class="w-5 h-5 text-primary"></i>
+                Accessibilité & Fonctionnalités
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+                <label class="flex items-center gap-3 cursor-pointer card p-3 rounded-xl">
+                    <input type="checkbox" name="has_wheelchair_access"
+                           {{ 'checked' if atm and atm.has_wheelchair_access else '' }}
+                           class="w-5 h-5 rounded text-primary">
+                    <span class="text-default">Accès fauteuil roulant</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer card p-3 rounded-xl">
+                    <input type="checkbox" name="has_nfc"
+                           {{ 'checked' if atm and atm.has_nfc else '' }}
+                           class="w-5 h-5 rounded text-primary">
+                    <span class="text-default">Paiement NFC</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer card p-3 rounded-xl">
+                    <input type="checkbox" name="has_deposit"
+                           {{ 'checked' if atm and atm.has_deposit else '' }}
+                           class="w-5 h-5 rounded text-primary">
+                    <span class="text-default">Dépôt d'espèces</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer card p-3 rounded-xl">
+                    <input type="checkbox" name="has_audio"
+                           {{ 'checked' if atm and atm.has_audio else '' }}
+                           class="w-5 h-5 rounded text-primary">
+                    <span class="text-default">Assistance audio</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="image" class="w-5 h-5 text-primary"></i>
+                Photos de l'ATM
+            </h3>
+            
+            {% if atm and atm.photos %}
+            <div class="grid grid-cols-4 gap-3 mb-4">
+                {% for photo in atm.photos %}
+                <div class="relative group">
+                    <img src="{{ photo }}" alt="ATM Photo" class="w-full h-24 object-cover rounded-lg">
+                    <button type="button" onclick="removePhoto('{{ photo }}')" 
+                            class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div id="dropzone" class="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary transition">
+                <input type="file" name="photos" id="photos-input" multiple accept="image/*" class="hidden" onchange="handleFiles(this.files)">
+                <i data-lucide="upload-cloud" class="w-12 h-12 mx-auto text-muted mb-3"></i>
+                <p class="text-muted">Glissez-déposez des photos ici</p>
+                <p class="text-xs text-muted mt-1">ou cliquez pour sélectionner (max 5 photos, 2MB chacune)</p>
+            </div>
+            <div id="preview-photos" class="grid grid-cols-4 gap-3 mt-4"></div>
+        </div>
+
+        <!-- Status (Edit only) -->
+        {% if atm %}
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="activity" class="w-5 h-5 text-primary"></i>
+                Statut
+            </h3>
+            <div class="grid grid-cols-3 gap-3">
+                {% for status in ['active', 'inactive', 'maintenance'] %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="status" value="{{ status }}"
+                           {{ 'checked' if atm.status == status else '' }}
+                           class="hidden status-radio">
+                    <div class="card p-3 rounded-xl text-center border-2 border-transparent status-option transition
+                                {{ 'bg-green-500/10 text-green-500' if status == 'active' else 'bg-red-500/10 text-red-500' if status == 'inactive' else 'bg-amber-500/10 text-amber-500' }}">
+                        <i data-lucide="{{ 'check-circle' if status == 'active' else 'x-circle' if status == 'inactive' else 'wrench' }}" class="w-6 h-6 mx-auto mb-2"></i>
+                        <p class="text-sm font-bold">{{ status | title }}</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Submit -->
+        <div class="flex gap-4">
+            <a href="{{ url_for('admin.atms') }}" class="flex-1 btn btn-ghost py-4 rounded-xl text-center">
+                Annuler
+            </a>
+            <button type="submit" class="flex-1 btn btn-primary py-4 rounded-xl font-bold">
+                <i data-lucide="save" class="w-5 h-5 mr-2"></i>
+                {{ 'Enregistrer les modifications' if atm else 'Créer l\'ATM' }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+.bank-radio:checked + .bank-option {
+    border-color: var(--bank-color);
+    box-shadow: 0 0 0 2px var(--bank-color);
+}
+.location-radio:checked + .location-option,
+.status-radio:checked + .status-option {
+    border-color: var(--color-primary);
+}
+</style>
+
+<script>
+// Bank selection
+document.querySelectorAll('.bank-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.bank-option').forEach(opt => {
+            opt.classList.remove('ring-2');
+        });
+        this.nextElementSibling.classList.add('ring-2');
+    });
+});
+
+// 24h toggle
+function toggle24h() {
+    const checkbox = document.getElementById('available_24h');
+    const hoursSection = document.getElementById('hours-section');
+    hoursSection.classList.toggle('hidden', checkbox.checked);
+}
+
+// Geolocation
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+        }, function(error) {
+            alert('Erreur de géolocalisation: ' + error.message);
+        });
+    } else {
+        alert('La géolocalisation n\'est pas supportée par ce navigateur.');
+    }
+}
+
+// Drag & Drop Photos
+const dropzone = document.getElementById('dropzone');
+const photosInput = document.getElementById('photos-input');
+const previewPhotos = document.getElementById('preview-photos');
+
+dropzone.addEventListener('click', () => photosInput.click());
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('border-primary');
+});
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('border-primary');
+});
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-primary');
+    handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+    previewPhotos.innerHTML = '';
+    Array.from(files).slice(0, 5).forEach((file, index) => {
+        if (file.size > 2 * 1024 * 1024) {
+            alert(`${file.name} dépasse 2MB`);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'relative';
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg">
+                <button type="button" onclick="this.parentElement.remove()" 
+                        class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
+                    ×
+                </button>
+            `;
+            previewPhotos.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function removePhoto(photoUrl) {
+    if (confirm('Supprimer cette photo ?')) {
+        // Add to hidden input for server-side removal
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'remove_photos';
+        input.value = photoUrl;
+        document.getElementById('atm-form').appendChild(input);
+        event.target.closest('.relative').remove();
+    }
+}
+
+// Initialize Lucide
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

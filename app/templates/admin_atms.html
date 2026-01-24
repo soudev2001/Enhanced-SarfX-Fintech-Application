@@ -1,0 +1,344 @@
+{% extends "app_base.html" %}
+
+{% block title %}Gestion ATM - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour
+            </a>
+            <h1 class="text-2xl font-bold text-default">Gestion ATM</h1>
+            <p class="text-muted text-sm">{{ total_atms | default(0) | number_format }} guichets automatiques</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin.atm_dashboard') }}" class="card px-3 py-2 rounded-lg text-primary font-bold text-sm flex items-center gap-1">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                Analytics
+            </a>
+            <a href="{{ url_for('admin.add_atm') }}" class="card px-3 py-2 rounded-lg bg-primary text-white font-bold text-sm flex items-center gap-1">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Ajouter
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-5 gap-3">
+        {% for bank in banks %}
+        <div class="card p-3 rounded-xl text-center cursor-pointer bank-filter {{ 'ring-2 ring-primary' if selected_bank == bank.code else '' }}"
+             onclick="filterByBank('{{ bank.code }}')" 
+             style="border-left: 3px solid {{ bank.color }}">
+            <p class="text-lg font-bold text-default">{{ bank.atm_count | number_format }}</p>
+            <p class="text-[10px] text-muted truncate">{{ bank.name.split()[0] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Filters -->
+    <div class="card p-4 rounded-xl">
+        <form method="GET" action="{{ url_for('admin.atms') }}" id="filter-form">
+            <div class="grid grid-cols-4 gap-3">
+                <!-- Search -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+                    <input type="text" name="q" value="{{ request.args.get('q', '') }}" 
+                           placeholder="Rechercher..." 
+                           class="w-full pl-10 pr-4 py-2 input rounded-lg text-sm">
+                </div>
+                
+                <!-- Bank Filter -->
+                <select name="bank" onchange="document.getElementById('filter-form').submit()" 
+                        class="input px-3 py-2 rounded-lg text-sm bg-transparent">
+                    <option value="">Toutes les banques</option>
+                    {% for bank in banks %}
+                    <option value="{{ bank.code }}" {{ 'selected' if request.args.get('bank') == bank.code else '' }}>
+                        {{ bank.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- City Filter -->
+                <select name="city" onchange="document.getElementById('filter-form').submit()"
+                        class="input px-3 py-2 rounded-lg text-sm bg-transparent">
+                    <option value="">Toutes les villes</option>
+                    {% for city in cities %}
+                    <option value="{{ city.city }}" {{ 'selected' if request.args.get('city') == city.city else '' }}>
+                        {{ city.city }} ({{ city.atm_count }})
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Status Filter -->
+                <select name="status" onchange="document.getElementById('filter-form').submit()"
+                        class="input px-3 py-2 rounded-lg text-sm bg-transparent">
+                    <option value="">Tous statuts</option>
+                    <option value="active" {{ 'selected' if request.args.get('status') == 'active' else '' }}>Actif</option>
+                    <option value="inactive" {{ 'selected' if request.args.get('status') == 'inactive' else '' }}>Inactif</option>
+                    <option value="maintenance" {{ 'selected' if request.args.get('status') == 'maintenance' else '' }}>Maintenance</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <input type="checkbox" id="select-all" onchange="toggleSelectAll()" class="w-4 h-4 rounded">
+            <span class="text-sm text-muted">Sélectionner tout</span>
+            <span id="selected-count" class="text-xs badge badge-primary hidden">0 sélectionnés</span>
+        </div>
+        <div class="flex items-center gap-2" id="bulk-actions" style="display: none;">
+            <button onclick="bulkAction('activate')" class="btn btn-sm badge badge-success">
+                <i data-lucide="check" class="w-3 h-3 mr-1"></i> Activer
+            </button>
+            <button onclick="bulkAction('deactivate')" class="btn btn-sm badge badge-warning">
+                <i data-lucide="pause" class="w-3 h-3 mr-1"></i> Désactiver
+            </button>
+            <button onclick="bulkAction('delete')" class="btn btn-sm badge badge-error">
+                <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i> Supprimer
+            </button>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin.export_atms') }}" class="text-xs text-muted hover:text-primary flex items-center gap-1">
+                <i data-lucide="download" class="w-3 h-3"></i> Export CSV
+            </a>
+            <a href="{{ url_for('admin.import_atms') }}" class="text-xs text-muted hover:text-primary flex items-center gap-1">
+                <i data-lucide="upload" class="w-3 h-3"></i> Import
+            </a>
+        </div>
+    </div>
+
+    <!-- ATM List -->
+    <div class="space-y-3" id="atm-list">
+        {% for atm in atms %}
+        <div class="card p-4 rounded-xl atm-card" data-atm-id="{{ atm.atm_id }}">
+            <div class="flex items-center gap-4">
+                <!-- Checkbox -->
+                <input type="checkbox" class="atm-checkbox w-4 h-4 rounded" value="{{ atm.atm_id }}" onchange="updateSelection()">
+                
+                <!-- Bank Logo / Color -->
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold"
+                     style="background: {{ banks_dict.get(atm.bank_code, {}).get('color', '#666') }}">
+                    {{ atm.bank_code[:3] | upper }}
+                </div>
+                
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <p class="font-bold text-default truncate">{{ atm.name }}</p>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full 
+                            {{ 'badge badge-success' if atm.status == 'active' else 'badge badge-error' if atm.status == 'inactive' else 'badge badge-warning' }}">
+                            {{ atm.status | upper }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-muted truncate">{{ atm.address }}</p>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span class="text-[10px] text-muted flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-3 h-3"></i>
+                            {{ atm.city }}{% if atm.district %}, {{ atm.district }}{% endif %}
+                        </span>
+                        <span class="text-[10px] text-muted flex items-center gap-1">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            {{ '24h' if atm.available_24h else atm.hours | default('N/A') }}
+                        </span>
+                        {% if atm.has_wheelchair_access %}
+                        <span class="text-[10px] text-muted flex items-center gap-1">
+                            <i data-lucide="accessibility" class="w-3 h-3"></i>
+                            Accessible
+                        </span>
+                        {% endif %}
+                    </div>
+                    <!-- Services -->
+                    <div class="flex gap-1 mt-2">
+                        {% for service in atm.services[:4] %}
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400">
+                            {{ service }}
+                        </span>
+                        {% endfor %}
+                        {% if atm.services | length > 4 %}
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400">
+                            +{{ atm.services | length - 4 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- ATM ID -->
+                <div class="text-right hidden md:block">
+                    <p class="text-xs font-mono text-muted">{{ atm.atm_id }}</p>
+                    {% if atm.location and atm.location.coordinates %}
+                    <p class="text-[10px] text-muted">
+                        {{ "%.4f" | format(atm.location.coordinates[1]) }}, {{ "%.4f" | format(atm.location.coordinates[0]) }}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-1">
+                    <a href="{{ url_for('admin.view_atm', atm_id=atm.atm_id) }}" 
+                       class="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition" title="Voir">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </a>
+                    <a href="{{ url_for('admin.edit_atm', atm_id=atm.atm_id) }}" 
+                       class="p-2 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition" title="Modifier">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                    </a>
+                    <button onclick="toggleAtmStatus('{{ atm.atm_id }}')" 
+                            class="p-2 rounded-lg {{ 'bg-green-500/10 text-green-500' if atm.status == 'active' else 'bg-red-500/10 text-red-500' }} hover:opacity-80 transition"
+                            title="{{ 'Désactiver' if atm.status == 'active' else 'Activer' }}">
+                        <i data-lucide="{{ 'toggle-right' if atm.status == 'active' else 'toggle-left' }}" class="w-4 h-4"></i>
+                    </button>
+                    <form action="{{ url_for('admin.delete_atm', atm_id=atm.atm_id) }}" method="POST" class="inline"
+                          onsubmit="return confirm('Supprimer cet ATM ?')">
+                        <button type="submit" class="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition" title="Supprimer">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card p-8 rounded-xl text-center">
+            <i data-lucide="inbox" class="w-12 h-12 mx-auto text-muted mb-4"></i>
+            <p class="text-muted">Aucun ATM trouvé</p>
+            <a href="{{ url_for('admin.add_atm') }}" class="btn btn-primary mt-4">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Ajouter un ATM
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-center items-center gap-2">
+        {% if page > 1 %}
+        <a href="{{ url_for('admin.atms', page=page-1, **request.args) }}" class="card px-3 py-2 rounded-lg text-muted hover:text-primary">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </a>
+        {% endif %}
+        
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="card px-3 py-2 rounded-lg bg-primary text-white font-bold">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ url_for('admin.atms', page=p, **request.args) }}" class="card px-3 py-2 rounded-lg text-muted hover:text-primary">{{ p }}</a>
+            {% elif p == 4 or p == total_pages - 2 %}
+            <span class="text-muted">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page < total_pages %}
+        <a href="{{ url_for('admin.atms', page=page+1, **request.args) }}" class="card px-3 py-2 rounded-lg text-muted hover:text-primary">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.atms') }}" class="flex flex-col items-center gap-1 text-primary">
+            <i data-lucide="landmark" class="w-5 h-5"></i>
+            <span class="text-xs font-bold">ATMs</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Transactions</span>
+        </a>
+        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+            <span class="text-xs">Banques</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+function filterByBank(bankCode) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('bank') === bankCode) {
+        url.searchParams.delete('bank');
+    } else {
+        url.searchParams.set('bank', bankCode);
+    }
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('select-all');
+    document.querySelectorAll('.atm-checkbox').forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    updateSelection();
+}
+
+function updateSelection() {
+    const checked = document.querySelectorAll('.atm-checkbox:checked');
+    const count = checked.length;
+    const countSpan = document.getElementById('selected-count');
+    const bulkActions = document.getElementById('bulk-actions');
+    
+    if (count > 0) {
+        countSpan.textContent = count + ' sélectionnés';
+        countSpan.classList.remove('hidden');
+        bulkActions.style.display = 'flex';
+    } else {
+        countSpan.classList.add('hidden');
+        bulkActions.style.display = 'none';
+    }
+}
+
+function bulkAction(action) {
+    const selected = Array.from(document.querySelectorAll('.atm-checkbox:checked')).map(cb => cb.value);
+    if (selected.length === 0) return;
+    
+    if (action === 'delete' && !confirm(`Supprimer ${selected.length} ATM ?`)) return;
+    
+    fetch('/admin/atms/bulk', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: action, atm_ids: selected})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Erreur');
+        }
+    });
+}
+
+function toggleAtmStatus(atmId) {
+    fetch(`/admin/atms/${atmId}/toggle`, {method: 'POST'})
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        }
+    });
+}
+
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}
