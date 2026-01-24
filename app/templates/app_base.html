@@ -81,6 +81,10 @@
                 <i data-lucide="help-circle" class="wise-nav-icon"></i>
                 <span>FAQ</span>
             </a>
+            <a href="{{ url_for('app.rate_history') }}" class="wise-nav-item {{ 'active' if active_tab == 'rate_history' else '' }}">
+                <i data-lucide="trending-up" class="wise-nav-icon"></i>
+                <span>Historique Taux</span>
+            </a>
             <a href="{{ url_for('app.ai_forecast') }}" class="wise-nav-item {{ 'active' if active_tab == 'ai' else '' }}">
                 <i data-lucide="brain-circuit" class="wise-nav-icon"></i>
                 <span>IA Prédictions</span>
@@ -293,6 +297,9 @@
     </script>
     
     {% block scripts %}{% endblock %}
+    
+    <!-- Notifications System -->
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     
     <!-- Chatbot SarfX avec API Gemini -->
     <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>

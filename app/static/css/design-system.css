@@ -192,39 +192,137 @@ ul, ol {
     --bg-primary: #0f172a;
     --bg-secondary: #1e293b;
     --bg-tertiary: #334155;
-    --surface: rgba(30, 41, 59, 0.8);
-    --surface-elevated: rgba(51, 65, 85, 0.9);
-    --surface-hover: rgba(51, 65, 85, 0.6);
+    --surface: rgba(30, 41, 59, 0.95);
+    --surface-elevated: rgba(51, 65, 85, 0.95);
+    --surface-hover: rgba(51, 65, 85, 0.7);
     
     --text-primary: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-tertiary: #94a3b8;
     --text-inverse: #0f172a;
+    --text-muted: #64748b;
     
     --border-light: rgba(255, 255, 255, 0.08);
     --border-medium: rgba(255, 255, 255, 0.12);
     --border-dark: rgba(255, 255, 255, 0.2);
+    --border-color: rgba(255, 255, 255, 0.1);
     
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
     
     /* Dark mode semantic colors - Brighter for better contrast */
     --success: #34d399;
     --success-light: #6ee7b7;
-    --success-bg: rgba(52, 211, 153, 0.12);
+    --success-bg: rgba(52, 211, 153, 0.15);
     --warning: #fbbf24;
     --warning-light: #fcd34d;
-    --warning-bg: rgba(251, 191, 36, 0.12);
+    --warning-bg: rgba(251, 191, 36, 0.15);
     --error: #f87171;
     --error-light: #fca5a5;
-    --error-bg: rgba(248, 113, 113, 0.12);
+    --error-bg: rgba(248, 113, 113, 0.15);
     --info: #60a5fa;
     --info-light: #93c5fd;
-    --info-bg: rgba(96, 165, 250, 0.12);
+    --info-bg: rgba(96, 165, 250, 0.15);
     
     /* Dark mode brand colors - Brighter */
     --brand-primary: #ff7a2e;
     --brand-primary-light: #ff9d5c;
+    --primary: #667eea;
+    --primary-hover: #5a67d8;
+}
+
+/* Dark mode specific overrides */
+[data-theme="dark"] .wise-card,
+.theme-dark .wise-card {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .wise-sidebar,
+.theme-dark .wise-sidebar {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .wise-bottom-nav,
+.theme-dark .wise-bottom-nav {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+.theme-dark input,
+.theme-dark select,
+.theme-dark textarea {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus,
+.theme-dark input:focus,
+.theme-dark select:focus,
+.theme-dark textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+[data-theme="dark"] input::placeholder,
+.theme-dark input::placeholder {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .wise-table th,
+.theme-dark .wise-table th {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .wise-table tr:hover,
+.theme-dark .wise-table tr:hover {
+    background: var(--surface-hover);
+}
+
+[data-theme="dark"] .modal-content,
+.theme-dark .modal-content {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .toast,
+.theme-dark .toast {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+/* Charts dark mode */
+[data-theme="dark"] .apexcharts-tooltip,
+.theme-dark .apexcharts-tooltip {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .apexcharts-tooltip-title,
+.theme-dark .apexcharts-tooltip-title {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .apexcharts-xaxistooltip,
+[data-theme="dark"] .apexcharts-yaxistooltip,
+.theme-dark .apexcharts-xaxistooltip,
+.theme-dark .apexcharts-yaxistooltip {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .apexcharts-legend-text,
+.theme-dark .apexcharts-legend-text {
+    color: var(--text-secondary) !important;
 }
 
 /* ===========================================

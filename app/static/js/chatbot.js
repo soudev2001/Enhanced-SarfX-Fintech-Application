@@ -40,6 +40,10 @@ class SarfXChatbot {
                                 <p>Bonjour ! Je suis l'assistant virtuel de SarfX. Comment puis-je vous aider aujourd'hui ?</p>
                             </div>
                         </div>
+                        <div class="chatbot-suggestions" id="chatbot-suggestions">
+                            <p class="suggestions-title">Questions fréquentes :</p>
+                            <div class="suggestions-list"></div>
+                        </div>
                     </div>
                     
                     <div class="chatbot-input-area">
@@ -244,6 +248,44 @@ class SarfXChatbot {
                     border-color: #667eea;
                 }
 
+                .chatbot-suggestions {
+                    margin-top: 8px;
+                    padding: 10px;
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                }
+
+                .suggestions-title {
+                    font-size: 12px;
+                    color: #6c757d;
+                    margin: 0 0 8px 0;
+                    font-weight: 500;
+                }
+
+                .suggestions-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                }
+
+                .suggestion-btn {
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border: 1px solid #dee2e6;
+                    color: #495057;
+                    padding: 6px 12px;
+                    border-radius: 16px;
+                    font-size: 12px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .suggestion-btn:hover {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border-color: transparent;
+                }
+
                 .chatbot-send {
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     border: none;
@@ -339,10 +381,41 @@ class SarfXChatbot {
         if (this.isOpen) {
             window.classList.add('open');
             toggle.style.display = 'none';
+            // Charger les suggestions
+            this.loadSuggestions();
         } else {
             window.classList.remove('open');
             toggle.style.display = 'flex';
         }
+    }
+
+    async loadSuggestions() {
+        try {
+            const response = await fetch('/api/chatbot/suggestions');
+            const data = await response.json();
+            
+            if (data.success && data.suggestions) {
+                const suggestionsContainer = document.querySelector('.suggestions-list');
+                if (suggestionsContainer) {
+                    suggestionsContainer.innerHTML = data.suggestions.map(s => 
+                        `<button class="suggestion-btn" onclick="window.sarfxChatbot.useSuggestion('${this.escapeHtml(s)}')">${this.escapeHtml(s)}</button>`
+                    ).join('');
+                }
+            }
+        } catch (error) {
+            console.log('Impossible de charger les suggestions');
+        }
+    }
+
+    useSuggestion(text) {
+        const input = document.getElementById('chatbot-input');
+        input.value = text;
+        // Masquer les suggestions après utilisation
+        const suggestionsDiv = document.getElementById('chatbot-suggestions');
+        if (suggestionsDiv) {
+            suggestionsDiv.style.display = 'none';
+        }
+        this.sendMessage();
     }
 
     async sendMessage() {
@@ -444,8 +517,8 @@ class SarfXChatbot {
 // Initialiser le chatbot automatiquement
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        new SarfXChatbot();
+        window.sarfxChatbot = new SarfXChatbot();
     });
 } else {
-    new SarfXChatbot();
+    window.sarfxChatbot = new SarfXChatbot();
 }

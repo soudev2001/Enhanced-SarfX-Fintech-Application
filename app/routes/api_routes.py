@@ -66,6 +66,154 @@ def get_suppliers():
     return jsonify(result)
 
 
+# ==================== RATE HISTORY ====================
+
+@api_bp.route('/rates/history')
+def get_rate_history_chart():
+    """Récupère l'historique des taux de change pour les graphiques"""
+    import random
+    from datetime import timedelta
+    
+    pair = request.args.get('pair', 'USD-MAD')
+    time_range = request.args.get('range', '24h')
+    
+    # Déterminer le nombre de points de données
+    ranges = {
+        '24h': (48, 30),     # 48 points, 30 min each
+        '7d': (168, 60),     # 168 points, 1 hour each
+        '30d': (120, 360),   # 120 points, 6 hours each
+        '90d': (90, 1440)    # 90 points, 1 day each
+    }
+    
+    points, interval = ranges.get(time_range, (48, 30))
+    
+    # Base rates par paire
+    base_rates = {
+        'USD-MAD': 10.05,
+        'EUR-MAD': 10.85,
+        'GBP-MAD': 12.65,
+        'USD-EUR': 0.92
+    }
+    
+    base_rate = base_rates.get(pair, 10.0)
+    
+    # Générer l'historique simulé
+    history = []
+    now = datetime.utcnow()
+    rate = base_rate
+    min_rate = rate
+    max_rate = rate
+    first_rate = None
+    
+    for i in range(points, -1, -1):
+        timestamp = now - timedelta(minutes=i * interval)
+        # Variation aléatoire réaliste
+        change = (random.random() - 0.5) * 0.03 * base_rate
+        rate = max(base_rate * 0.95, min(base_rate * 1.05, rate + change))
+        
+        if first_rate is None:
+            first_rate = rate
+        
+        min_rate = min(min_rate, rate)
+        max_rate = max(max_rate, rate)
+        
+        history.append({
+            'timestamp': timestamp.isoformat(),
+            'rate': round(rate, 4)
+        })
+    
+    current_rate = history[-1]['rate'] if history else base_rate
+    change_pct = ((current_rate - first_rate) / first_rate * 100) if first_rate else 0
+    
+    return jsonify({
+        'success': True,
+        'pair': pair,
+        'range': time_range,
+        'history': history,
+        'stats': {
+            'current': round(current_rate, 4),
+            'high': round(max_rate, 4),
+            'low': round(min_rate, 4),
+            'change': round(change_pct, 2)
+        }
+    })
+
+
+@api_bp.route('/rates/best')
+def get_best_rates():
+    """Récupère les meilleurs taux de change"""
+    db = get_db()
+    amount = float(request.args.get('amount', 1000))
+    
+    if db is None:
+        # Données mock
+        return jsonify({
+            'success': True,
+            'rates': [
+                {'supplier': 'Binance P2P', 'type': 'Crypto', 'rate': 10.12, 'fee': 0},
+                {'supplier': 'Marché Parallèle', 'type': 'Cash', 'rate': 10.05, 'fee': 0},
+                {'supplier': 'Western Union', 'type': 'Transfer', 'rate': 9.95, 'fee': 15},
+                {'supplier': 'MoneyGram', 'type': 'Transfer', 'rate': 9.90, 'fee': 12},
+                {'supplier': 'Banque Populaire', 'type': 'Bank', 'rate': 9.85, 'fee': 20}
+            ]
+        })
+    
+    suppliers = list(db.suppliers.find({"is_active": True}).sort("rate", -1))
+    
+    rates = []
+    for s in suppliers:
+        rates.append({
+            'supplier': s['name'],
+            'type': s.get('type', 'bank').capitalize(),
+            'rate': s.get('rate', 10.0),
+            'fee': s.get('fee', 0)
+        })
+    
+    return jsonify({
+        'success': True,
+        'rates': rates
+    })
+
+
+@api_bp.route('/rates/alerts', methods=['GET', 'POST', 'DELETE'])
+@login_required_api
+def rate_alerts():
+    """Gestion des alertes de taux"""
+    db = get_db()
+    user_id = session['user_id']
+    
+    if request.method == 'GET':
+        alerts = list(db.rate_alerts.find({"user_id": user_id})) if db else []
+        for a in alerts:
+            a['_id'] = str(a['_id'])
+        return jsonify({'success': True, 'alerts': alerts})
+    
+    elif request.method == 'POST':
+        data = request.get_json()
+        alert = {
+            'user_id': user_id,
+            'pair': data.get('pair', 'USD-MAD'),
+            'condition': data.get('condition', 'above'),
+            'target': float(data.get('target', 10.0)),
+            'email_notify': data.get('email_notify', True),
+            'created_at': datetime.utcnow(),
+            'triggered': False
+        }
+        
+        if db:
+            result = db.rate_alerts.insert_one(alert)
+            alert['_id'] = str(result.inserted_id)
+        
+        return jsonify({'success': True, 'alert': alert})
+    
+    elif request.method == 'DELETE':
+        alert_id = request.args.get('id')
+        if db and alert_id:
+            from bson import ObjectId
+            db.rate_alerts.delete_one({"_id": ObjectId(alert_id), "user_id": user_id})
+        return jsonify({'success': True})
+
+
 # ==================== EXCHANGE ====================
 
 @api_bp.route('/exchange', methods=['POST'])
@@ -824,6 +972,119 @@ def test_bank_connection():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# ==================== NOTIFICATIONS ====================
+
+@api_bp.route('/notifications')
+@login_required_api
+def get_notifications():
+    """Récupère les notifications de l'utilisateur"""
+    db = get_db()
+    user_id = session['user_id']
+    
+    if db is None:
+        return jsonify({"success": True, "notifications": []})
+    
+    notifications = list(db.notifications.find(
+        {"user_id": user_id}
+    ).sort("created_at", -1).limit(20))
+    
+    for n in notifications:
+        n['_id'] = str(n['_id'])
+        n['id'] = n['_id']
+        n['time'] = n.get('created_at', datetime.utcnow()).isoformat()
+    
+    return jsonify({
+        "success": True,
+        "notifications": notifications
+    })
+
+
+@api_bp.route('/notifications/<notif_id>/read', methods=['POST'])
+@login_required_api
+def mark_notification_read(notif_id):
+    """Marque une notification comme lue"""
+    db = get_db()
+    user_id = session['user_id']
+    
+    if db:
+        from bson import ObjectId
+        db.notifications.update_one(
+            {"_id": ObjectId(notif_id), "user_id": user_id},
+            {"$set": {"read": True}}
+        )
+    
+    return jsonify({"success": True})
+
+
+@api_bp.route('/notifications/read-all', methods=['POST'])
+@login_required_api
+def mark_all_notifications_read():
+    """Marque toutes les notifications comme lues"""
+    db = get_db()
+    user_id = session['user_id']
+    
+    if db:
+        db.notifications.update_many(
+            {"user_id": user_id},
+            {"$set": {"read": True}}
+        )
+    
+    return jsonify({"success": True})
+
+
+@api_bp.route('/notifications/check')
+@login_required_api
+def check_new_notifications():
+    """Vérifie s'il y a de nouvelles notifications"""
+    db = get_db()
+    user_id = session['user_id']
+    
+    if db is None:
+        return jsonify({"hasNew": False})
+    
+    unread_count = db.notifications.count_documents({
+        "user_id": user_id,
+        "read": False
+    })
+    
+    latest = None
+    if unread_count > 0:
+        latest_doc = db.notifications.find_one(
+            {"user_id": user_id, "read": False},
+            sort=[("created_at", -1)]
+        )
+        if latest_doc:
+            latest = {
+                "title": latest_doc.get('title', ''),
+                "message": latest_doc.get('message', '')
+            }
+    
+    return jsonify({
+        "hasNew": unread_count > 0,
+        "unreadCount": unread_count,
+        "latest": latest
+    })
+
+
+def create_notification(user_id, notif_type, title, message):
+    """Helper pour créer une notification (utilisable depuis d'autres modules)"""
+    db = get_db()
+    if db is None:
+        return None
+    
+    notification = {
+        "user_id": user_id,
+        "type": notif_type,
+        "title": title,
+        "message": message,
+        "read": False,
+        "created_at": datetime.utcnow()
+    }
+    
+    result = db.notifications.insert_one(notification)
+    return str(result.inserted_id)
+
+
 # ==================== CHATBOT ====================
 
 @api_bp.route('/chatbot/message', methods=['POST'])
@@ -857,6 +1118,36 @@ def chatbot_message():
             
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/chatbot/suggestions', methods=['GET'])
+def chatbot_suggestions():
+    """Retourne les suggestions de questions pour le chatbot"""
+    try:
+        from app.services.chatbot_service import chatbot_service
+        from bson import ObjectId
+        
+        db = get_db()
+        user = None
+        
+        if 'user_id' in session and db:
+            user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+        
+        suggestions = chatbot_service.get_suggestions(db, user)
+        
+        return jsonify({
+            "success": True,
+            "suggestions": suggestions
+        })
+    except Exception as e:
+        return jsonify({
+            "success": True,
+            "suggestions": [
+                "Quels sont les taux de change actuels ?",
+                "Comment créer un wallet ?",
+                "Où trouver un ATM près de moi ?"
+            ]
+        })
 
 
 # ==================== ATMS ====================

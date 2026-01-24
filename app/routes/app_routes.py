@@ -213,6 +213,17 @@ def ai_forecast():
     )
 
 
+@app_bp.route('/rate-history')
+@login_required
+def rate_history():
+    """Page de l'historique des taux avec graphiques"""
+    user = get_current_user()
+    return render_template('app_rate_history.html',
+        active_tab='rate_history',
+        user=user
+    )
+
+
 @app_bp.route('/profile')
 @login_required
 def profile():
