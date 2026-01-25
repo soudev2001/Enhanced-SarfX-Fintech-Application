@@ -6,6 +6,10 @@
     <title>SarfX - AI-Powered Exchange Rates | Send Money Globally</title>
     <meta name="description" content="Compare real-time rates from 6+ providers, generate secure withdrawal codes, and access cash at 1,000+ ATMs worldwide - all without a physical card.">
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
@@ -420,6 +424,34 @@
             gap: 40px;
             flex-wrap: wrap;
             margin-bottom: 24px;
+        }
+        
+        /* Mobile: QR codes empilés verticalement */
+        @media (max-width: 640px) {
+            .qr-codes {
+                flex-direction: column;
+                gap: 24px;
+            }
+            
+            .qr-codes .or-divider {
+                flex-direction: row;
+                gap: 16px;
+            }
+            
+            .qr-codes .or-divider div {
+                width: 50px !important;
+                height: 2px !important;
+            }
+            
+            .qr-code-box img {
+                width: 140px !important;
+                height: 140px !important;
+            }
+            
+            .store-badges {
+                flex-direction: column;
+                align-items: center;
+            }
         }
         
         .qr-code-box {
@@ -1202,43 +1234,48 @@
     <!-- ============ MOBILE APP DOWNLOAD ============ -->
     <section class="app-download">
         <div class="app-download-container">
-            <h2>Download Our Mobile App</h2>
-            <p>Scan QR codes to get instant access 📱</p>
+            <div class="text-center mb-6">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light)); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(224, 90, 3, 0.4);">
+                        <i data-lucide="qr-code" style="width: 28px; height: 28px; color: white;"></i>
+                    </div>
+                    <h2 style="margin: 0;">Download Our Mobile App</h2>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 8px;">Scan QR codes to get instant access 📱</p>
+                <p style="color: #e05a03; font-weight: 600;">📱 Available Q2 2026</p>
+            </div>
             
+            <!-- QR Codes Row -->
             <div class="qr-codes">
-                <div class="qr-code-box">
-                    <div class="qr-placeholder">App Store QR</div>
-                    <span class="qr-label">iOS</span>
+                <div class="qr-code-box" style="background: white; border-radius: 20px; padding: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid rgba(224, 90, 3, 0.2); transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://apps.apple.com/sarfx&bgcolor=ffffff" alt="App Store QR" style="width: 128px; height: 128px; border-radius: 12px;">
+                    <div style="margin-top: 12px;">
+                        <span style="background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;">🍎 iOS</span>
+                    </div>
                 </div>
-                <span class="or-divider">OR</span>
-                <div class="qr-code-box">
-                    <div class="qr-placeholder">Play Store QR</div>
-                    <span class="qr-label">Android</span>
+
+                <div class="or-divider" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="width: 2px; height: 50px; background: linear-gradient(180deg, var(--brand-orange), transparent);"></div>
+                    <span style="font-weight: 600; color: var(--text-dim);">OR</span>
+                    <div style="width: 2px; height: 50px; background: linear-gradient(0deg, var(--brand-orange), transparent);"></div>
+                </div>
+
+                <div class="qr-code-box" style="background: white; border-radius: 20px; padding: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid rgba(16, 185, 129, 0.2); transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://play.google.com/store/apps/sarfx&bgcolor=ffffff" alt="Play Store QR" style="width: 128px; height: 128px; border-radius: 12px;">
+                    <div style="margin-top: 12px;">
+                        <span style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;">▶️ Android</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="store-badges">
-                <a href="#" class="store-badge">
-                    <img src="{{ url_for('static', filename='images/app-store-badge.png') }}" alt="Download on the App Store" style="height: 50px; width: auto;">
+            <!-- Store Badges Row -->
+            <div class="store-badges" style="padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 24px;">
+                <a href="https://apps.apple.com/sarfx" target="_blank" rel="noopener noreferrer" class="store-badge" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store" style="height: 48px; width: auto;">
                 </a>
-                <a href="#" class="store-badge">
-                    <img src="{{ url_for('static', filename='images/google-play-badge.png') }}" alt="Get it on Google Play" style="height: 50px; width: auto;">
+                <a href="https://play.google.com/store/apps/sarfx" target="_blank" rel="noopener noreferrer" class="store-badge" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" style="height: 48px; width: auto;">
                 </a>
-            </div>
-            
-            <div class="trust-badges">
-                <div class="trust-badge">
-                    <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
-                    Secure
-                </div>
-                <div class="trust-badge">
-                    <i data-lucide="zap" style="width: 18px; height: 18px;"></i>
-                    Fast
-                </div>
-                <div class="trust-badge">
-                    <i data-lucide="trending-up" style="width: 18px; height: 18px;"></i>
-                    Best Rates
-                </div>
             </div>
         </div>
     </section>

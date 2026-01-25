@@ -1,10 +1,11 @@
 """Service de chatbot utilisant l'API Gemini de Google"""
 import requests
 import os
+import re
 from flask import current_app
 
 class ChatbotService:
-    """Service pour interagir avec l'API Gemini"""
+    """Service pour interagir avec l'API Gemini avec sécurité renforcée"""
     
     def __init__(self, api_key=None):
         self.api_key = api_key or os.getenv('GEMINI_API_KEY', 'AIzaSyC4q4-n7tdL8cU9srm8q9aodCG0hTqUcoA')
@@ -18,6 +19,28 @@ class ChatbotService:
             "Quels sont les frais de conversion ?"
         ]
         
+        # Patterns de détection de demandes sensibles
+        self.sensitive_patterns = [
+            r'mot de passe|password|mdp|pwd',
+            r'carte bancaire|credit card|numéro de carte|card number',
+            r'code pin|pin code|code secret',
+            r'iban|rib|compte bancaire|account number',
+            r'code cvv|cvv|cvc|code sécurité carte',
+            r'api[_\s]?key|clé api|secret key',
+            r'token|jwt|bearer|auth token',
+            r'credential|identifiant secret',
+            r'admin password|mot de passe admin',
+            r'base de données|database|mongodb|connection string',
+            r'données utilisateur|user data|informations personnelles',
+            r'liste des utilisateurs|all users|dump users',
+            r'données financières|financial data|transactions privées',
+            r'clé privée|private key|ssh key',
+            r'bypass|contourner|hack|injection|exploit'
+        ]
+        
+        # Réponses pour demandes sensibles
+        self.security_response = "🔒 Pour des raisons de sécurité, je ne peux pas fournir d'informations sensibles comme des mots de passe, numéros de carte, IBAN ou données personnelles. Si vous avez besoin d'aide avec votre compte, veuillez contacter notre support sécurisé à support@sarfx.ma ou accéder à votre espace client pour gérer vos informations de manière sécurisée."
+        
         # Réponses de fallback intelligentes
         self.fallback_responses = {
             "taux": "📊 Les taux de change actuels sont disponibles sur la page Converter. Nous offrons les meilleures conversions EUR/MAD, USD/MAD et GBP/MAD avec des mises à jour en temps réel.",
@@ -29,9 +52,36 @@ class ChatbotService:
             "default": "👋 Je suis l'assistant SarfX ! Je peux vous aider avec : les taux de change, les wallets, la localisation d'ATMs, les bénéficiaires et l'API. Que souhaitez-vous savoir ?"
         }
         
+    def _is_sensitive_request(self, message):
+        """Vérifie si le message demande des informations sensibles"""
+        message_lower = message.lower()
+        for pattern in self.sensitive_patterns:
+            if re.search(pattern, message_lower, re.IGNORECASE):
+                return True
+        return False
+    
+    def _sanitize_response(self, response):
+        """Nettoie la réponse pour masquer toute donnée sensible potentielle"""
+        # Patterns de données sensibles à masquer
+        sanitize_patterns = [
+            (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[email masqué]'),
+            (r'\b(?:MA|FR|DE|ES|IT|GB)[0-9]{2}[A-Z0-9]{4,30}\b', '[IBAN masqué]'),
+            (r'\b(?:\d{4}[-\s]?){3}\d{4}\b', '[carte masquée]'),
+            (r'\b\d{3,4}\b(?=.*(?:cvv|cvc|code))', '***'),
+            (r'(?:api[_\s]?key|token|secret)[:\s]*["\']?[A-Za-z0-9_-]{20,}["\']?', '[clé masquée]'),
+            (r'mongodb(?:\+srv)?://[^\s]+', '[connexion masquée]'),
+            (r'(?:password|pwd|mdp)[:\s]*["\']?[^\s"\']+["\']?', '[mot de passe masqué]'),
+        ]
+        
+        sanitized = response
+        for pattern, replacement in sanitize_patterns:
+            sanitized = re.sub(pattern, replacement, sanitized, flags=re.IGNORECASE)
+        
+        return sanitized
+        
     def generate_response(self, message, context=None):
         """
-        Génère une réponse du chatbot
+        Génère une réponse du chatbot avec sécurité renforcée
         
         Args:
             message (str): Message de l'utilisateur
@@ -40,15 +90,34 @@ class ChatbotService:
         Returns:
             dict: Réponse avec 'success', 'response' ou 'error'
         """
+        # SÉCURITÉ: Vérifier si le message demande des informations sensibles
+        if self._is_sensitive_request(message):
+            return {'success': True, 'response': self.security_response}
+        
         # Vérifier si API key est configurée
         if not self.api_key:
             return self._get_fallback_response(message)
             
         try:
-            # Construire le prompt avec contexte si fourni
-            prompt = message
-            if context:
-                prompt = f"Contexte: {context}\n\nQuestion: {message}"
+            # Construire le prompt avec contexte sécurisé
+            secure_context = self.get_sarfx_context()
+            
+            # Ajouter des instructions de sécurité strictes
+            security_instructions = """
+            
+RÈGLES DE SÉCURITÉ STRICTES (À RESPECTER ABSOLUMENT):
+1. Ne JAMAIS divulguer de mots de passe, codes PIN, ou credentials
+2. Ne JAMAIS afficher d'IBAN, numéros de carte bancaire ou CVV
+3. Ne JAMAIS révéler de clés API, tokens ou secrets
+4. Ne JAMAIS partager des données personnelles d'utilisateurs
+5. Ne JAMAIS expliquer comment contourner la sécurité
+6. Toujours rediriger vers le support pour les questions sensibles
+7. Réponses générales et éducatives uniquement
+8. En cas de doute, répondre de manière générique"""
+            
+            full_context = secure_context + security_instructions
+            
+            prompt = f"{full_context}\n\nQuestion utilisateur: {message}\n\nRéponds de manière utile, concise et sécurisée:"
             
             # Préparer la requête
             headers = {
@@ -65,6 +134,12 @@ class ChatbotService:
                             }
                         ]
                     }
+                ],
+                "safetySettings": [
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"}
                 ]
             }
             
@@ -83,9 +158,11 @@ class ChatbotService:
                 candidate = result['candidates'][0]
                 if 'content' in candidate and 'parts' in candidate['content']:
                     text = candidate['content']['parts'][0].get('text', '')
+                    # SÉCURITÉ: Sanitiser la réponse avant de l'envoyer
+                    sanitized_text = self._sanitize_response(text)
                     return {
                         'success': True,
-                        'response': text
+                        'response': sanitized_text
                     }
             
             return self._get_fallback_response(message)

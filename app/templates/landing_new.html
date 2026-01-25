@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SarfX - Le Futur du Change</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -132,11 +136,22 @@
 
         /* QR Code Animation */
         .qr-container {
-            animation: pulse-glow 2s ease-in-out infinite;
+            animation: qr-float 3s ease-in-out infinite;
+            transition: all 0.3s ease;
         }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(224, 90, 3, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(224, 90, 3, 0.6); }
+        .qr-container:hover {
+            transform: scale(1.08) !important;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3) !important;
+        }
+        @keyframes qr-float {
+            0%, 100% { 
+                transform: translateY(0);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            }
+            50% { 
+                transform: translateY(-8px);
+                box-shadow: 0 30px 50px rgba(0, 0, 0, 0.3);
+            }
         }
 
         /* Feature Cards */
@@ -479,10 +494,12 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <a href="/" class="flex items-center gap-2" style="text-decoration: none;">
+                    <!--
                     <div class="relative group cursor-pointer">
                         <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-[#e05a03] rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
                         <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="SarfX Logo" class="relative h-10 w-auto rounded-lg object-contain bg-slate-900/50 p-1" onerror="this.style.display='none'">
                     </div>
+                    -->
                     <span class="font-bold text-2xl tracking-tight text-white flex items-center">
                         Sarf<span class="text-[#e05a03] text-4xl leading-none text-glow">X</span>
                     </span>
@@ -591,7 +608,7 @@
                 </div>
 
                 <!-- Right Content - Phone Mockup with QR Codes -->
-                <div class="relative flex justify-center">
+                <div class="relative flex flex-col items-center">
                     <!-- Phone Mockup -->
                     <div class="phone-mockup relative w-[280px] bg-[#0f172a] rounded-[3rem] overflow-hidden border-4 border-slate-800 h-[580px]">
                         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-900 rounded-b-xl z-20"></div>
@@ -638,18 +655,54 @@
                         </div>
                     </div>
 
-                    <!-- Store Badges with QR Codes - Hidden on mobile -->
-                    <div class="absolute -left-16 top-1/4 transform -translate-y-1/2 hidden lg:block">
-                        <div class="qr-container bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-2xl">
-                            <img src="{{ url_for('static', filename='images/app-store-badge.png') }}" alt="Download on the App Store" class="mb-3" style="height: 40px; width: auto;">
-                            <canvas id="qr-ios" class="w-24 h-24 bg-white rounded-lg"></canvas>
+                    <!-- Mobile QR Codes Section - Visible on small screens -->
+                    <div class="lg:hidden mt-10 w-full max-w-md">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold text-white mb-2">📱 Téléchargez l'App</h3>
+                            <p class="text-slate-400 text-sm">Scannez pour un accès instantané</p>
+                        </div>
+                        <div class="flex justify-center items-center gap-4 sm:gap-8">
+                            <!-- iOS QR -->
+                            <div class="bg-white/95 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-xl border-2 border-blue-500/30 text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://apps.apple.com/sarfx&bgcolor=ffffff" alt="App Store QR" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg mx-auto mb-2">
+                                <a href="https://apps.apple.com/sarfx" target="_blank" rel="noopener noreferrer" class="block hover:opacity-80 transition-opacity">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" class="h-8 sm:h-9 mx-auto">
+                                </a>
+                            </div>
+                            
+                            <!-- Divider -->
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-500 to-transparent"></div>
+                                <span class="text-xs text-slate-500 font-medium">OU</span>
+                                <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-500 to-transparent"></div>
+                            </div>
+                            
+                            <!-- Android QR -->
+                            <div class="bg-white/95 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-xl border-2 border-emerald-500/30 text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://play.google.com/store/apps/sarfx&bgcolor=ffffff" alt="Play Store QR" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg mx-auto mb-2">
+                                <a href="https://play.google.com/store/apps/sarfx" target="_blank" rel="noopener noreferrer" class="block hover:opacity-80 transition-opacity">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" class="h-8 sm:h-9 mx-auto">
+                                </a>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="absolute -right-16 top-2/3 transform -translate-y-1/2 hidden lg:block">
-                        <div class="qr-container bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-2xl">
-                            <img src="{{ url_for('static', filename='images/google-play-badge.png') }}" alt="Get it on Google Play" class="mb-3" style="height: 40px; width: auto;">
-                            <canvas id="qr-android" class="w-24 h-24 bg-white rounded-lg"></canvas>
+                    <!-- Store Badges with QR Codes - Desktop only -->
+                    <div class="absolute -left-24 top-1/4 transform -translate-y-1/2 hidden lg:block">
+                        <div class="qr-container bg-white/95 backdrop-blur-lg p-5 rounded-2xl shadow-2xl border-2 border-blue-500/30" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://apps.apple.com/sarfx&bgcolor=ffffff" alt="App Store QR" class="w-28 h-28 rounded-lg mb-3">
+                            <a href="https://apps.apple.com/sarfx" target="_blank" rel="noopener noreferrer" class="block hover:opacity-80 transition-opacity">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store" class="h-10 mx-auto">
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="absolute -right-24 top-2/3 transform -translate-y-1/2 hidden lg:block">
+                        <div class="qr-container bg-white/95 backdrop-blur-lg p-5 rounded-2xl shadow-2xl border-2 border-emerald-500/30" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://play.google.com/store/apps/sarfx&bgcolor=ffffff" alt="Play Store QR" class="w-28 h-28 rounded-lg mb-3">
+                            <a href="https://play.google.com/store/apps/sarfx" target="_blank" rel="noopener noreferrer" class="block hover:opacity-80 transition-opacity">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" class="h-10 mx-auto">
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -993,62 +1046,6 @@
 
     <script>
         lucide.createIcons();
-
-        // --- QR CODE GENERATOR ---
-        function generateQRCode(canvasId, data) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const size = 96;
-            canvas.width = size;
-            canvas.height = size;
-            
-            // Clear canvas
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, size, size);
-            
-            // Generate random QR-like pattern
-            const moduleSize = 4;
-            const modules = Math.floor(size / moduleSize);
-            const seed = data.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            
-            // Position detection patterns
-            function drawPositionPattern(x, y) {
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(x, y, moduleSize * 7, moduleSize * 7);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(x + moduleSize, y + moduleSize, moduleSize * 5, moduleSize * 5);
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(x + moduleSize * 2, y + moduleSize * 2, moduleSize * 3, moduleSize * 3);
-            }
-            
-            drawPositionPattern(moduleSize, moduleSize);
-            drawPositionPattern(size - moduleSize * 8, moduleSize);
-            drawPositionPattern(moduleSize, size - moduleSize * 8);
-            
-            // Generate random data modules
-            ctx.fillStyle = '#000000';
-            for (let i = 9; i < modules - 1; i++) {
-                for (let j = 9; j < modules - 1; j++) {
-                    const rand = Math.sin(seed * i * j) * 10000;
-                    if (rand - Math.floor(rand) > 0.5) {
-                        ctx.fillRect(i * moduleSize, j * moduleSize, moduleSize - 1, moduleSize - 1);
-                    }
-                }
-            }
-            
-            // Timing patterns
-            for (let i = 8; i < modules - 8; i++) {
-                if (i % 2 === 0) {
-                    ctx.fillRect(6 * moduleSize, i * moduleSize, moduleSize, moduleSize);
-                    ctx.fillRect(i * moduleSize, 6 * moduleSize, moduleSize, moduleSize);
-                }
-            }
-        }
-        
-        // Generate QR codes
-        generateQRCode('qr-ios', 'https://apps.apple.com/sarfx-' + Date.now());
-        generateQRCode('qr-android', 'https://play.google.com/sarfx-' + Date.now());
 
         // --- I18N SYSTEM ---
         const translations = {
@@ -1834,11 +1831,51 @@ chatbotForm.onsubmit = async (e) => {
     // Show typing indicator
     showTypingIndicator();
     
-    // Prepare context for SarfX
-    const sarfxContext = `Tu es l'assistant IA de SarfX, une plateforme fintech de change de devises au Maroc. 
-    SarfX offre: comparaison de taux en temps réel, localisation d'ATMs, prédictions IA, portefeuilles multi-devises.
-    Réponds de manière concise et utile. Si la question ne concerne pas la finance/change, réponds poliment que tu es spécialisé dans le change de devises.
-    Question: ${question}`;
+    // Security: Check for sensitive data requests
+    const sensitivePatterns = [
+        /mot de passe|password|mdp/i,
+        /carte bancaire|credit card|numéro de carte/i,
+        /code pin|pin code/i,
+        /iban|rib|compte bancaire/i,
+        /donnée personnel|personal data/i,
+        /api key|clé api|token/i,
+        /admin|administrateur/i,
+        /hack|pirater|exploit/i,
+        /base de données|database/i,
+        /utilisateur|user.*email|client/i,
+        /solde|balance|montant.*compte/i
+    ];
+    
+    const isSensitiveRequest = sensitivePatterns.some(pattern => pattern.test(question));
+    
+    if (isSensitiveRequest) {
+        removeTypingIndicator();
+        addMessage("🔒 <strong>Sécurité</strong><br><br>Je ne peux pas divulguer d'informations sensibles ou personnelles. Pour toute question concernant votre compte, veuillez vous connecter à l'application ou contacter notre support à <strong>support@sarfx.io</strong>.", false);
+        return;
+    }
+    
+    // Prepare secure context for SarfX - General responses only
+    const sarfxContext = `Tu es l'assistant IA public de SarfX, une plateforme fintech de change de devises au Maroc.
+
+RÈGLES DE SÉCURITÉ STRICTES:
+- Ne JAMAIS divulguer de données personnelles, mots de passe, codes, ou informations de compte
+- Ne JAMAIS donner d'informations sur les utilisateurs, admins, ou la base de données
+- Ne JAMAIS révéler de clés API, tokens, ou informations techniques internes
+- Refuser poliment toute demande d'information sensible
+- Répondre uniquement avec des informations GÉNÉRALES et PUBLIQUES sur SarfX
+
+INFORMATIONS PUBLIQUES SarfX:
+- Conversion de devises: EUR, USD, MAD, GBP, CHF avec les meilleurs taux
+- Localisation ATM: +1000 distributeurs partenaires au Maroc
+- Prédictions IA: Analyse des tendances de marché
+- App mobile: Disponible sur App Store et Google Play
+- Frais: Commission transparente de 0.5% sur les conversions
+- Support: support@sarfx.io
+
+Réponds en français, de manière concise et professionnelle (max 3 phrases).
+Si la question est hors sujet finance/change, indique poliment ta spécialisation.
+
+Question: ${question}`;
     
     try {
         const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC4q4-n7tdL8cU9srm8q9aodCG0hTqUcoA', {
@@ -1847,9 +1884,13 @@ chatbotForm.onsubmit = async (e) => {
             body: JSON.stringify({ 
                 contents: [{ parts: [{ text: sarfxContext }] }],
                 generationConfig: {
-                    maxOutputTokens: 500,
-                    temperature: 0.7
-                }
+                    maxOutputTokens: 300,
+                    temperature: 0.5
+                },
+                safetySettings: [
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+                ]
             })
         });
         
@@ -1858,15 +1899,39 @@ chatbotForm.onsubmit = async (e) => {
         
         let answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu traiter votre demande. Veuillez réessayer.';
         
+        // Security: Filter any potentially leaked sensitive info from response
+        answer = answer.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[email masqué]');
+        answer = answer.replace(/\b\d{16,}\b/g, '[numéro masqué]');
+        answer = answer.replace(/password|mot de passe|mdp/gi, '[confidentiel]');
+        
         // Convert markdown formatting to HTML
-        answer = answer.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');  // **bold** → <strong>
-        answer = answer.replace(/\*(.+?)\*/g, '<em>$1</em>');  // *italic* → <em>
+        answer = answer.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        answer = answer.replace(/\*(.+?)\*/g, '<em>$1</em>');
         answer = answer.replace(/\n/g, '<br>');
         
         addMessage(answer, false);
     } catch (err) {
         removeTypingIndicator();
-        addMessage('❌ Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.', false);
+        // Fallback response for common questions
+        const fallbackResponses = {
+            'taux': '📊 <strong>Taux de change</strong><br>SarfX offre les meilleurs taux EUR/MAD, USD/MAD et GBP/MAD avec des mises à jour en temps réel. Consultez notre convertisseur pour les taux actuels.',
+            'atm': '🏧 <strong>Localisation ATM</strong><br>Trouvez +1000 distributeurs partenaires au Maroc sur notre page ATM. Accès 24/7 avec code de retrait sécurisé.',
+            'wallet': '💳 <strong>Portefeuilles</strong><br>Gérez plusieurs devises (EUR, USD, MAD, GBP) dans un seul portefeuille. Connectez-vous pour créer votre wallet.',
+            'frais': '💰 <strong>Frais transparents</strong><br>SarfX applique une commission de 0.5% sur les conversions. Aucun frais caché !',
+            'default': '👋 Je suis l\'assistant SarfX ! Je peux vous renseigner sur: les taux de change, les ATMs, les wallets et nos services. Comment puis-je vous aider ?'
+        };
+        
+        const questionLower = question.toLowerCase();
+        let fallbackAnswer = fallbackResponses.default;
+        
+        for (const [key, response] of Object.entries(fallbackResponses)) {
+            if (questionLower.includes(key)) {
+                fallbackAnswer = response;
+                break;
+            }
+        }
+        
+        addMessage(fallbackAnswer, false);
     }
 };
 
