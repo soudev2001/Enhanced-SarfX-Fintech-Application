@@ -638,23 +638,17 @@
                         </div>
                     </div>
 
-                    <!-- QR Codes - Hidden on mobile -->
+                    <!-- Store Badges with QR Codes - Hidden on mobile -->
                     <div class="absolute -left-16 top-1/4 transform -translate-y-1/2 hidden lg:block">
                         <div class="qr-container bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-2xl">
-                            <div class="flex items-center gap-2 mb-3">
-                                <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                                <span class="text-xs font-bold text-white">App Store</span>
-                            </div>
+                            <img src="{{ url_for('static', filename='images/app-store-badge.png') }}" alt="Download on the App Store" class="mb-3" style="height: 40px; width: auto;">
                             <canvas id="qr-ios" class="w-24 h-24 bg-white rounded-lg"></canvas>
                         </div>
                     </div>
 
                     <div class="absolute -right-16 top-2/3 transform -translate-y-1/2 hidden lg:block">
                         <div class="qr-container bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-2xl">
-                            <div class="flex items-center gap-2 mb-3">
-                                <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 2.262a1.338 1.338 0 0 0-.476-.078c-.907 0-1.766.478-2.212.967l-2.75 2.652-2.749-2.652c-.447-.489-1.306-.967-2.213-.967-.165 0-.327.027-.476.078C4.98 2.86 3.5 4.626 3.5 6.74c0 .687.201 1.394.633 2.177l7.867 11.31 7.867-11.31c.432-.783.633-1.49.633-2.177 0-2.114-1.48-3.88-3.147-4.478h.17z"/></svg>
-                                <span class="text-xs font-bold text-white">Google Play</span>
-                            </div>
+                            <img src="{{ url_for('static', filename='images/google-play-badge.png') }}" alt="Get it on Google Play" class="mb-3" style="height: 40px; width: auto;">
                             <canvas id="qr-android" class="w-24 h-24 bg-white rounded-lg"></canvas>
                         </div>
                     </div>
