@@ -1160,65 +1160,205 @@ def create_notification(user_id, notif_type, title, message):
 
 @api_bp.route('/chatbot/message', methods=['POST'])
 def chatbot_message():
-    """Envoie un message au chatbot et reçoit une réponse"""
+    """
+    Envoie un message au chatbot et reçoit une réponse
+    
+    Features:
+    - RBAC: Réponses adaptées au rôle utilisateur
+    - Function Calling: Exécution de tools (solde, taux, ATMs, stats...)
+    - Rate Limiting: 5 req/min anonymes, 30 req/min authentifiés
+    - Mémoire: Historique de conversation en MongoDB
+    - Fallback gracieux: Messages d'erreur spécifiques
+    """
     try:
         from app.services.chatbot_service import chatbot_service
+        from bson import ObjectId
+        import uuid
         
+        db = get_db()
         data = request.get_json()
         message = data.get('message', '')
+        context_type = data.get('context', 'app')  # 'landing', 'app', 'backoffice'
         
         if not message:
             return jsonify({"success": False, "error": "Message vide"}), 400
         
-        # Ajouter le contexte SarfX
-        context = chatbot_service.get_sarfx_context()
+        # Récupérer le contexte utilisateur
+        user_context = {'role': 'anonymous'}
+        user = None
         
-        # Générer la réponse
-        result = chatbot_service.generate_response(message, context)
+        if 'user_id' in session and db:
+            try:
+                user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+                if user:
+                    user_context = {
+                        'user_id': str(user['_id']),
+                        'role': user.get('role', 'user'),
+                        'email': user.get('email', ''),
+                        'bank_code': user.get('bank_code', ''),
+                        'is_authenticated': True
+                    }
+            except Exception as e:
+                print(f"Error fetching user context: {e}")
         
-        if result['success']:
+        # Récupérer ou créer l'ID de session pour la mémoire de conversation
+        session_id = data.get('session_id') or session.get('chat_session_id')
+        if not session_id:
+            session_id = str(uuid.uuid4())
+            session['chat_session_id'] = session_id
+        
+        # Récupérer l'adresse IP pour rate limiting
+        ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if ip_address and ',' in ip_address:
+            ip_address = ip_address.split(',')[0].strip()
+        
+        # Générer la réponse avec toutes les fonctionnalités
+        result = chatbot_service.generate_response(
+            message=message,
+            user_context=user_context,
+            db=db,
+            session_id=session_id,
+            ip_address=ip_address
+        )
+        
+        # Gérer le rate limiting
+        if result.get('error') == 'rate_limited':
             return jsonify({
+                "success": False,
+                "error": "rate_limited",
+                "response": result['response'],
+                "retry_after": result.get('retry_after', 60)
+            }), 429
+        
+        if result.get('success'):
+            response_data = {
                 "success": True,
-                "response": result['response']
-            })
+                "response": result['response'],
+                "session_id": session_id
+            }
+            
+            # Ajouter les métadonnées optionnelles
+            if result.get('tool_used'):
+                response_data['tool_used'] = result['tool_used']
+            if result.get('data'):
+                response_data['data'] = result['data']
+            if result.get('remaining_requests') is not None:
+                response_data['remaining_requests'] = result['remaining_requests']
+            
+            return jsonify(response_data)
         else:
             return jsonify({
                 "success": False,
-                "error": result.get('error', 'Erreur inconnue')
+                "error": result.get('error', 'Erreur inconnue'),
+                "response": result.get('response', "Désolé, une erreur est survenue.")
             }), 500
             
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        print(f"Chatbot error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "response": "Une erreur technique est survenue. Veuillez réessayer dans quelques instants."
+        }), 500
 
 
 @api_bp.route('/chatbot/suggestions', methods=['GET'])
 def chatbot_suggestions():
-    """Retourne les suggestions de questions pour le chatbot"""
+    """
+    Retourne les suggestions de questions pour le chatbot
+    Adaptées au contexte (landing/app/backoffice) et au rôle utilisateur
+    """
     try:
         from app.services.chatbot_service import chatbot_service
         from bson import ObjectId
         
         db = get_db()
         user = None
+        context_type = request.args.get('context', 'landing')  # 'landing', 'app', 'backoffice'
         
         if 'user_id' in session and db:
-            user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+            try:
+                user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+            except Exception:
+                pass
         
-        suggestions = chatbot_service.get_suggestions(db, user)
+        suggestions = chatbot_service.get_suggestions(db, user, context_type)
         
         return jsonify({
             "success": True,
-            "suggestions": suggestions
+            "suggestions": suggestions,
+            "context": context_type,
+            "user_role": user.get('role', 'anonymous') if user else 'anonymous'
         })
     except Exception as e:
+        print(f"Suggestions error: {e}")
         return jsonify({
             "success": True,
             "suggestions": [
-                "Quels sont les taux de change actuels ?",
-                "Comment créer un wallet ?",
-                "Où trouver un ATM près de moi ?"
-            ]
+                "C'est quoi SarfX ?",
+                "Taux de change actuel",
+                "Où trouver un ATM ?"
+            ],
+            "context": "landing"
         })
+
+
+@api_bp.route('/chatbot/history', methods=['GET', 'DELETE'])
+def chatbot_history():
+    """
+    Gestion de l'historique de conversation
+    GET: Récupère l'historique
+    DELETE: Efface l'historique
+    """
+    try:
+        from app.services.chatbot_service import chatbot_service
+        
+        db = get_db()
+        session_id = request.args.get('session_id') or session.get('chat_session_id')
+        
+        if not session_id:
+            return jsonify({
+                "success": True,
+                "history": [],
+                "message": "Pas de session de conversation active"
+            })
+        
+        if request.method == 'DELETE':
+            # Effacer l'historique
+            success = chatbot_service.clear_conversation_history(db, session_id)
+            if 'chat_session_id' in session:
+                del session['chat_session_id']
+            
+            return jsonify({
+                "success": success,
+                "message": "Historique de conversation effacé" if success else "Erreur lors de l'effacement"
+            })
+        
+        # GET: Récupérer l'historique
+        history = chatbot_service.get_conversation_history(db, session_id, limit=20)
+        
+        # Formater pour l'affichage
+        formatted_history = []
+        for msg in history:
+            formatted_history.append({
+                'role': msg['role'],
+                'content': msg['content'],
+                'timestamp': msg['timestamp'].isoformat() if msg.get('timestamp') else None
+            })
+        
+        return jsonify({
+            "success": True,
+            "history": formatted_history,
+            "session_id": session_id,
+            "count": len(formatted_history)
+        })
+        
+    except Exception as e:
+        print(f"History error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 # ==================== ATMS ====================

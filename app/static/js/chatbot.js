@@ -1,12 +1,29 @@
 /**
  * Widget Chatbot SarfX - Intégration universelle
+ * Avec support RBAC, Tools, Mémoire de conversation et Rate Limiting
  */
 
 class SarfXChatbot {
-    constructor() {
+    constructor(options = {}) {
         this.isOpen = false;
         this.messages = [];
+        this.sessionId = null;
+        this.context = options.context || this.detectContext();
+        this.remainingRequests = null;
         this.init();
+    }
+
+    /**
+     * Détecte automatiquement le contexte (landing, app, backoffice)
+     */
+    detectContext() {
+        const path = window.location.pathname;
+        if (path.includes('/admin') || path.includes('/backoffice')) {
+            return 'backoffice';
+        } else if (path.includes('/app') || path.includes('/dashboard') || path.includes('/wallets')) {
+            return 'app';
+        }
+        return 'landing';
     }
 
     init() {
@@ -23,14 +40,22 @@ class SarfXChatbot {
                     <div class="chatbot-header">
                         <div class="chatbot-header-info">
                             <h3>Assistant SarfX</h3>
-                            <span class="chatbot-status">En ligne</span>
+                            <span class="chatbot-status" id="chatbot-status">En ligne</span>
                         </div>
-                        <button class="chatbot-close" id="chatbot-close">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
+                        <div class="chatbot-header-actions">
+                            <button class="chatbot-clear" id="chatbot-clear" title="Nouvelle conversation">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                </svg>
+                            </button>
+                            <button class="chatbot-close" id="chatbot-close">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="chatbot-messages" id="chatbot-messages">
@@ -158,6 +183,29 @@ class SarfXChatbot {
                 }
 
                 .chatbot-close:hover {
+                    background: rgba(255,255,255,0.3);
+                }
+
+                .chatbot-header-actions {
+                    display: flex;
+                    gap: 8px;
+                }
+
+                .chatbot-clear {
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    color: white;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                }
+
+                .chatbot-clear:hover {
                     background: rgba(255,255,255,0.3);
                 }
 
@@ -360,11 +408,13 @@ class SarfXChatbot {
     attachEvents() {
         const toggle = document.getElementById('chatbot-toggle');
         const close = document.getElementById('chatbot-close');
+        const clear = document.getElementById('chatbot-clear');
         const send = document.getElementById('chatbot-send');
         const input = document.getElementById('chatbot-input');
 
         toggle.addEventListener('click', () => this.toggleChat());
         close.addEventListener('click', () => this.toggleChat());
+        clear.addEventListener('click', () => this.clearConversation());
         send.addEventListener('click', () => this.sendMessage());
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -381,7 +431,7 @@ class SarfXChatbot {
         if (this.isOpen) {
             window.classList.add('open');
             toggle.style.display = 'none';
-            // Charger les suggestions
+            // Charger les suggestions avec contexte
             this.loadSuggestions();
         } else {
             window.classList.remove('open');
@@ -389,9 +439,37 @@ class SarfXChatbot {
         }
     }
 
+    async clearConversation() {
+        try {
+            // Effacer côté serveur
+            await fetch('/api/chatbot/history', { method: 'DELETE' });
+            this.sessionId = null;
+            
+            // Effacer l'affichage
+            const messagesContainer = document.getElementById('chatbot-messages');
+            messagesContainer.innerHTML = `
+                <div class="chatbot-message bot-message">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <p>Conversation effacée. Comment puis-je vous aider ?</p>
+                    </div>
+                </div>
+                <div class="chatbot-suggestions" id="chatbot-suggestions">
+                    <p class="suggestions-title">Questions fréquentes :</p>
+                    <div class="suggestions-list"></div>
+                </div>
+            `;
+            
+            // Recharger les suggestions
+            this.loadSuggestions();
+        } catch (error) {
+            console.log('Erreur lors de l\'effacement de la conversation');
+        }
+    }
+
     async loadSuggestions() {
         try {
-            const response = await fetch('/api/chatbot/suggestions');
+            const response = await fetch(`/api/chatbot/suggestions?context=${this.context}`);
             const data = await response.json();
             
             if (data.success && data.suggestions) {
@@ -401,11 +479,19 @@ class SarfXChatbot {
                         `<button class="suggestion-btn" onclick="window.sarfxChatbot.useSuggestion('${this.escapeHtml(s)}')">${this.escapeHtml(s)}</button>`
                     ).join('');
                 }
+                
+                // Mettre à jour le statut si info de rôle disponible
+                if (data.user_role && data.user_role !== 'anonymous') {
+                    const statusEl = document.getElementById('chatbot-status');
+                    if (statusEl) {
+                        statusEl.textContent = `Connecté (${data.user_role})`;
+                    }
+                }
             }
         } catch (error) {
             console.log('Impossible de charger les suggestions');
         }
-    }
+    } 
 
     useSuggestion(text) {
         const input = document.getElementById('chatbot-input');
@@ -436,13 +522,17 @@ class SarfXChatbot {
         this.showTypingIndicator();
 
         try {
-            // Envoyer la requête à l'API
+            // Envoyer la requête à l'API avec contexte et session
             const response = await fetch('/api/chatbot/message', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message })
+                body: JSON.stringify({ 
+                    message,
+                    context: this.context,
+                    session_id: this.sessionId
+                })
             });
 
             const data = await response.json();
@@ -450,10 +540,31 @@ class SarfXChatbot {
             // Retirer l'indicateur de saisie
             this.hideTypingIndicator();
 
+            // Gérer le rate limiting
+            if (response.status === 429) {
+                this.addMessage(data.response || `⏱️ Trop de requêtes. Réessayez dans ${data.retry_after || 60} secondes.`, 'bot');
+                return;
+            }
+
+            // Mettre à jour la session ID
+            if (data.session_id) {
+                this.sessionId = data.session_id;
+            }
+
+            // Mettre à jour les requêtes restantes
+            if (data.remaining_requests !== undefined) {
+                this.remainingRequests = data.remaining_requests;
+            }
+
             if (data.success) {
                 this.addMessage(data.response, 'bot');
+                
+                // Si un tool a été utilisé, on peut afficher un badge
+                if (data.tool_used) {
+                    console.log(`Tool utilisé: ${data.tool_used}`);
+                }
             } else {
-                this.addMessage('Désolé, une erreur est survenue. Veuillez réessayer.', 'bot');
+                this.addMessage(data.response || 'Désolé, une erreur est survenue. Veuillez réessayer.', 'bot');
             }
         } catch (error) {
             this.hideTypingIndicator();
