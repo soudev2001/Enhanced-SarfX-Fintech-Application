@@ -221,7 +221,7 @@ class ChatbotService:
             content: Contenu du message
             user_context: Contexte utilisateur optionnel
         """
-        if not db:
+        if db is None:
             return None
             
         try:
@@ -271,7 +271,7 @@ class ChatbotService:
         Returns:
             list: Liste des messages [{role, content, timestamp}, ...]
         """
-        if not db:
+        if db is None:
             return []
             
         try:
@@ -301,7 +301,7 @@ class ChatbotService:
     
     def clear_conversation_history(self, db, session_id):
         """Efface l'historique de conversation d'une session"""
-        if not db:
+        if db is None:
             return False
             
         try:
@@ -337,7 +337,7 @@ class ChatbotService:
             return {'success': True, 'response': self.security_response}
         
         # 3. SAUVEGARDER LE MESSAGE UTILISATEUR
-        if db and session_id:
+        if db is not None and session_id:
             self.save_message_to_history(db, session_id, 'user', message, user_context)
         
         # 4. DÉTECTION D'INTENTION ET EXÉCUTION DE TOOL
@@ -346,7 +346,7 @@ class ChatbotService:
         intent, params = detect_intent(message)
         tool_result = None
         
-        if intent and db:
+        if intent and db is not None:
             tools = get_chatbot_tools(db)
             tool_result = tools.execute_tool(intent, params, user_context or {'role': 'anonymous'})
             
@@ -377,14 +377,14 @@ class ChatbotService:
         # 5. FALLBACK VERS GEMINI AI
         if not self.api_key:
             fallback = self._get_fallback_response(message, user_context)
-            if db and session_id:
+            if db is not None and session_id:
                 self.save_message_to_history(db, session_id, 'assistant', fallback['response'], user_context)
             return fallback
             
         try:
             # Récupérer l'historique de conversation
             history = []
-            if db and session_id:
+            if db is not None and session_id:
                 history = self.get_conversation_history(db, session_id, limit=5)
             
             # Construire le prompt maître
@@ -424,7 +424,7 @@ class ChatbotService:
                     sanitized_text = self._sanitize_response(text)
                     
                     # Sauvegarder la réponse
-                    if db and session_id:
+                    if db is not None and session_id:
                         self.save_message_to_history(db, session_id, 'assistant', sanitized_text, user_context)
                     
                     return {
@@ -492,18 +492,19 @@ RÈGLES DE SÉCURITÉ STRICTES :
 2. Ne JAMAIS afficher d'IBAN, numéros de carte bancaire ou CVV
 3. Ne JAMAIS révéler de clés API, tokens ou secrets
 4. Rediriger vers le support (support@sarfx.ma) pour les questions sensibles"""
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Chatbot connection error: {e}")
-            return self._get_fallback_response(message)
-        except Exception as e:
-            print(f"Chatbot error: {e}")
-            return self._get_fallback_response(message)
     
     def _get_fallback_response(self, message, user_context=None):
         """Retourne une réponse intelligente basée sur des mots-clés et le contexte"""
-        message_lower = message.lower()
+        message_lower = message.lower().strip()
         role = user_context.get('role', 'anonymous') if user_context else 'anonymous'
+        
+        # Gestion des salutations courtes
+        greetings = ['hi', 'hy', 'hey', 'hello', 'bonjour', 'salut', 'slt', 'coucou', 'bonsoir', 'yo', 'cc']
+        if message_lower in greetings or any(message_lower.startswith(g + ' ') for g in greetings):
+            return {
+                'success': True, 
+                'response': "👋 Bonjour ! Je suis l'assistant SarfX. Comment puis-je vous aider aujourd'hui ?\n\nVoici quelques exemples de ce que je peux faire :\n• Consulter les taux de change\n• Trouver un ATM près de vous\n• Expliquer comment créer un wallet\n• Répondre à vos questions sur SarfX"
+            }
         
         # Réponses spécifiques pour les admins
         if role in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
@@ -577,7 +578,7 @@ RÈGLES DE SÉCURITÉ STRICTES :
         suggestions = self.get_contextual_suggestions(context_type, role)
         
         # Personnalisation additionnelle basée sur les données
-        if db and user:
+        if db is not None and user:
             try:
                 user_id = str(user.get('_id'))
                 

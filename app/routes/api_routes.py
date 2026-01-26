@@ -267,7 +267,7 @@ def rate_alerts():
             'triggered': False
         }
         
-        if db:
+        if db is not None:
             result = db.rate_alerts.insert_one(alert)
             alert['_id'] = str(result.inserted_id)
         
@@ -275,7 +275,7 @@ def rate_alerts():
     
     elif request.method == 'DELETE':
         alert_id = request.args.get('id')
-        if db and alert_id:
+        if db is not None and alert_id:
             from bson import ObjectId
             db.rate_alerts.delete_one({"_id": ObjectId(alert_id), "user_id": user_id})
         return jsonify({'success': True})
@@ -425,7 +425,7 @@ def set_theme():
         # Si l'utilisateur est connecté, sauvegarder dans la DB
         if 'user_id' in session:
             db = get_db()
-            if db:
+            if db is not None:
                 from bson import ObjectId
                 db.users.update_one(
                     {"_id": ObjectId(session['user_id'])},
@@ -1077,7 +1077,7 @@ def mark_notification_read(notif_id):
     db = get_db()
     user_id = session['user_id']
     
-    if db:
+    if db is not None:
         from bson import ObjectId
         db.notifications.update_one(
             {"_id": ObjectId(notif_id), "user_id": user_id},
@@ -1094,7 +1094,7 @@ def mark_all_notifications_read():
     db = get_db()
     user_id = session['user_id']
     
-    if db:
+    if db is not None:
         db.notifications.update_many(
             {"user_id": user_id},
             {"$set": {"read": True}}
