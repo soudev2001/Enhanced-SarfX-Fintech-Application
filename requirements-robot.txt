@@ -1,0 +1,11 @@
+# Robot Framework + Selenium Test Dependencies
+# Install: pip install -r requirements-robot.txt
+
+robotframework==7.1.1
+robotframework-seleniumlibrary==6.6.1
+robotframework-requests==0.9.7
+selenium==4.27.1
+webdriver-manager==4.0.2
+
+# Reporting
+robotframework-pabot==3.2
