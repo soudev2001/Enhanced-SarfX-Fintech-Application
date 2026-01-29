@@ -23,8 +23,9 @@ from playwright.sync_api import Page, Browser, BrowserContext, expect
 # CONFIGURATION
 # ============================================
 
-# Base URL - Flask server
-BASE_URL = os.getenv("TEST_BASE_URL", "http://localhost:5000")
+# Base URL - Production or localhost
+# Set TEST_BASE_URL env variable to override
+BASE_URL = os.getenv("TEST_BASE_URL", "https://sarfx.io")
 
 # Test accounts (from seed_demo_users.py)
 TEST_ACCOUNTS = {
