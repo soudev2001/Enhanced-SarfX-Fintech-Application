@@ -2,7 +2,7 @@
 Documentation    Keywords réutilisables pour les tests SarfX
 ...              Contient les actions communes: login, navigation, etc.
 
-Library          SeleniumLibrary    timeout=${TIMEOUT}    implicit_wait=5s
+Library          SeleniumLibrary    timeout=30s    implicit_wait=5s
 Library          Collections
 Library          String
 Library          DateTime
@@ -10,20 +10,23 @@ Library          OperatingSystem
 
 Resource         variables.robot
 
+*** Variables ***
+${DEFAULT_TIMEOUT}    30s
+
 *** Keywords ***
 # ============================================
 # BROWSER SETUP
 # ============================================
 Open Browser To SarfX
-    [Documentation]    Ouvre le navigateur avec les options configurées
-    ${chrome_options}=    Evaluate    sys.modules['selenium.webdriver'].ChromeOptions()    sys
-    Call Method    ${chrome_options}    add_argument    --no-sandbox
-    Call Method    ${chrome_options}    add_argument    --disable-dev-shm-usage
-    Call Method    ${chrome_options}    add_argument    --disable-gpu
-    Call Method    ${chrome_options}    add_argument    --window-size=1920,1080
-    Run Keyword If    ${HEADLESS}    Call Method    ${chrome_options}    add_argument    --headless
-    Create Webdriver    Chrome    options=${chrome_options}
-    Set Window Size    1920    1080
+    [Documentation]    Ouvre le navigateur Chrome en mode headless
+    ${options}=    Evaluate    sys.modules['selenium.webdriver'].ChromeOptions()    sys
+    Call Method    ${options}    add_argument    --no-sandbox
+    Call Method    ${options}    add_argument    --disable-dev-shm-usage
+    Call Method    ${options}    add_argument    --disable-gpu
+    Call Method    ${options}    add_argument    --headless
+    Call Method    ${options}    add_argument    --window-size\=1920,1080
+    Create Webdriver    Chrome    options=${options}
+    Maximize Browser Window
 
 Close Browser Safely
     [Documentation]    Ferme le navigateur de manière sécurisée
@@ -40,7 +43,7 @@ Take Screenshot On Failure
 Go To Login Page
     [Documentation]    Navigue vers la page de connexion
     Go To    ${LOGIN_URL}
-    Wait Until Page Contains Element    ${LOGIN_EMAIL_INPUT}    ${TIMEOUT}
+    Wait Until Page Contains Element    ${LOGIN_EMAIL_INPUT}    30s
     Title Should Contain    Login
 
 Login With Credentials
@@ -55,44 +58,44 @@ Login With Credentials
 Login As Admin
     [Documentation]    Connexion avec le compte admin
     Login With Credentials    ${ADMIN_EMAIL}    ${ADMIN_PASSWORD}
-    Wait Until Location Contains    /app    ${TIMEOUT}
+    Wait Until Location Contains    /app    30s
 
 Login As User
     [Documentation]    Connexion avec le compte utilisateur
     Login With Credentials    ${USER_EMAIL}    ${USER_PASSWORD}
-    Wait Until Location Contains    /app    ${TIMEOUT}
+    Wait Until Location Contains    /app    30s
 
 Login As Bank Respo
     [Documentation]    Connexion avec le compte responsable banque
     Login With Credentials    ${BANK_RESPO_EMAIL}    ${BANK_RESPO_PASSWORD}
-    Wait Until Location Contains    /app    ${TIMEOUT}
+    Wait Until Location Contains    /app    30s
 
 Login Via Demo Button Admin
     [Documentation]    Connexion via le bouton démo Admin
     Go To Login Page
-    Wait Until Element Is Visible    ${DEMO_ADMIN_BTN}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Visible    ${DEMO_ADMIN_BTN}    10s
     Click Element    ${DEMO_ADMIN_BTN}
     Wait For Page Load
     Click Button    ${LOGIN_SUBMIT_BTN}
-    Wait Until Location Contains    /app    ${TIMEOUT}
+    Wait Until Location Contains    /app    30s
 
 Login Via Demo Button User
     [Documentation]    Connexion via le bouton démo User
     Go To Login Page
-    Wait Until Element Is Visible    ${DEMO_USER_BTN}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Visible    ${DEMO_USER_BTN}    10s
     Click Element    ${DEMO_USER_BTN}
     Wait For Page Load
     Click Button    ${LOGIN_SUBMIT_BTN}
-    Wait Until Location Contains    /app    ${TIMEOUT}
+    Wait Until Location Contains    /app    30s
 
 Logout
     [Documentation]    Déconnexion de l'utilisateur
     Click Element    ${NAV_LOGOUT}
-    Wait Until Location Contains    /auth/login    ${TIMEOUT}
+    Wait Until Location Contains    /auth/login    30s
 
 Verify Login Failed
     [Documentation]    Vérifie que la connexion a échoué
-    Wait Until Element Is Visible    ${LOGIN_ERROR_MSG}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Visible    ${LOGIN_ERROR_MSG}    10s
     Element Should Be Visible    ${LOGIN_ERROR_MSG}
 
 # ============================================
@@ -107,7 +110,7 @@ Navigate To Converter
     [Documentation]    Navigue vers le convertisseur
     Go To    ${CONVERTER_URL}
     Wait For Page Load
-    Wait Until Element Is Visible    ${AMOUNT_INPUT}    ${TIMEOUT}
+    Wait Until Element Is Visible    ${AMOUNT_INPUT}    30s
 
 Navigate To Wallets
     [Documentation]    Navigue vers les portefeuilles
@@ -136,7 +139,7 @@ Navigate To Admin Users
 
 Wait For Page Load
     [Documentation]    Attend que la page soit complètement chargée
-    Wait For Condition    return document.readyState == "complete"    ${TIMEOUT}
+    Wait For Condition    return document.readyState == "complete"    30s
     Sleep    0.5s
 
 # ============================================
@@ -186,7 +189,7 @@ Swap Currencies
 # ============================================
 Verify Admin Dashboard Loaded
     [Documentation]    Vérifie que le dashboard admin est chargé
-    Wait Until Element Is Visible    ${ADMIN_KPI_CARDS}    ${TIMEOUT}
+    Wait Until Element Is Visible    ${ADMIN_KPI_CARDS}    30s
     Page Should Contain Element    ${ADMIN_KPI_CARDS}
 
 Search Admin Users
@@ -216,17 +219,17 @@ Page Should Be Accessible
 
 Verify Toast Success
     [Documentation]    Vérifie qu'un toast de succès apparaît
-    Wait Until Element Is Visible    ${TOAST_SUCCESS}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Visible    ${TOAST_SUCCESS}    10s
 
 Verify Toast Error
     [Documentation]    Vérifie qu'un toast d'erreur apparaît
-    Wait Until Element Is Visible    ${TOAST_ERROR}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Visible    ${TOAST_ERROR}    10s
 
 Wait And Close Modal
     [Documentation]    Attend et ferme une modal
-    Wait Until Element Is Visible    ${MODAL}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Visible    ${MODAL}    10s
     Click Element    ${MODAL_CLOSE}
-    Wait Until Element Is Not Visible    ${MODAL}    ${SHORT_TIMEOUT}
+    Wait Until Element Is Not Visible    ${MODAL}    10s
 
 Element Should Be Visible With Retry
     [Documentation]    Vérifie qu'un élément est visible avec retry
