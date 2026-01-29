@@ -1,0 +1,525 @@
+{% extends "admin_dashboard.html" %}
+
+{% block title %}Démonstration Automatisée - SarfX Admin{% endblock %}
+
+{% block admin_content %}
+<div class="demo-container">
+    <!-- Header -->
+    <div class="demo-header mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-robot me-2 text-primary"></i>
+                    Démonstration Automatisée
+                </h1>
+                <p class="text-muted mb-0">
+                    Tests Robot Framework avec enregistrement vidéo et captures d'écran
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="checkStatus()">
+                    <i class="fas fa-sync-alt me-2"></i>Actualiser
+                </button>
+                <button class="btn btn-primary btn-lg" onclick="startDemo()" id="start-demo-btn">
+                    <i class="fas fa-play me-2"></i>Lancer la Démo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="alert alert-info demo-status-banner" id="status-banner" style="display: none;">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>
+                <strong>Démonstration en cours...</strong>
+                <span class="text-muted ms-2">Les résultats apparaîtront automatiquement</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-primary-subtle text-primary rounded-circle mx-auto mb-3">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <h3 class="mb-1" id="screenshot-count">{{ screenshot_count }}</h3>
+                    <p class="text-muted mb-0">Screenshots</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success-subtle text-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h3 class="mb-1">{{ '1' if latest_video else '0' }}</h3>
+                    <p class="text-muted mb-0">Vidéo Disponible</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info-subtle text-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h3 class="mb-1">{{ demo_results|length }}</h3>
+                    <p class="text-muted mb-0">Rapports</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning-subtle text-warning rounded-circle mx-auto mb-3">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="mb-1" id="demo-status">Prêt</h3>
+                    <p class="text-muted mb-0">Statut</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row g-4">
+        <!-- Video Section -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-video me-2 text-danger"></i>
+                        Dernière Vidéo de Démonstration
+                    </h5>
+                    {% if latest_video %}
+                    <a href="{{ url_for('admin.get_demo_video') }}" class="btn btn-sm btn-outline-primary" download>
+                        <i class="fas fa-download me-1"></i>Télécharger
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if latest_video %}
+                    <div class="video-wrapper">
+                        <video id="demo-video" controls class="w-100 rounded">
+                            <source src="{{ url_for('admin.get_demo_video') }}" type="video/mp4">
+                            Votre navigateur ne supporte pas la vidéo HTML5.
+                        </video>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Fichier: {{ latest_video }}
+                    </p>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-film fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Aucune vidéo disponible</h5>
+                        <p class="text-muted">Lancez une démonstration pour générer une vidéo</p>
+                        <button class="btn btn-primary" onclick="startDemo()">
+                            <i class="fas fa-play me-2"></i>Lancer la Démo
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenarios Section -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-check me-2 text-success"></i>
+                        Scénarios de Test
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2">1</span>
+                                <div>
+                                    <strong>Admin Login</strong>
+                                    <small class="d-block text-muted">Connexion administrateur</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2">2</span>
+                                <div>
+                                    <strong>Dashboard Admin</strong>
+                                    <small class="d-block text-muted">Exploration du panel admin</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2">3</span>
+                                <div>
+                                    <strong>Gestion Users/Wallets</strong>
+                                    <small class="d-block text-muted">Utilisateurs et portefeuilles</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success me-2">4</span>
+                                <div>
+                                    <strong>User Login</strong>
+                                    <small class="d-block text-muted">Connexion utilisateur</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success me-2">5</span>
+                                <div>
+                                    <strong>Convertisseur</strong>
+                                    <small class="d-block text-muted">Conversion USD → MAD</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success me-2">6</span>
+                                <div>
+                                    <strong>Wallets & Transactions</strong>
+                                    <small class="d-block text-muted">Portefeuilles utilisateur</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-warning text-dark me-2">7</span>
+                                <div>
+                                    <strong>Bank User</strong>
+                                    <small class="d-block text-muted">Connexion responsable banque</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-info me-2">8</span>
+                                <div>
+                                    <strong>Test Mobile</strong>
+                                    <small class="d-block text-muted">Interface responsive</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screenshots Gallery -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-images me-2 text-info"></i>
+                Galerie de Screenshots
+            </h5>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadScreenshots()">
+                <i class="fas fa-sync-alt me-1"></i>Actualiser
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row g-3" id="screenshots-gallery">
+                <div class="col-12 text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">Chargement des captures...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-history me-2 text-secondary"></i>
+                Historique des Démonstrations
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date/Heure</th>
+                            <th>Rapport</th>
+                            <th>Log</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for demo in demo_results %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-calendar me-2 text-muted"></i>
+                                {{ demo.timestamp }}
+                            </td>
+                            <td>{{ demo.report_file }}</td>
+                            <td>{{ demo.log_file }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.get_demo_report') }}" 
+                                   class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p class="mb-0">Aucune démonstration effectuée</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Screenshot Modal -->
+<div class="modal fade" id="screenshotModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="screenshotModalLabel">Screenshot</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img src="" alt="Screenshot" class="img-fluid" id="modalScreenshot">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.demo-container {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.video-wrapper {
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.video-wrapper video {
+    max-height: 500px;
+    object-fit: contain;
+}
+
+.screenshot-thumb {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.screenshot-thumb:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.screenshot-thumb img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.screenshot-thumb .overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    padding: 10px;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.demo-status-banner {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+[data-bs-theme="dark"] .stat-card {
+    background: var(--bs-dark);
+}
+
+[data-bs-theme="dark"] .card {
+    background: var(--bs-dark);
+}
+</style>
+
+<script>
+let statusCheckInterval = null;
+
+function startDemo() {
+    const btn = document.getElementById('start-demo-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Démarrage...';
+    
+    fetch('{{ url_for("admin.run_demo") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Démonstration lancée!', 'success');
+            document.getElementById('status-banner').style.display = 'block';
+            document.getElementById('demo-status').textContent = 'En cours';
+            
+            // Commencer à vérifier le statut
+            statusCheckInterval = setInterval(checkStatus, 5000);
+        } else {
+            showToast('Erreur: ' + data.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play me-2"></i>Lancer la Démo';
+        }
+    })
+    .catch(error => {
+        showToast('Erreur réseau', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play me-2"></i>Lancer la Démo';
+    });
+}
+
+function checkStatus() {
+    fetch('{{ url_for("admin.demo_status") }}')
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById('start-demo-btn');
+        const banner = document.getElementById('status-banner');
+        const statusEl = document.getElementById('demo-status');
+        const countEl = document.getElementById('screenshot-count');
+        
+        if (data.running) {
+            banner.style.display = 'block';
+            statusEl.textContent = 'En cours';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>En cours...';
+        } else {
+            banner.style.display = 'none';
+            statusEl.textContent = 'Prêt';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play me-2"></i>Lancer la Démo';
+            
+            // Arrêter la vérification
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+            
+            // Recharger les screenshots
+            loadScreenshots();
+        }
+        
+        countEl.textContent = data.screenshot_count || 0;
+    });
+}
+
+function loadScreenshots() {
+    const gallery = document.getElementById('screenshots-gallery');
+    gallery.innerHTML = '<div class="col-12 text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i></div>';
+    
+    fetch('{{ url_for("admin.demo_screenshots") }}')
+    .then(response => response.json())
+    .then(screenshots => {
+        if (screenshots.length === 0) {
+            gallery.innerHTML = `
+                <div class="col-12 text-center py-4">
+                    <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Aucune capture disponible</p>
+                </div>
+            `;
+            return;
+        }
+        
+        gallery.innerHTML = '';
+        screenshots.forEach(screenshot => {
+            const col = document.createElement('div');
+            col.className = 'col-6 col-md-4 col-lg-3 col-xl-2';
+            col.innerHTML = `
+                <div class="screenshot-thumb" onclick="openScreenshot('${screenshot.path}', '${screenshot.name}')">
+                    <img src="${screenshot.path}" alt="${screenshot.name}">
+                    <div class="overlay">
+                        <small>${screenshot.name.replace('.png', '').replace(/_/g, ' ').substring(0, 25)}</small>
+                    </div>
+                </div>
+            `;
+            gallery.appendChild(col);
+        });
+    })
+    .catch(() => {
+        gallery.innerHTML = '<div class="col-12 text-center py-4 text-danger">Erreur de chargement</div>';
+    });
+}
+
+function openScreenshot(path, name) {
+    document.getElementById('screenshotModalLabel').textContent = name.replace('.png', '').replace(/_/g, ' ');
+    document.getElementById('modalScreenshot').src = path;
+    new bootstrap.Modal(document.getElementById('screenshotModal')).show();
+}
+
+function showToast(message, type) {
+    // Utiliser le système de toast existant si disponible
+    if (typeof SarfXNotifications !== 'undefined') {
+        SarfXNotifications.show(message, type);
+    } else {
+        alert(message);
+    }
+}
+
+// Charger les screenshots au démarrage
+document.addEventListener('DOMContentLoaded', function() {
+    loadScreenshots();
+    checkStatus();
+});
+</script>
+{% endblock %}

@@ -171,6 +171,16 @@
                     <p class="text-xs text-muted">{{ beneficiary_count | default(0) }} contacts</p>
                 </div>
             </a>
+            
+            <a href="{{ url_for('admin.demo_page') }}" class="card p-4 flex items-center gap-3 hover:shadow-md transition bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                <div class="bg-purple-500/20 p-3 rounded-lg">
+                    <i data-lucide="play-circle" class="w-5 h-5 text-purple-500"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-default text-sm">Démo Robot</p>
+                    <p class="text-xs text-muted">Tests automatisés</p>
+                </div>
+            </a>
         </div>
     </div>
 

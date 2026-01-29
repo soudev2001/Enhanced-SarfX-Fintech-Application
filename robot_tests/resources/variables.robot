@@ -20,6 +20,9 @@ ${ADMIN_USERS_URL}       ${BASE_URL}/admin/users
 ${ADMIN_WALLETS_URL}     ${BASE_URL}/admin/wallets
 ${ADMIN_BANKS_URL}       ${BASE_URL}/admin/banks
 ${ADMIN_TRANSACTIONS_URL}    ${BASE_URL}/admin/transactions
+${ATM_URL}               ${BASE_URL}/app/atms
+${RATE_HISTORY_URL}      ${BASE_URL}/app/rate-history
+${AI_URL}                ${BASE_URL}/app/ai
 
 # ============================================
 # Test Accounts
@@ -36,6 +39,11 @@ ${BANK_RESPO_PASSWORD}   bank123
 ${BANK_USER_EMAIL}       bank.user@boa.ma
 ${BANK_USER_PASSWORD}    bank123
 
+# Demo test user (created for tests)
+${TEST_USER_EMAIL}       test.demo@sarfx.io
+${TEST_USER_PASSWORD}    Test@123456
+${TEST_USER_NAME}        Demo Test User
+
 # ============================================
 # Timeouts
 # ============================================
@@ -50,60 +58,108 @@ ${BROWSER}               chrome
 ${HEADLESS}              ${TRUE}
 
 # ============================================
-# Login Page Selectors
+# Login Page Selectors (FIXED - no duplicate css: prefix)
 # ============================================
-${LOGIN_EMAIL_INPUT}     css:input[name="email"], css:#email
-${LOGIN_PASSWORD_INPUT}  css:input[name="password"], css:#password
+${LOGIN_EMAIL_INPUT}     css:input[name="email"]
+${LOGIN_PASSWORD_INPUT}  css:input[name="password"]
 ${LOGIN_SUBMIT_BTN}      css:button[type="submit"]
-${LOGIN_ERROR_MSG}       css:.alert-danger, css:.error-message, css:.toast-error
-${DEMO_ADMIN_BTN}        xpath://button[contains(text(),'Admin')] | css:[onclick*="admin@sarfx.io"]
-${DEMO_USER_BTN}         xpath://button[contains(text(),'User')] | css:[onclick*="user@demo.com"]
+${LOGIN_ERROR_MSG}       css:.alert-danger, .error-message, .toast-error
+${DEMO_ADMIN_BTN}        xpath://button[contains(text(),'Admin')]
+${DEMO_USER_BTN}         xpath://button[contains(text(),'User')]
+${LOGIN_REGISTER_LINK}   css:a[href*="register"]
 
 # ============================================
-# Registration Page Selectors
+# Registration Page Selectors (FIXED)
 # ============================================
-${REGISTER_NAME_INPUT}       css:input[name="name"], css:#name
-${REGISTER_EMAIL_INPUT}      css:input[name="email"], css:#email
-${REGISTER_PASSWORD_INPUT}   css:input[name="password"], css:#password
-${REGISTER_CONFIRM_INPUT}    css:input[name="confirm_password"], css:#confirm_password
+${REGISTER_NAME_INPUT}       css:input[name="name"]
+${REGISTER_EMAIL_INPUT}      css:input[name="email"]
+${REGISTER_PASSWORD_INPUT}   css:input[name="password"]
+${REGISTER_CONFIRM_INPUT}    css:input[name="confirm_password"]
 ${REGISTER_SUBMIT_BTN}       css:button[type="submit"]
 
 # ============================================
-# App Navigation Selectors
+# App Navigation Selectors (FIXED)
 # ============================================
-${NAV_HOME}              css:a[href*="/app/"], css:.nav-home
-${NAV_CONVERTER}         css:a[href*="/converter"]
-${NAV_WALLETS}           css:a[href*="/wallets"]
-${NAV_TRANSACTIONS}      css:a[href*="/transactions"]
-${NAV_PROFILE}           css:a[href*="/profile"]
-${NAV_LOGOUT}            css:a[href*="/logout"], css:.logout-btn
+${NAV_HOME}              css:a[href="/app/"], a[href="/app"]
+${NAV_CONVERTER}         css:a[href*="converter"]
+${NAV_WALLETS}           css:a[href*="wallets"]
+${NAV_TRANSACTIONS}      css:a[href*="transactions"]
+${NAV_PROFILE}           css:a[href*="profile"]
+${NAV_LOGOUT}            css:a[href*="logout"]
+${NAV_BENEFICIARIES}     css:a[href*="beneficiaries"]
+${NAV_ATMS}              css:a[href*="atms"]
+${NAV_AI}                css:a[href*="ai"]
+${NAV_ADMIN}             css:a[href*="admin"]
+${USER_MENU}             css:.user-menu, .dropdown-toggle, .nav-user
 
 # ============================================
-# Converter Page Selectors
+# Converter Page Selectors (FIXED)
 # ============================================
-${AMOUNT_INPUT}          css:#amount, css:input[name="amount"]
-${FROM_CURRENCY}         css:#from-currency, css:select[name="from"]
-${TO_CURRENCY}           css:#to-currency, css:select[name="to"]
-${CONVERT_BTN}           css:#convert-btn, css:.convert-button
-${RESULT_DISPLAY}        css:#result, css:.conversion-result
-${SWAP_BTN}              css:#swap-btn, css:.swap-currencies
-${RATE_DISPLAY}          css:.rate-display, css:#current-rate
+${AMOUNT_INPUT}          css:#amount
+${FROM_CURRENCY}         css:#from-currency
+${TO_CURRENCY}           css:#to-currency
+${CONVERT_BTN}           css:#convert-btn, .convert-button, button[type="submit"]
+${RESULT_DISPLAY}        css:#result, .conversion-result, .result-amount
+${SWAP_BTN}              css:#swap-btn, .swap-btn, .swap-currencies
+${RATE_DISPLAY}          css:.rate-display, .current-rate, #current-rate
+${RATE_CARD}             css:.rate-card, .exchange-rate
+${PROVIDER_LIST}         css:.provider-list, .providers, #providers
 
 # ============================================
-# Admin Page Selectors
+# Wallet Page Selectors
 # ============================================
-${ADMIN_SIDEBAR}         css:.admin-sidebar, css:#admin-nav
-${ADMIN_KPI_CARDS}       css:.kpi-card, css:.stat-card
-${ADMIN_USERS_TABLE}     css:.users-table, css:#users-list
-${ADMIN_USER_ROW}        css:tr.user-row, css:.user-item
-${ADMIN_SEARCH_INPUT}    css:#search, css:input[type="search"]
-${ADMIN_EXPORT_BTN}      css:.export-btn, css:a[href*="export"]
+${WALLET_CARD}           css:.wallet-card, .currency-wallet
+${WALLET_BALANCE}        css:.wallet-balance, .balance-amount
+${WALLET_CURRENCY}       css:.wallet-currency, .currency-code
+${ADD_WALLET_BTN}        css:#add-wallet, .add-wallet-btn
+${WALLET_ACTIONS}        css:.wallet-actions, .wallet-menu
 
 # ============================================
-# Common Selectors
+# Transaction Page Selectors
 # ============================================
-${TOAST_SUCCESS}         css:.toast-success, css:.alert-success
-${TOAST_ERROR}           css:.toast-error, css:.alert-danger
-${LOADING_SPINNER}       css:.loading, css:.spinner
-${MODAL}                 css:.modal.show, css:.modal:not(.hidden)
-${MODAL_CLOSE}           css:.modal .close, css:[data-dismiss="modal"]
+${TX_TABLE}              css:.transactions-table, #transactions-list, table
+${TX_ROW}                css:.transaction-row, tr
+${TX_FILTER_DATE}        css:#date-filter, input[type="date"]
+${TX_FILTER_TYPE}        css:#type-filter, select[name="type"]
+${TX_SEARCH}             css:#tx-search, input[type="search"]
+
+# ============================================
+# Admin Page Selectors (FIXED)
+# ============================================
+${ADMIN_SIDEBAR}         css:.sidebar, .admin-sidebar, #sidebar
+${ADMIN_KPI_CARDS}       css:.stat-card, .kpi-card, .info-card
+${ADMIN_USERS_TABLE}     css:table, .users-table, #users-table
+${ADMIN_USER_ROW}        css:tbody tr, .user-row
+${ADMIN_SEARCH_INPUT}    css:input[name="search"], #search, input[type="search"]
+${ADMIN_EXPORT_BTN}      css:a[href*="export"], .export-btn
+${ADMIN_NAV_USERS}       css:a[href*="users"]
+${ADMIN_NAV_WALLETS}     css:a[href*="wallets"]
+${ADMIN_NAV_TX}          css:a[href*="transactions"]
+${ADMIN_NAV_BANKS}       css:a[href*="banks"]
+${ADMIN_NAV_ATMS}        css:a[href*="atms"]
+${ADMIN_NAV_SOURCES}     css:a[href*="sources"]
+${ADMIN_NAV_API}         css:a[href*="api"]
+
+# ============================================
+# Profile Page Selectors
+# ============================================
+${PROFILE_NAME}          css:#name, input[name="name"]
+${PROFILE_EMAIL}         css:#email, input[name="email"]
+${PROFILE_PHONE}         css:#phone, input[name="phone"]
+${PROFILE_SAVE_BTN}      css:button[type="submit"], .save-btn
+${PROFILE_AVATAR}        css:.avatar, .profile-image
+
+# ============================================
+# Common Selectors (FIXED)
+# ============================================
+${TOAST_SUCCESS}         css:.toast-success, .alert-success, .success-message
+${TOAST_ERROR}           css:.toast-error, .alert-danger, .error-message
+${LOADING_SPINNER}       css:.loading, .spinner, .loader
+${MODAL}                 css:.modal.show, .modal[style*="display: block"]
+${MODAL_CLOSE}           css:.modal .close, .btn-close, [data-bs-dismiss="modal"]
+${PAGE_TITLE}            css:h1, .page-title, .header-title
+${CARD}                  css:.card, .panel
+${TABLE}                 css:table, .data-table
+${BUTTON_PRIMARY}        css:.btn-primary, button[type="submit"]
+${BUTTON_SECONDARY}      css:.btn-secondary, .btn-outline
+${ALERT}                 css:.alert, .notification

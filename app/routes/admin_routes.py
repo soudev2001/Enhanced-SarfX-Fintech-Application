@@ -1203,3 +1203,176 @@ def sources():
     
     return render_template('admin_sources.html', sources=sources_list)
 
+
+# ==================== DEMO AUTOMATION ====================
+
+@admin_bp.route('/demo')
+@admin_required
+def demo_page():
+    """Page de démonstration automatisée avec Robot Framework"""
+    db = get_db()
+    
+    # Récupérer les résultats des dernières démos
+    demo_results = []
+    demo_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'demo')
+    video_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'videos')
+    
+    # Lister les rapports existants
+    if os.path.exists(demo_dir):
+        for f in sorted(os.listdir(demo_dir), reverse=True):
+            if f.startswith('report-') and f.endswith('.html'):
+                timestamp = f.replace('report-', '').replace('.html', '')
+                demo_results.append({
+                    'timestamp': timestamp,
+                    'report_file': f,
+                    'log_file': f.replace('report-', 'log-'),
+                })
+    
+    # Dernière vidéo
+    latest_video = None
+    if os.path.exists(video_dir):
+        videos = [f for f in os.listdir(video_dir) if f.endswith('.mp4')]
+        if videos:
+            latest_video = sorted(videos, reverse=True)[0]
+    
+    # Compter les screenshots
+    screenshot_count = 0
+    if os.path.exists(demo_dir):
+        screenshot_count = len([f for f in os.listdir(demo_dir) if f.endswith('.png')])
+    
+    return render_template('admin_demo.html', 
+                         demo_results=demo_results[:10],
+                         latest_video=latest_video,
+                         screenshot_count=screenshot_count)
+
+
+@admin_bp.route('/demo/run', methods=['POST'])
+@admin_required
+def run_demo():
+    """Lance la démonstration Robot Framework en arrière-plan"""
+    import subprocess
+    import threading
+    
+    def run_demo_thread():
+        try:
+            script_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                'run_demo_robot.sh'
+            )
+            
+            # Exécuter le script
+            subprocess.run(
+                ['bash', script_path, '--headless'],
+                cwd=os.path.dirname(script_path),
+                timeout=600  # 10 minutes max
+            )
+        except Exception as e:
+            print(f"Demo error: {e}")
+    
+    # Lancer dans un thread
+    thread = threading.Thread(target=run_demo_thread, daemon=True)
+    thread.start()
+    
+    log_history("DEMO_STARTED", "Démonstration Robot Framework lancée", user=session.get('email'))
+    
+    return jsonify({
+        'success': True,
+        'message': 'Démonstration lancée en arrière-plan'
+    })
+
+
+@admin_bp.route('/demo/status')
+@admin_required
+def demo_status():
+    """Vérifie le statut de la dernière démo"""
+    import subprocess
+    
+    # Vérifier si un processus robot est en cours
+    try:
+        result = subprocess.run(['pgrep', '-f', 'robot'], capture_output=True, text=True)
+        is_running = result.returncode == 0
+    except:
+        is_running = False
+    
+    # Récupérer les derniers résultats
+    demo_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'demo')
+    
+    latest_report = None
+    screenshot_count = 0
+    
+    if os.path.exists(demo_dir):
+        reports = [f for f in os.listdir(demo_dir) if f.startswith('report-') and f.endswith('.html')]
+        if reports:
+            latest_report = sorted(reports, reverse=True)[0]
+        screenshot_count = len([f for f in os.listdir(demo_dir) if f.endswith('.png')])
+    
+    return jsonify({
+        'running': is_running,
+        'latest_report': latest_report,
+        'screenshot_count': screenshot_count
+    })
+
+
+@admin_bp.route('/demo/screenshots')
+@admin_required
+def demo_screenshots():
+    """Liste les screenshots de la démo"""
+    demo_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'demo')
+    
+    screenshots = []
+    if os.path.exists(demo_dir):
+        for f in sorted(os.listdir(demo_dir)):
+            if f.endswith('.png'):
+                screenshots.append({
+                    'name': f,
+                    'path': f'/admin/demo/screenshot/{f}'
+                })
+    
+    return jsonify(screenshots)
+
+
+@admin_bp.route('/demo/screenshot/<filename>')
+@admin_required
+def get_demo_screenshot(filename):
+    """Retourne un screenshot de la démo"""
+    from flask import send_from_directory
+    
+    demo_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'demo')
+    
+    # Sécurité: vérifier que le fichier est bien un PNG
+    if not filename.endswith('.png') or '..' in filename:
+        return "Invalid file", 400
+    
+    return send_from_directory(demo_dir, filename)
+
+
+@admin_bp.route('/demo/video')
+@admin_required
+def get_demo_video():
+    """Retourne la dernière vidéo de démo"""
+    from flask import send_from_directory
+    
+    video_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'videos')
+    
+    if os.path.exists(os.path.join(video_dir, 'demo_latest.mp4')):
+        return send_from_directory(video_dir, 'demo_latest.mp4')
+    
+    return "No video available", 404
+
+
+@admin_bp.route('/demo/report')
+@admin_required
+def get_demo_report():
+    """Retourne le dernier rapport HTML"""
+    from flask import send_from_directory
+    
+    demo_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'demo')
+    
+    if os.path.exists(demo_dir):
+        reports = [f for f in os.listdir(demo_dir) if f.startswith('report') and f.endswith('.html')]
+        if reports:
+            latest = sorted(reports, reverse=True)[0]
+            return send_from_directory(demo_dir, latest)
+    
+    return "No report available", 404
+
