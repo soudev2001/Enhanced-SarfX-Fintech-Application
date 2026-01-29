@@ -42,7 +42,17 @@ def get_current_user():
     if db is None:
         return None
     from bson import ObjectId
-    return db.users.find_one({"_id": ObjectId(session['user_id'])})
+    from bson.errors import InvalidId
+    try:
+        user_id = session['user_id']
+        # Si c'est déjà un ObjectId valide
+        if isinstance(user_id, ObjectId):
+            return db.users.find_one({"_id": user_id})
+        # Tenter de convertir en ObjectId
+        return db.users.find_one({"_id": ObjectId(user_id)})
+    except (InvalidId, TypeError):
+        # Si l'ID n'est pas valide, chercher par email ou string ID
+        return db.users.find_one({"email": session.get('email')}) or None
 
 def get_user_wallet(user_id):
     """Récupère le portefeuille de l'utilisateur"""

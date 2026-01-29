@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
-  <rect width="200" height="80" rx="8" fill="#FFD700"/>
-  <rect x="25" y="25" width="25" height="30" rx="2" fill="#0066CC"/>
-  <path d="M30 30L45 40L30 50V30Z" fill="white"/>
-  <text x="60" y="35" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#0066CC">AL BARID</text>
-  <text x="60" y="52" font-family="Arial, sans-serif" font-size="12" fill="#0066CC">BANK</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#FFB81C"/>
+  <circle cx="30" cy="30" r="14" fill="#006633"/>
+  <text x="50" y="26" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#006633">AL BARID</text>
+  <text x="50" y="40" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#006633">BANK</text>
 </svg>

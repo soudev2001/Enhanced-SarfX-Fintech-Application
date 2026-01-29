@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
-  <rect width="200" height="80" rx="8" fill="#DC0032"/>
-  <circle cx="35" cy="40" r="15" fill="white"/>
-  <circle cx="35" cy="40" r="10" fill="#DC0032"/>
-  <text x="60" y="45" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">BMCI</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#00427A"/>
+  <rect x="15" y="20" width="30" height="20" rx="3" fill="#E21836"/>
+  <text x="50" y="36" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">BMCI</text>
 </svg>

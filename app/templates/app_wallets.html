@@ -90,13 +90,13 @@
                             <div class="wise-tx-title">
                                 {% if tx.type == 'deposit' %}Received from Exchange
                                 {% elif tx.type == 'withdrawal' %}Withdrawn at ATM
-                                {% elif tx.type == 'transfer' %}Sent to {{ tx.get('recipient', 'User') }}
-                                {% else %}{{ tx.type|title }}{% endif %}
+                                {% elif tx.type == 'transfer' %}Sent to {{ tx.recipient or tx.recipient_name or 'User' }}
+                                {% else %}{{ tx.type|default('transfer')|title }}{% endif %}
                             </div>
                             <div class="wise-tx-date">{{ tx.created_at.strftime('%Y-%m-%d at %H:%M') if tx.created_at else 'N/A' }}</div>
                         </div>
                         <div class="wise-tx-amount {% if tx.type == 'deposit' %}positive{% else %}negative{% endif %}">
-                            {% if tx.type == 'deposit' %}+{% else %}-{% endif %}{{ tx.currency }}{{ "%.2f"|format(tx.amount) }}
+                            {% if tx.type == 'deposit' %}+{% else %}-{% endif %}{{ tx.from_currency or tx.currency or 'MAD' }} {{ "%.2f"|format(tx.amount or 0) }}
                         </div>
                     </div>
                     {% else %}

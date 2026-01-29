@@ -42,17 +42,18 @@
     <div class="wise-section" id="transactions-list">
         {% if transactions %}
             {% for tx in transactions %}
-            <div class="wise-tx-item" data-status="{{ tx.status }}" onclick="toggleTxDetails(this)">
-                <div class="wise-tx-icon {% if tx.status == 'completed' %}wise-bg-success{% elif tx.status == 'pending' %}wise-bg-warning{% else %}wise-bg-error{% endif %}">
-                    <i data-lucide="{% if tx.status == 'completed' %}check{% elif tx.status == 'pending' %}clock{% else %}x{% endif %}" 
-                       class="{% if tx.status == 'completed' %}wise-status-success{% elif tx.status == 'pending' %}wise-status-warning{% else %}wise-status-error{% endif %}"
+            {% set status = tx.status or 'pending' %}
+            <div class="wise-tx-item" data-status="{{ status }}" onclick="toggleTxDetails(this)">
+                <div class="wise-tx-icon {% if status == 'completed' %}wise-bg-success{% elif status == 'pending' %}wise-bg-warning{% else %}wise-bg-error{% endif %}">
+                    <i data-lucide="{% if status == 'completed' %}check{% elif status == 'pending' %}clock{% else %}x{% endif %}" 
+                       class="{% if status == 'completed' %}wise-status-success{% elif status == 'pending' %}wise-status-warning{% else %}wise-status-error{% endif %}"
                        style="width: 20px; height: 20px;"></i>
                 </div>
                 <div class="wise-tx-content">
                     <div class="wise-tx-header">
                         <span class="wise-tx-title">{{ tx.recipient_name or 'Transfert' }}</span>
                         <span class="wise-tx-amount {% if tx.type == 'send' %}wise-status-error{% else %}wise-status-success{% endif %}">
-                            {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount_sent }} {{ tx.from_currency }}
+                            {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount or tx.amount_sent or 0 }} {{ tx.from_currency or 'USD' }}
                         </span>
                     </div>
                     <div class="wise-tx-footer">
@@ -70,11 +71,11 @@
                 <div class="wise-tx-details">
                     <div class="wise-tx-detail-row">
                         <span>Montant reçu</span>
-                        <span class="wise-tx-detail-value">{{ tx.amount_received }} {{ tx.to_currency }}</span>
+                        <span class="wise-tx-detail-value">{{ tx.final_amount or tx.amount_received or 0 }} {{ tx.to_currency or 'MAD' }}</span>
                     </div>
                     <div class="wise-tx-detail-row">
                         <span>Taux appliqué</span>
-                        <span class="wise-tx-detail-value">1 {{ tx.from_currency }} = {{ tx.rate }} {{ tx.to_currency }}</span>
+                        <span class="wise-tx-detail-value">1 {{ tx.from_currency or 'USD' }} = {{ tx.rate or '—' }} {{ tx.to_currency or 'MAD' }}</span>
                     </div>
                     <div class="wise-tx-detail-row">
                         <span>Fournisseur</span>

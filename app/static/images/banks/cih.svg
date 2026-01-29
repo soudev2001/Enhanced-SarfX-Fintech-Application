@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
-  <rect width="200" height="80" rx="8" fill="#C41E3A"/>
-  <path d="M35 25H45V55H35V25Z" fill="white"/>
-  <path d="M25 35C25 30 28 25 35 25V35H25Z" fill="white"/>
-  <text x="55" y="45" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white">CIH BANK</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#1B3A6D"/>
+  <rect x="18" y="18" width="24" height="24" rx="4" fill="#E31E24"/>
+  <text x="50" y="36" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">CIH BANK</text>
 </svg>

@@ -426,11 +426,13 @@ def set_theme():
         if 'user_id' in session:
             db = get_db()
             if db is not None:
-                from bson import ObjectId
-                db.users.update_one(
-                    {"_id": ObjectId(session['user_id'])},
-                    {"$set": {"theme": theme}}
-                )
+                from app.services.db_service import safe_object_id
+                user_id = safe_object_id(session['user_id'])
+                if user_id:
+                    db.users.update_one(
+                        {"_id": user_id},
+                        {"$set": {"theme": theme}}
+                    )
         
         return jsonify({"success": True, "theme": theme})
     except Exception as e:
@@ -449,8 +451,9 @@ def save_settings():
         return jsonify({"error": "Database unavailable"}), 500
     
     # Vérifier si admin
-    from bson import ObjectId
-    user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+    from app.services.db_service import safe_object_id
+    user_id = safe_object_id(session['user_id'])
+    user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
     if not user or user.get('role') != 'admin':
         if request.form:
             from flask import redirect, url_for, flash
@@ -1189,7 +1192,9 @@ def chatbot_message():
         
         if 'user_id' in session and db:
             try:
-                user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+                from app.services.db_service import safe_object_id
+                user_id = safe_object_id(session['user_id'])
+                user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
                 if user:
                     user_context = {
                         'user_id': str(user['_id']),
@@ -1270,7 +1275,7 @@ def chatbot_suggestions():
     """
     try:
         from app.services.chatbot_service import chatbot_service
-        from bson import ObjectId
+        from app.services.db_service import safe_object_id
         
         db = get_db()
         user = None
@@ -1278,7 +1283,8 @@ def chatbot_suggestions():
         
         if 'user_id' in session and db:
             try:
-                user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+                user_id = safe_object_id(session['user_id'])
+                user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
             except Exception:
                 pass
         

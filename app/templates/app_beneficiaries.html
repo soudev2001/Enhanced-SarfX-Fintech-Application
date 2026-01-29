@@ -35,7 +35,7 @@
                 <i data-lucide="send" style="width: 24px; height: 24px;"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-value">{{ beneficiaries|sum(attribute='transactions')|length if beneficiaries else 0 }}</span>
+                <span class="stat-value">{% set total = namespace(count=0) %}{% for b in beneficiaries if b.transactions %}{% set total.count = total.count + (b.transactions|length) %}{% endfor %}{{ total.count }}</span>
                 <span class="stat-label">Transferts</span>
             </div>
         </div>
@@ -85,7 +85,7 @@
                             <i data-lucide="{{ 'check' if tx.status == 'completed' else 'clock' }}" style="width: 14px; height: 14px;"></i>
                         </div>
                         <div class="history-details">
-                            <span class="history-amount">{{ tx.amount }} {{ tx.currency|default('MAD') }}</span>
+                            <span class="history-amount">{{ tx.amount or 0 }} {{ tx.from_currency or tx.currency or 'MAD' }}</span>
                             <span class="history-date">{{ tx.created_at.strftime('%d/%m/%Y') if tx.created_at else 'N/A' }}</span>
                         </div>
                         <span class="history-status {{ tx.status }}">{{ tx.status|default('pending') }}</span>

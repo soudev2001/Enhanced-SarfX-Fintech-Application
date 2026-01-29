@@ -58,22 +58,22 @@
     <div class="space-y-3">
         {% for tx in transactions %}
         <div class="card p-4 rounded-xl space-y-3 tx-card"
-             data-email="{{ tx.user_email | lower }}"
-             data-id="{{ tx.transaction_id | lower }}"
-             data-status="{{ tx.status }}">
+             data-email="{{ (tx.user_email or '') | lower }}"
+             data-id="{{ (tx.transaction_id or tx._id|string or '') | lower }}"
+             data-status="{{ tx.status or 'pending' }}">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full {{ 'bg-emerald-500/20 text-emerald-500' if tx.type == 'receive' else 'bg-rose-500/20 text-rose-500' }} flex items-center justify-center">
                         <i data-lucide="{{ 'arrow-down-left' if tx.type == 'receive' else 'arrow-up-right' }}" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <p class="font-bold text-default">{{ tx.user_email }}</p>
-                        <p class="text-[10px] text-muted font-mono">{{ tx.transaction_id[:16] }}...</p>
+                        <p class="font-bold text-default">{{ tx.user_email or 'Unknown' }}</p>
+                        <p class="text-[10px] text-muted font-mono">{{ (tx.transaction_id or tx._id|string)[:16] }}...</p>
                     </div>
                 </div>
                 <div class="text-right">
-                    <p class="font-bold text-default">{{ "{:,.2f}".format(tx.amount) }} {{ tx.from_currency }}</p>
-                    <p class="text-xs text-muted">→ {{ "{:,.2f}".format(tx.final_amount) }} {{ tx.to_currency }}</p>
+                    <p class="font-bold text-default">{{ "{:,.2f}".format(tx.amount or 0) }} {{ tx.from_currency or '?' }}</p>
+                    <p class="text-xs text-muted">→ {{ "{:,.2f}".format(tx.final_amount or 0) }} {{ tx.to_currency or '?' }}</p>
                 </div>
             </div>
             
@@ -83,7 +83,7 @@
                         {% if tx.status == 'completed' %}badge badge-success
                         {% elif tx.status == 'pending' %}badge badge-warning
                         {% else %}badge badge-error{% endif %}">
-                        {{ tx.status | upper }}
+                        {{ (tx.status or 'pending') | upper }}
                     </span>
                     <span class="text-muted">
                         {{ tx.created_at.strftime('%d/%m/%Y %H:%M') if tx.created_at else '--' }}
@@ -91,7 +91,7 @@
                 </div>
                 
                 <!-- Status Update -->
-                <form action="{{ url_for('admin.update_transaction_status', tx_id=tx.transaction_id) }}" method="POST" class="inline">
+                <form action="{{ url_for('admin.update_transaction_status', tx_id=(tx.transaction_id or tx._id|string)) }}" method="POST" class="inline">
                     <select name="status" onchange="this.form.submit()" class="input rounded px-2 py-1 text-xs bg-transparent">
                         <option value="pending" {{ 'selected' if tx.status == 'pending' else '' }}>En attente</option>
                         <option value="completed" {{ 'selected' if tx.status == 'completed' else '' }}>Complétée</option>

@@ -286,11 +286,11 @@
                     <i data-lucide="{{ 'arrow-up-right' if tx.type == 'send' else 'arrow-down-left' }}" style="width: 16px; height: 16px;"></i>
                 </div>
                 <div class="wise-tx-info">
-                    <span class="wise-tx-name">{{ tx.recipient | default('Transaction') }}</span>
-                    <span class="wise-tx-date">{{ tx.created_at | default('Aujourd\'hui') }}</span>
+                    <span class="wise-tx-name">{{ tx.recipient_name or tx.recipient or 'Transaction' }}</span>
+                    <span class="wise-tx-date">{{ tx.created_at.strftime('%d/%m/%Y') if tx.created_at else 'Aujourd\'hui' }}</span>
                 </div>
                 <span class="wise-tx-amount {{ 'wise-tx-negative' if tx.type == 'send' else 'wise-tx-positive' }}">
-                    {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount }} {{ tx.currency }}
+                    {{ '-' if tx.type == 'send' else '+' }}{{ tx.amount or 0 }} {{ tx.from_currency or tx.currency or 'MAD' }}
                 </span>
             </div>
             {% endfor %}

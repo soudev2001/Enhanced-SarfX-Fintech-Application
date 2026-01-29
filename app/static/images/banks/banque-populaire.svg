@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
-  <rect width="200" height="80" rx="8" fill="#005BAA"/>
-  <rect x="25" y="25" width="20" height="30" rx="2" fill="#FFA500"/>
-  <rect x="30" y="30" width="10" height="10" fill="white"/>
-  <text x="55" y="35" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">BANQUE</text>
-  <text x="55" y="50" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">POPULAIRE</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#005BAA"/>
+  <circle cx="30" cy="30" r="16" fill="#FF6B00"/>
+  <text x="50" y="26" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">BANQUE</text>
+  <text x="50" y="40" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#FF6B00">POPULAIRE</text>
 </svg>

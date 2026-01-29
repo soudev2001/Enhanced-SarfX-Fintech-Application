@@ -36,12 +36,12 @@
             </div>
             
             <div class="wise-exchange-field">
-                <label class="wise-field-label">Recipient gets</label>
+                <label class="wise-field-label">Le bénéficiaire reçoit</label>
                 <div class="wise-field-input">
                     <input type="text" id="recipient-amount" value="--" class="wise-amount-input wise-amount-result" readonly>
-                    <select id="to-currency" class="wise-currency-select">
-                        <option value="EUR" selected>🇪🇺 EUR</option>
-                        <option value="MAD">🇲🇦 MAD</option>
+                    <select id="to-currency" class="wise-currency-select" onchange="calculateExchange()">
+                        <option value="EUR">🇪🇺 EUR</option>
+                        <option value="MAD" selected>🇲🇦 MAD</option>
                         <option value="GBP">🇬🇧 GBP</option>
                         <option value="USD">🇺🇸 USD</option>
                     </select>
@@ -1633,6 +1633,24 @@
     let beneficiariesData = [];
     let selectedBeneficiary = null;
 
+    // Currency symbols map
+    const currencySymbols = {
+        'MAD': 'DH',
+        'EUR': '€',
+        'USD': '$',
+        'GBP': '£'
+    };
+
+    // Format amount with currency symbol
+    function formatAmountWithCurrency(amount, currency) {
+        const symbol = currencySymbols[currency] || currency;
+        const formattedAmount = new Intl.NumberFormat('fr-FR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+        return `${formattedAmount} ${symbol}`;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('smart-amount').addEventListener('input', calculateSmartExchange);
         document.getElementById('from-currency').addEventListener('change', calculateSmartExchange);
@@ -1835,8 +1853,8 @@
         bestSupplier = providers[0];
         const finalAmount = bestSupplier.finalAmount;
 
-        // Update recipient amount display
-        document.getElementById('recipient-amount').value = finalAmount.toFixed(2);
+        // Update recipient amount display with currency
+        document.getElementById('recipient-amount').value = formatAmountWithCurrency(finalAmount, toCurrency);
         
         // Update time
         const now = new Date();
@@ -1886,7 +1904,7 @@
         document.getElementById('form-supplier-id').value = 'SarfX';
         document.getElementById('form-rate').value = sarfxRate;
         document.getElementById('form-final-amount').value = sarfxFinalAmount.toFixed(2);
-        document.getElementById('recipient-amount').value = sarfxFinalAmount.toFixed(2);
+        document.getElementById('recipient-amount').value = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
         
         // Comparison label
         const compLabel = document.createElement('div');
@@ -1925,10 +1943,11 @@
 
     // Select provider function
     function selectProvider(provider) {
+        const toCurrency = document.getElementById('to-currency').value;
         document.getElementById('form-supplier-id').value = provider.name;
         document.getElementById('form-rate').value = provider.rate;
         document.getElementById('form-final-amount').value = provider.finalAmount.toFixed(2);
-        document.getElementById('recipient-amount').value = provider.finalAmount.toFixed(2);
+        document.getElementById('recipient-amount').value = formatAmountWithCurrency(provider.finalAmount, toCurrency);
         
         // Highlight selected card
         document.querySelectorAll('.wise-provider-card').forEach(card => {
@@ -2040,8 +2059,10 @@
                     const bankCard = document.createElement('div');
                     bankCard.className = 'wise-bank-select-item';
                     bankCard.innerHTML = `
-                        <img src="${bank.logo}" alt="${bank.name}" onerror="this.style.display='none'">
-                        <span>${bank.atm_count} ATM</span>
+                        <img src="${bank.logo}" alt="${bank.name}" onerror="this.parentElement.querySelector('.bank-fallback').style.display='flex'; this.style.display='none'">
+                        <div class="bank-fallback" style="display:none; width:100%; height:40px; background:var(--bg-tertiary); border-radius:8px; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:var(--text-secondary);">${bank.name.substring(0, 3).toUpperCase()}</div>
+                        <span class="bank-name" style="font-size:11px; font-weight:600; color:var(--text-primary); text-align:center;">${bank.name}</span>
+                        <span style="font-size:9px; color:var(--text-tertiary);">${bank.atm_count} ATM disponibles</span>
                     `;
                     bankCard.onclick = () => selectBank(bank, bankCard);
                     banksGrid.appendChild(bankCard);

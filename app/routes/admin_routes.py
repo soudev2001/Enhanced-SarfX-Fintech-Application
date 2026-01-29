@@ -26,7 +26,9 @@ def admin_required(f):
         if 'user_id' not in session:
             return redirect(url_for('auth.login'))
         db = get_db()
-        user = db.users.find_one({"_id": ObjectId(session['user_id'])})
+        from app.services.db_service import safe_object_id
+        user_id = safe_object_id(session['user_id'])
+        user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
         if not user or user.get('role') != 'admin':
             flash("Accès non autorisé", "error")
             return redirect(url_for('app.home'))
