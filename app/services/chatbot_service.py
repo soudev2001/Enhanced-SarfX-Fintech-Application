@@ -85,11 +85,16 @@ class ChatbotService:
     """Service pour interagir avec l'API Gemini avec RBAC, Tools et Mémoire"""
     
     def __init__(self, api_key=None):
-        self.api_key = api_key or os.getenv('GEMINI_API_KEY', 'AIzaSyC4q4-n7tdL8cU9srm8q9aodCG0hTqUcoA')
+        self.api_key = api_key or os.getenv('GEMINI_API_KEY')
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is required. Please set it in your .env file.")
         self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
         
         # Rate limiting en mémoire (pour prod, utiliser Redis)
         self._rate_limits = {}
+        
+        # MongoDB rate limiting (persistent)
+        self._use_mongodb_rate_limit = True
         
         # Patterns de détection de demandes sensibles
         self.sensitive_patterns = [
@@ -177,7 +182,17 @@ class ChatbotService:
         is_authenticated = user_context and user_context.get('user_id')
         limit = RATE_LIMIT_AUTHENTICATED if is_authenticated else RATE_LIMIT_ANONYMOUS
         
-        # Nettoyer les anciennes entrées
+        # Essayer MongoDB d'abord pour persistance
+        if self._use_mongodb_rate_limit:
+            try:
+                from app.services.db_service import get_db
+                db = get_db()
+                if db is not None:
+                    return self._check_rate_limit_mongodb(db, client_id, limit, current_time)
+            except Exception:
+                pass  # Fallback to memory
+        
+        # Fallback: Rate limiting en mémoire
         if client_id in self._rate_limits:
             self._rate_limits[client_id] = [
                 t for t in self._rate_limits[client_id]
@@ -196,6 +211,56 @@ class ChatbotService:
         
         # Enregistrer la requête
         self._rate_limits[client_id].append(current_time)
+        
+        return True, limit - request_count - 1, RATE_LIMIT_WINDOW
+    
+    def _check_rate_limit_mongodb(self, db, client_id, limit, current_time):
+        """
+        Rate limiting persistant avec MongoDB
+        
+        Args:
+            db: Instance MongoDB
+            client_id: Identifiant client
+            limit: Limite de requêtes
+            current_time: Timestamp actuel
+        
+        Returns:
+            tuple: (is_allowed, remaining_requests, reset_time)
+        """
+        cutoff_time = datetime.utcnow() - timedelta(seconds=RATE_LIMIT_WINDOW)
+        
+        # Compter les requêtes récentes
+        rate_limit_col = db['chatbot_rate_limits']
+        
+        # Nettoyer les anciennes entrées
+        rate_limit_col.delete_many({
+            'client_id': client_id,
+            'timestamp': {'$lt': cutoff_time}
+        })
+        
+        # Compter les requêtes dans la fenêtre
+        request_count = rate_limit_col.count_documents({
+            'client_id': client_id,
+            'timestamp': {'$gte': cutoff_time}
+        })
+        
+        if request_count >= limit:
+            # Trouver la plus ancienne pour calculer reset_time
+            oldest = rate_limit_col.find_one(
+                {'client_id': client_id},
+                sort=[('timestamp', 1)]
+            )
+            if oldest:
+                oldest_ts = oldest['timestamp'].timestamp()
+                reset_time = int(oldest_ts + RATE_LIMIT_WINDOW - current_time)
+                return False, 0, max(1, reset_time)
+            return False, 0, RATE_LIMIT_WINDOW
+        
+        # Enregistrer la nouvelle requête
+        rate_limit_col.insert_one({
+            'client_id': client_id,
+            'timestamp': datetime.utcnow()
+        })
         
         return True, limit - request_count - 1, RATE_LIMIT_WINDOW
     

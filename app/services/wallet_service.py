@@ -60,7 +60,21 @@ def update_balance(user_id, currency, amount, operation='add'):
         currency: Devise (USD, EUR, MAD, etc.)
         amount: Montant à ajouter/retirer
         operation: 'add' ou 'subtract'
+    
+    Returns:
+        bool: True si succès, False sinon
     """
+    # Validation du montant
+    if amount is None or not isinstance(amount, (int, float)):
+        return False
+    if amount < 0:
+        return False  # Montant négatif non autorisé
+    
+    # Validation de la devise
+    valid_currencies = ['USD', 'EUR', 'MAD', 'GBP']
+    if currency not in valid_currencies:
+        return False
+    
     db = get_db()
     if db is None:
         return False
@@ -111,7 +125,21 @@ def adjust_wallet(wallet_id, currency, new_balance, admin_id, reason=""):
         new_balance: Nouveau solde
         admin_id: ID de l'admin effectuant l'ajustement
         reason: Raison de l'ajustement
+    
+    Returns:
+        bool: True si succès, False sinon
     """
+    # Validation du nouveau solde
+    if new_balance is None or not isinstance(new_balance, (int, float)):
+        return False
+    if new_balance < 0:
+        return False  # Solde négatif non autorisé
+    
+    # Validation de la devise
+    valid_currencies = ['USD', 'EUR', 'MAD', 'GBP']
+    if currency not in valid_currencies:
+        return False
+    
     db = get_db()
     if db is None:
         return False

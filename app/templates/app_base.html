@@ -246,11 +246,29 @@
             document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
         }
 
-        // Notifications
-        function showNotification(message, type = 'info') {
+        // Notifications - Enhanced with close button and stacking
+        const MAX_TOASTS = 5;
+        
+        function showNotification(message, type = 'info', duration = null) {
             const container = document.getElementById('notification-container');
+            
+            // Auto duration based on type
+            const durations = {
+                success: 3000,
+                error: 6000,
+                warning: 5000,
+                info: 4000
+            };
+            const autoDuration = duration || durations[type] || 4000;
+            
+            // Limit number of toasts
+            const existingToasts = container.querySelectorAll('.toast');
+            if (existingToasts.length >= MAX_TOASTS) {
+                existingToasts[0].remove();
+            }
+            
             const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
+            toast.className = `toast toast-${type} toast-enter`;
             
             const icons = {
                 success: 'check-circle',
@@ -260,19 +278,50 @@
             };
             
             toast.innerHTML = `
-                <i data-lucide="${icons[type] || 'info'}" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
-                <span style="flex: 1;">${message}</span>
+                <div class="toast-content">
+                    <i data-lucide="${icons[type] || 'info'}" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+                    <span style="flex: 1;">${message}</span>
+                </div>
+                <button class="toast-close" aria-label="Fermer">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
             `;
             
             container.appendChild(toast);
             lucide.createIcons();
             
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-10px)';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            // Close button handler
+            const closeBtn = toast.querySelector('.toast-close');
+            closeBtn.addEventListener('click', () => dismissToast(toast));
+            
+            // Auto dismiss
+            const timeoutId = setTimeout(() => dismissToast(toast), autoDuration);
+            toast.dataset.timeoutId = timeoutId;
         }
+        
+        function dismissToast(toast) {
+            if (!toast || !toast.parentNode) return;
+            
+            // Clear timeout if exists
+            if (toast.dataset.timeoutId) {
+                clearTimeout(parseInt(toast.dataset.timeoutId));
+            }
+            
+            toast.classList.remove('toast-enter');
+            toast.classList.add('toast-exit');
+            
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 300);
+        }
+        
+        // Global notification function for external scripts
+        window.SarfXNotify = {
+            success: (msg, duration) => showNotification(msg, 'success', duration),
+            error: (msg, duration) => showNotification(msg, 'error', duration),
+            warning: (msg, duration) => showNotification(msg, 'warning', duration),
+            info: (msg, duration) => showNotification(msg, 'info', duration)
+        };
 
         // Init Theme on Load
         document.addEventListener('DOMContentLoaded', () => {

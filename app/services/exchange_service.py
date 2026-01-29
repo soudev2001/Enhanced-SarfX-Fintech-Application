@@ -340,12 +340,30 @@ def convert_currency(amount: float, from_currency: str, to_currency: str) -> Dic
     Convert amount from one currency to another.
     Returns result with 4 decimals precision.
     """
+    # Validation du montant
+    if amount is None or not isinstance(amount, (int, float)):
+        return {'success': False, 'error': 'Invalid amount: must be a number'}
+    if amount <= 0:
+        return {'success': False, 'error': 'Invalid amount: must be positive'}
+    
+    # Validation des devises
+    valid_currencies = ['USD', 'EUR', 'MAD', 'GBP', 'CAD', 'CHF', 'AED']
+    if from_currency.upper() not in valid_currencies:
+        return {'success': False, 'error': f'Invalid source currency: {from_currency}'}
+    if to_currency.upper() not in valid_currencies:
+        return {'success': False, 'error': f'Invalid target currency: {to_currency}'}
+    
     rate_result = get_live_rate(from_currency, to_currency)
     
     if not rate_result.get('success'):
         return rate_result
     
     rate = rate_result['rate']
+    
+    # Protection contre division par zéro (rate = 0)
+    if not rate or rate == 0:
+        return {'success': False, 'error': 'Invalid exchange rate received'}
+    
     converted = amount * rate
     
     return {

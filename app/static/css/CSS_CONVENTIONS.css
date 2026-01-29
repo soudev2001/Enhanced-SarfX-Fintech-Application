@@ -1,0 +1,197 @@
+/* ============================================
+   SarfX CSS CONVENTIONS GUIDE
+   ============================================
+   
+   This file documents the CSS naming conventions
+   used across the SarfX application. Follow these
+   conventions for consistency.
+   
+   ============================================ */
+
+/* =========================================
+   1. NAMING CONVENTIONS
+   =========================================
+
+   Primary convention: Wise-inspired BEM-like naming
+   Format: .wise-{component}-{element}--{modifier}
+
+   Examples:
+   - .wise-section          → Component container
+   - .wise-section-title    → Component element
+   - .wise-section.active   → Component with modifier
+
+   =========================================
+   2. PREFIX CATEGORIES
+   =========================================
+
+   .wise-*     → Main component styles (Wise-inspired design)
+   .btn        → Button base classes (legacy)
+   .btn-*      → Button variants
+   .card       → Card base class (legacy)
+   .badge      → Badge/tag elements
+   .toast-*    → Notification toasts
+   .input      → Form input base
+   .glass-*    → Glassmorphism effects
+   .nav-*      → Navigation elements
+
+   =========================================
+   3. RESPONSIVE PREFIXES
+   =========================================
+
+   Mobile-first approach with breakpoints:
+   
+   (no prefix) → Mobile default (< 640px)
+   sm:*        → Small screens (≥ 640px)
+   md:*        → Medium/Tablet (≥ 768px)
+   lg:*        → Large/Desktop (≥ 1024px)
+   xl:*        → Extra large (≥ 1280px)
+   xxl:*       → 2XL screens (≥ 1536px)
+
+   Example: class="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+
+   =========================================
+   4. COMPONENT CATALOG
+   =========================================
+
+   LAYOUT:
+   - .wise-main-content     → Main content wrapper
+   - .wise-content-inner    → Inner content container
+   - .wise-sidebar          → Desktop sidebar
+   - .wise-bottom-nav       → Mobile bottom navigation
+
+   NAVIGATION:
+   - .wise-nav-item         → Sidebar nav item
+   - .wise-bottom-nav-item  → Mobile nav item
+   - .wise-breadcrumb       → Breadcrumb navigation
+
+   CARDS & SECTIONS:
+   - .wise-section          → Section container
+   - .wise-section-title    → Section heading
+   - .wise-card             → Generic card
+   - .wise-stat-card        → Stats/KPI card
+   - .wise-profile-card     → User profile card
+   - .wise-wallet-card      → Wallet display card
+
+   TRANSACTIONS:
+   - .wise-tx-item          → Transaction list item
+   - .wise-tx-icon          → Transaction icon
+   - .wise-tx-content       → Transaction content
+   - .wise-tx-header        → Transaction header row
+   - .wise-tx-footer        → Transaction footer row
+   - .wise-tx-details       → Expandable details
+
+   FORMS:
+   - .wise-input-group      → Input with label group
+   - .wise-input            → Styled input field
+   - .wise-select           → Select dropdown
+   - .wise-textarea         → Multiline input
+
+   BUTTONS:
+   - .wise-btn              → Button base
+   - .wise-btn-primary      → Primary action
+   - .wise-btn-secondary    → Secondary action
+   - .wise-btn-ghost        → Ghost/text button
+   - .wise-btn-danger       → Destructive action
+
+   FILTERS:
+   - .wise-filter-group     → Filter container
+   - .wise-filter-btn       → Filter pill button
+   - .wise-filter-btn.active → Active filter
+
+   LISTS:
+   - .wise-list             → List container
+   - .wise-list-item        → List item
+   - .wise-list-icon        → Item icon
+   - .wise-list-content     → Item content
+
+   EMPTY STATES:
+   - .wise-empty-state      → Empty state container
+   - .wise-empty-icon       → Empty state icon
+   - .wise-empty-title      → Empty state heading
+   - .wise-empty-text       → Empty state description
+
+   STATUS COLORS:
+   - .wise-status-success   → Success text color
+   - .wise-status-warning   → Warning text color
+   - .wise-status-error     → Error text color
+   - .wise-status-info      → Info text color
+   - .wise-bg-success       → Success background
+   - .wise-bg-warning       → Warning background
+   - .wise-bg-error         → Error background
+   - .wise-bg-info          → Info background
+
+   TOASTS/NOTIFICATIONS:
+   - .toast-container       → Toast wrapper
+   - .toast                 → Toast base
+   - .toast-success         → Success toast
+   - .toast-error           → Error toast
+   - .toast-warning         → Warning toast
+   - .toast-info            → Info toast
+   - .toast-close           → Close button
+
+   =========================================
+   5. COLOR VARIABLES
+   =========================================
+
+   Brand:
+   --brand-primary: #e05a03 (Orange)
+   --wise-green: #9fe870
+   --wise-navy: #163300
+
+   Semantic:
+   --success: #10b981
+   --warning: #f59e0b
+   --error: #ef4444
+   --info: #3b82f6
+
+   Neutral:
+   --text-primary: Main text
+   --text-secondary: Secondary text
+   --text-tertiary: Muted text
+   --bg-primary: Page background
+   --bg-secondary: Section background
+   --bg-tertiary: Hover/active states
+   --border-light: Light borders
+   --border-medium: Medium borders
+
+   =========================================
+   6. SPACING SCALE
+   =========================================
+
+   --space-1:  4px
+   --space-2:  8px
+   --space-3:  12px
+   --space-4:  16px
+   --space-5:  20px
+   --space-6:  24px
+   --space-8:  32px
+   --space-10: 40px
+   --space-12: 48px
+
+   =========================================
+   7. BORDER RADIUS SCALE
+   =========================================
+
+   --radius-sm:   6px
+   --radius-md:   8px
+   --radius-lg:   12px
+   --radius-xl:   16px
+   --radius-2xl:  20px
+   --radius-full: 9999px
+
+   =========================================
+   8. MIGRATION NOTES
+   =========================================
+
+   Legacy classes being phased out:
+   - .card → Use .wise-section or .wise-card
+   - .btn → Still supported, prefer .wise-btn
+   - .glass-* → Still supported for effects
+
+   When adding new components:
+   1. Use .wise- prefix
+   2. Follow BEM-like structure
+   3. Add responsive variants if needed
+   4. Document in this file
+
+   ============================================ */

@@ -43,8 +43,12 @@ def calculate_best_rate(amount, from_currency='USD', to_currency='MAD'):
     Calcule le meilleur taux parmi tous les fournisseurs
     
     Returns:
-        dict avec le meilleur fournisseur et les détails
+        dict avec le meilleur fournisseur et les details
     """
+    # Validation du montant
+    if amount is None or not isinstance(amount, (int, float)) or amount <= 0:
+        return {'error': 'Invalid amount: must be a positive number'}
+    
     suppliers = get_all_suppliers(active_only=True)
     if not suppliers:
         return None
@@ -58,8 +62,10 @@ def calculate_best_rate(amount, from_currency='USD', to_currency='MAD'):
         
         fee = supplier.get('fee', 0)
         
-        # Calcul du montant final
+        # Calcul du montant final avec protection
         net_amount = amount - fee
+        if net_amount <= 0:
+            continue  # Skip si le montant net est négatif ou nul
         final_amount = net_amount * current_rate
         
         results.append({
@@ -155,11 +161,17 @@ def update_rate(supplier_id, new_rate):
         old_rate = supplier.get('rate', 0)
         
         # Enregistrer l'historique
+        # Protection contre division par zéro
+        if old_rate and old_rate != 0:
+            change_pct = ((float(new_rate) - old_rate) / old_rate * 100)
+        else:
+            change_pct = 0
+        
         rate_history = {
             "supplier_id": supplier_id,
             "old_rate": old_rate,
             "new_rate": float(new_rate),
-            "change_pct": ((float(new_rate) - old_rate) / old_rate * 100) if old_rate else 0,
+            "change_pct": change_pct,
             "created_at": datetime.utcnow()
         }
         db.rate_history.insert_one(rate_history)

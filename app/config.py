@@ -11,6 +11,9 @@ class Config:
     MONGO_URI = os.environ.get("MONGO_URI")
     DB_NAME = "SarfX_Enhanced"
     
+    # Gemini AI API
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    
     # SMTP (Email)
     SMTP_EMAIL = os.environ.get("SMTP_EMAIL")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")

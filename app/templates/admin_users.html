@@ -25,23 +25,25 @@
 
     <!-- Search & Filters -->
     <div class="card p-4 rounded-xl">
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3">
             <div class="flex-1 relative">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
                 <input type="text" id="search-input" placeholder="Rechercher par email..." 
                        class="w-full pl-10 pr-4 py-2 input rounded-lg text-sm"
                        onkeyup="filterUsers()">
             </div>
-            <select id="filter-role" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm bg-transparent">
-                <option value="">Tous les rôles</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-            </select>
-            <select id="filter-status" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm bg-transparent">
-                <option value="">Tous statuts</option>
-                <option value="active">Actif</option>
-                <option value="inactive">Inactif</option>
-            </select>
+            <div class="flex gap-2">
+                <select id="filter-role" onchange="filterUsers()" class="input flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm bg-transparent">
+                    <option value="">Tous les rôles</option>
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                </select>
+                <select id="filter-status" onchange="filterUsers()" class="input flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm bg-transparent">
+                    <option value="">Tous statuts</option>
+                    <option value="active">Actif</option>
+                    <option value="inactive">Inactif</option>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -88,8 +90,8 @@
                     </div>
                 </div>
                 
-                <!-- Actions -->
-                <div class="flex items-center gap-2">
+                <!-- Actions - Responsive -->
+                <div class="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
                     <!-- View Details -->
                     <button onclick="showUserDetails('{{ user._id }}')" class="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition" title="Voir détails">
                         <i data-lucide="eye" class="w-4 h-4"></i>
@@ -103,8 +105,8 @@
                         </button>
                     </form>
                     
-                    <!-- Change Role -->
-                    <form action="{{ url_for('admin.change_role', user_id=user._id) }}" method="POST" class="inline">
+                    <!-- Change Role - Hidden on mobile -->
+                    <form action="{{ url_for('admin.change_role', user_id=user._id) }}" method="POST" class="hidden sm:inline">
                         <select name="role" onchange="this.form.submit()" class="input rounded-lg px-2 py-1 text-xs bg-transparent">
                             <option value="user" {{ 'selected' if user.role != 'admin' else '' }}>User</option>
                             <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>

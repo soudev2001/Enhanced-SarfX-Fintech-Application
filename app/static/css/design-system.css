@@ -1161,12 +1161,13 @@ ul, ol {
 .toast-container {
     position: fixed;
     top: var(--space-4);
-    left: var(--space-4);
-    right: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90vw, 420px);
     z-index: var(--z-toast);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
     pointer-events: none;
 }
 
@@ -1177,24 +1178,95 @@ ul, ol {
     padding: var(--space-4);
     background: var(--surface);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-xl);
     animation: slideInDown var(--transition-normal);
     pointer-events: auto;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-light);
+}
+
+.toast:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2xl);
 }
 
 .toast-success {
-    background: var(--success);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
+    border: none;
 }
 
 .toast-error {
-    background: var(--error);
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     color: white;
+    border: none;
+}
+
+.toast-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
 }
 
 .toast-info {
-    background: var(--info);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
+    border: none;
+}
+
+.toast-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+/* Toast animations */
+@keyframes toastSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+}
+
+.toast-enter {
+    animation: toastSlideIn 0.3s ease forwards;
+}
+
+.toast-exit {
+    animation: toastSlideOut 0.3s ease forwards;
 }
 
 /* --- SKELETON LOADERS --- */
@@ -2559,6 +2631,144 @@ body, .card, .wise-card, .btn, input, select {
 .wise-bg-warning { background: rgba(245, 158, 11, 0.15); }
 .wise-bg-error { background: rgba(239, 68, 68, 0.15); }
 .wise-bg-info { background: rgba(59, 130, 246, 0.15); }
+
+/* ===================================
+   WISE TRANSACTION ITEMS
+   =================================== */
+.wise-transactions {
+    max-width: 100%;
+}
+
+.wise-tx-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wise-tx-item:hover {
+    background: var(--bg-tertiary);
+    transform: translateX(4px);
+}
+
+.wise-tx-item:last-child {
+    margin-bottom: 0;
+}
+
+.wise-tx-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wise-tx-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.wise-tx-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.wise-tx-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wise-tx-amount {
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.wise-tx-amount.positive { color: var(--success); }
+.wise-tx-amount.negative { color: var(--error); }
+
+.wise-tx-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wise-tx-pair {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.wise-tx-date {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-tx-details {
+    display: none;
+    width: 100%;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light);
+}
+
+.wise-tx-item.expanded .wise-tx-details {
+    display: block;
+}
+
+.wise-tx-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+.wise-tx-detail-row span:first-child {
+    color: var(--text-tertiary);
+}
+
+.wise-tx-detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.wise-tx-id {
+    font-family: monospace;
+    font-size: 12px;
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Transaction responsive */
+@media (max-width: 480px) {
+    .wise-tx-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .wise-tx-amount {
+        font-size: 14px;
+    }
+    
+    .wise-tx-item {
+        padding: 12px;
+    }
+}
 
 /* Filter Pills */
 .wise-filter-group {
