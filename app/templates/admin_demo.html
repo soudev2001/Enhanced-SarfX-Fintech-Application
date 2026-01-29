@@ -1,398 +1,239 @@
-{% extends "admin_dashboard.html" %}
+{% extends "app_base.html" %}
 
 {% block title %}Démonstration Automatisée - SarfX Admin{% endblock %}
 
-{% block admin_content %}
-<div class="demo-container">
+{% block content %}
+<div class="space-y-6 pb-24">
     <!-- Header -->
-    <div class="demo-header mb-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h1 class="h3 mb-1">
-                    <i class="fas fa-robot me-2 text-primary"></i>
-                    Démonstration Automatisée
-                </h1>
-                <p class="text-muted mb-0">
-                    Tests Robot Framework avec enregistrement vidéo et captures d'écran
-                </p>
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <div class="flex items-center gap-2">
+                <div class="logo">
+                    <span class="logo-text">Sarf</span><span class="logo-accent">X</span>
+                </div>
+                <span class="badge badge-error">Admin</span>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary" onclick="checkStatus()">
-                    <i class="fas fa-sync-alt me-2"></i>Actualiser
-                </button>
-                <button class="btn btn-primary btn-lg" onclick="startDemo()" id="start-demo-btn">
-                    <i class="fas fa-play me-2"></i>Lancer la Démo
-                </button>
-            </div>
+            <p class="text-muted text-sm mt-1">Démonstration Automatisée</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-muted hover:text-default transition">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <a href="{{ url_for('app.settings') }}" class="btn btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-muted hover:text-default transition">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </a>
         </div>
     </div>
 
-    <!-- Status Banner -->
-    <div class="alert alert-info demo-status-banner" id="status-banner" style="display: none;">
-        <div class="d-flex align-items-center">
-            <div class="spinner-border spinner-border-sm me-3" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div>
-                <strong>Démonstration en cours...</strong>
-                <span class="text-muted ms-2">Les résultats apparaîtront automatiquement</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body text-center">
-                    <div class="stat-icon bg-primary-subtle text-primary rounded-circle mx-auto mb-3">
-                        <i class="fas fa-images"></i>
-                    </div>
-                    <h3 class="mb-1" id="screenshot-count">{{ screenshot_count }}</h3>
-                    <p class="text-muted mb-0">Screenshots</p>
+    <!-- Demo Container -->
+    <div class="demo-container">
+        <!-- Status Banner -->
+        <div class="card p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 mb-4" id="status-banner" style="display: none;">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                    <i data-lucide="loader-2" class="w-4 h-4 text-purple-500 animate-spin"></i>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body text-center">
-                    <div class="stat-icon bg-success-subtle text-success rounded-circle mx-auto mb-3">
-                        <i class="fas fa-video"></i>
-                    </div>
-                    <h3 class="mb-1">{{ '1' if latest_video else '0' }}</h3>
-                    <p class="text-muted mb-0">Vidéo Disponible</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body text-center">
-                    <div class="stat-icon bg-info-subtle text-info rounded-circle mx-auto mb-3">
-                        <i class="fas fa-file-alt"></i>
-                    </div>
-                    <h3 class="mb-1">{{ demo_results|length }}</h3>
-                    <p class="text-muted mb-0">Rapports</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body text-center">
-                    <div class="stat-icon bg-warning-subtle text-warning rounded-circle mx-auto mb-3">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h3 class="mb-1" id="demo-status">Prêt</h3>
-                    <p class="text-muted mb-0">Statut</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="row g-4">
-        <!-- Video Section -->
-        <div class="col-lg-8">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-video me-2 text-danger"></i>
-                        Dernière Vidéo de Démonstration
-                    </h5>
-                    {% if latest_video %}
-                    <a href="{{ url_for('admin.get_demo_video') }}" class="btn btn-sm btn-outline-primary" download>
-                        <i class="fas fa-download me-1"></i>Télécharger
-                    </a>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    {% if latest_video %}
-                    <div class="video-wrapper">
-                        <video id="demo-video" controls class="w-100 rounded">
-                            <source src="{{ url_for('admin.get_demo_video') }}" type="video/mp4">
-                            Votre navigateur ne supporte pas la vidéo HTML5.
-                        </video>
-                    </div>
-                    <p class="text-muted mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Fichier: {{ latest_video }}
-                    </p>
-                    {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-film fa-4x text-muted mb-3"></i>
-                        <h5 class="text-muted">Aucune vidéo disponible</h5>
-                        <p class="text-muted">Lancez une démonstration pour générer une vidéo</p>
-                        <button class="btn btn-primary" onclick="startDemo()">
-                            <i class="fas fa-play me-2"></i>Lancer la Démo
-                        </button>
-                    </div>
-                    {% endif %}
+                <div>
+                    <p class="font-bold text-default">Démonstration en cours...</p>
+                    <p class="text-xs text-muted">Les résultats apparaîtront automatiquement</p>
                 </div>
             </div>
         </div>
 
-        <!-- Scenarios Section -->
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list-check me-2 text-success"></i>
-                        Scénarios de Test
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-primary me-2">1</span>
-                                <div>
-                                    <strong>Admin Login</strong>
-                                    <small class="d-block text-muted">Connexion administrateur</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-primary me-2">2</span>
-                                <div>
-                                    <strong>Dashboard Admin</strong>
-                                    <small class="d-block text-muted">Exploration du panel admin</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-primary me-2">3</span>
-                                <div>
-                                    <strong>Gestion Users/Wallets</strong>
-                                    <small class="d-block text-muted">Utilisateurs et portefeuilles</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-success me-2">4</span>
-                                <div>
-                                    <strong>User Login</strong>
-                                    <small class="d-block text-muted">Connexion utilisateur</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-success me-2">5</span>
-                                <div>
-                                    <strong>Convertisseur</strong>
-                                    <small class="d-block text-muted">Conversion USD → MAD</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-success me-2">6</span>
-                                <div>
-                                    <strong>Wallets & Transactions</strong>
-                                    <small class="d-block text-muted">Portefeuilles utilisateur</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-warning text-dark me-2">7</span>
-                                <div>
-                                    <strong>Bank User</strong>
-                                    <small class="d-block text-muted">Connexion responsable banque</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-info me-2">8</span>
-                                <div>
-                                    <strong>Test Mobile</strong>
-                                    <small class="d-block text-muted">Interface responsive</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Launch Button -->
+        <div class="card p-6 text-center mb-4">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="play" class="w-10 h-10 text-white"></i>
             </div>
-        </div>
-    </div>
-
-    <!-- Screenshots Gallery -->
-    <div class="card mt-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-images me-2 text-info"></i>
-                Galerie de Screenshots
-            </h5>
-            <button class="btn btn-sm btn-outline-primary" onclick="loadScreenshots()">
-                <i class="fas fa-sync-alt me-1"></i>Actualiser
+            <h2 class="text-xl font-bold text-default mb-2">Robot Framework Demo</h2>
+            <p class="text-muted mb-4">Tests automatisés avec vidéo et captures d'écran</p>
+            <button onclick="startDemo()" id="start-demo-btn" class="btn btn-primary px-8 py-3 text-lg">
+                <i data-lucide="play-circle" class="w-5 h-5 mr-2"></i>
+                Lancer la Démo
             </button>
         </div>
-        <div class="card-body">
-            <div class="row g-3" id="screenshots-gallery">
-                <div class="col-12 text-center py-4">
-                    <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
-                    <p class="text-muted">Chargement des captures...</p>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="card p-4 text-center">
+                <div class="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="image" class="w-6 h-6 text-primary"></i>
+                </div>
+                <p class="text-2xl font-bold text-default" id="screenshot-count">{{ screenshot_count }}</p>
+                <p class="text-xs text-muted">Screenshots</p>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="bg-success/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="video" class="w-6 h-6 text-success"></i>
+                </div>
+                <p class="text-2xl font-bold text-default">{{ '1' if latest_video else '0' }}</p>
+                <p class="text-xs text-muted">Vidéo</p>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="bg-info/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="file-text" class="w-6 h-6 text-info"></i>
+                </div>
+                <p class="text-2xl font-bold text-default">{{ demo_results|length }}</p>
+                <p class="text-xs text-muted">Rapports</p>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="bg-warning/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="activity" class="w-6 h-6 text-warning"></i>
+                </div>
+                <p class="text-2xl font-bold text-default" id="demo-status">Prêt</p>
+                <p class="text-xs text-muted">Statut</p>
+            </div>
+        </div>
+
+        <!-- Video Section -->
+        <div class="card p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-default flex items-center gap-2">
+                    <i data-lucide="video" class="w-5 h-5 text-error"></i>
+                    Dernière Vidéo
+                </h3>
+                {% if latest_video %}
+                <a href="{{ url_for('admin.get_demo_video') }}" class="text-primary text-sm" download>
+                    <i data-lucide="download" class="w-4 h-4 inline"></i> Télécharger
+                </a>
+                {% endif %}
+            </div>
+            {% if latest_video %}
+            <div class="bg-black rounded-lg overflow-hidden">
+                <video id="demo-video" controls class="w-full" style="max-height: 400px;">
+                    <source src="{{ url_for('admin.get_demo_video') }}" type="video/mp4">
+                    Votre navigateur ne supporte pas la vidéo.
+                </video>
+            </div>
+            <p class="text-xs text-muted mt-2">📹 {{ latest_video }}</p>
+            {% else %}
+            <div class="text-center py-12 text-muted">
+                <i data-lucide="film" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
+                <p class="font-bold mb-1">Aucune vidéo disponible</p>
+                <p class="text-sm">Lancez une démonstration pour générer une vidéo</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Scenarios List -->
+        <div class="card p-4 mb-4">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="list-checks" class="w-5 h-5 text-success"></i>
+                Scénarios de Test
+            </h3>
+            <div class="space-y-2">
+                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+                    <span class="w-8 h-8 rounded-full bg-primary/20 text-primary text-sm font-bold flex items-center justify-center">1</span>
+                    <div>
+                        <p class="font-bold text-default text-sm">Admin Login & Dashboard</p>
+                        <p class="text-xs text-muted">Connexion admin, exploration dashboard, users, wallets</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+                    <span class="w-8 h-8 rounded-full bg-success/20 text-success text-sm font-bold flex items-center justify-center">2</span>
+                    <div>
+                        <p class="font-bold text-default text-sm">User Experience</p>
+                        <p class="text-xs text-muted">Login user, convertisseur USD→MAD, wallets, transactions</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+                    <span class="w-8 h-8 rounded-full bg-warning/20 text-warning text-sm font-bold flex items-center justify-center">3</span>
+                    <div>
+                        <p class="font-bold text-default text-sm">Bank User Flow</p>
+                        <p class="text-xs text-muted">Connexion responsable banque, dashboard spécifique</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+                    <span class="w-8 h-8 rounded-full bg-info/20 text-info text-sm font-bold flex items-center justify-center">4</span>
+                    <div>
+                        <p class="font-bold text-default text-sm">Mobile Responsive</p>
+                        <p class="text-xs text-muted">Test de l'interface sur viewport mobile</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- History Section -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-history me-2 text-secondary"></i>
-                Historique des Démonstrations
-            </h5>
+        <!-- Screenshots Gallery -->
+        <div class="card p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-default flex items-center gap-2">
+                    <i data-lucide="images" class="w-5 h-5 text-info"></i>
+                    Galerie de Screenshots
+                </h3>
+                <button onclick="loadScreenshots()" class="text-primary text-sm">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> Actualiser
+                </button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="screenshots-gallery">
+                <div class="col-span-full text-center py-8 text-muted">
+                    <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                    <p class="text-sm">Chargement des captures...</p>
+                </div>
+            </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Date/Heure</th>
-                            <th>Rapport</th>
-                            <th>Log</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for demo in demo_results %}
-                        <tr>
-                            <td>
-                                <i class="fas fa-calendar me-2 text-muted"></i>
-                                {{ demo.timestamp }}
-                            </td>
-                            <td>{{ demo.report_file }}</td>
-                            <td>{{ demo.log_file }}</td>
-                            <td>
-                                <a href="{{ url_for('admin.get_demo_report') }}" 
-                                   class="btn btn-sm btn-outline-primary" target="_blank">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center py-4 text-muted">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p class="mb-0">Aucune démonstration effectuée</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+        <!-- History -->
+        <div class="card p-4">
+            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-secondary"></i>
+                Historique des Démonstrations
+            </h3>
+            <div class="space-y-2">
+                {% for demo in demo_results %}
+                <div class="flex items-center justify-between p-3 bg-surface rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="file-text" class="w-5 h-5 text-muted"></i>
+                        <div>
+                            <p class="text-sm font-bold text-default">{{ demo.timestamp }}</p>
+                            <p class="text-xs text-muted">{{ demo.report_file }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.get_demo_report') }}" target="_blank" class="btn btn-ghost btn-sm">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-muted">
+                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                    <p class="text-sm">Aucune démonstration effectuée</p>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-6 py-3 z-50" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.demo_page') }}" class="flex flex-col items-center gap-1 text-primary">
+            <i data-lucide="play-circle" class="w-5 h-5"></i>
+            <span class="text-xs font-bold">Démo</span>
+        </a>
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+            <span class="text-xs">Banques</span>
+        </a>
+        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-xs">App</span>
+        </a>
+    </div>
+</nav>
 
 <!-- Screenshot Modal -->
-<div class="modal fade" id="screenshotModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-0">
-                <h5 class="modal-title text-white" id="screenshotModalLabel">Screenshot</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center p-0">
-                <img src="" alt="Screenshot" class="img-fluid" id="modalScreenshot">
-            </div>
-        </div>
-    </div>
+<div id="screenshot-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
+    <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-3xl">&times;</button>
+    <img id="modal-image" src="" alt="Screenshot" class="max-w-full max-h-full rounded-lg">
 </div>
-
-<style>
-.demo-container {
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.stat-card {
-    border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    transition: all 0.3s;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-}
-
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-}
-
-.video-wrapper {
-    background: #000;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.video-wrapper video {
-    max-height: 500px;
-    object-fit: contain;
-}
-
-.screenshot-thumb {
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.screenshot-thumb:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-}
-
-.screenshot-thumb img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-}
-
-.screenshot-thumb .overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.8));
-    padding: 10px;
-    color: white;
-    font-size: 0.75rem;
-}
-
-.demo-status-banner {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
-
-[data-bs-theme="dark"] .stat-card {
-    background: var(--bs-dark);
-}
-
-[data-bs-theme="dark"] .card {
-    background: var(--bs-dark);
-}
-</style>
 
 <script>
 let statusCheckInterval = null;
@@ -400,115 +241,102 @@ let statusCheckInterval = null;
 function startDemo() {
     const btn = document.getElementById('start-demo-btn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Démarrage...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Démarrage...';
+    lucide.createIcons();
     
     fetch('{{ url_for("admin.run_demo") }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
+        headers: { 'Content-Type': 'application/json' }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('Démonstration lancée!', 'success');
+            showNotification('Démonstration lancée!', 'success');
             document.getElementById('status-banner').style.display = 'block';
             document.getElementById('demo-status').textContent = 'En cours';
-            
-            // Commencer à vérifier le statut
             statusCheckInterval = setInterval(checkStatus, 5000);
         } else {
-            showToast('Erreur: ' + data.message, 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play me-2"></i>Lancer la Démo';
+            showNotification('Erreur: ' + data.message, 'error');
+            resetButton();
         }
     })
     .catch(error => {
-        showToast('Erreur réseau', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-play me-2"></i>Lancer la Démo';
+        showNotification('Erreur réseau', 'error');
+        resetButton();
     });
+}
+
+function resetButton() {
+    const btn = document.getElementById('start-demo-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="play-circle" class="w-5 h-5 mr-2"></i>Lancer la Démo';
+    lucide.createIcons();
 }
 
 function checkStatus() {
     fetch('{{ url_for("admin.demo_status") }}')
     .then(response => response.json())
     .then(data => {
-        const btn = document.getElementById('start-demo-btn');
-        const banner = document.getElementById('status-banner');
-        const statusEl = document.getElementById('demo-status');
-        const countEl = document.getElementById('screenshot-count');
+        document.getElementById('screenshot-count').textContent = data.screenshot_count || 0;
         
         if (data.running) {
-            banner.style.display = 'block';
-            statusEl.textContent = 'En cours';
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>En cours...';
+            document.getElementById('demo-status').textContent = 'En cours';
         } else {
-            banner.style.display = 'none';
-            statusEl.textContent = 'Prêt';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play me-2"></i>Lancer la Démo';
-            
-            // Arrêter la vérification
+            document.getElementById('demo-status').textContent = 'Prêt';
+            document.getElementById('status-banner').style.display = 'none';
+            resetButton();
             if (statusCheckInterval) {
                 clearInterval(statusCheckInterval);
                 statusCheckInterval = null;
             }
-            
-            // Recharger les screenshots
             loadScreenshots();
         }
-        
-        countEl.textContent = data.screenshot_count || 0;
     });
 }
 
 function loadScreenshots() {
     const gallery = document.getElementById('screenshots-gallery');
-    gallery.innerHTML = '<div class="col-12 text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i></div>';
     
     fetch('{{ url_for("admin.demo_screenshots") }}')
     .then(response => response.json())
     .then(screenshots => {
         if (screenshots.length === 0) {
             gallery.innerHTML = `
-                <div class="col-12 text-center py-4">
-                    <i class="fas fa-images fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">Aucune capture disponible</p>
+                <div class="col-span-full text-center py-8 text-muted">
+                    <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                    <p class="text-sm">Aucune capture disponible</p>
                 </div>
             `;
+            lucide.createIcons();
             return;
         }
         
-        gallery.innerHTML = '';
-        screenshots.forEach(screenshot => {
-            const col = document.createElement('div');
-            col.className = 'col-6 col-md-4 col-lg-3 col-xl-2';
-            col.innerHTML = `
-                <div class="screenshot-thumb" onclick="openScreenshot('${screenshot.path}', '${screenshot.name}')">
-                    <img src="${screenshot.path}" alt="${screenshot.name}">
-                    <div class="overlay">
-                        <small>${screenshot.name.replace('.png', '').replace(/_/g, ' ').substring(0, 25)}</small>
-                    </div>
+        gallery.innerHTML = screenshots.map(s => `
+            <div class="cursor-pointer group" onclick="openModal('${s.path}')">
+                <div class="aspect-video bg-surface rounded-lg overflow-hidden">
+                    <img src="${s.path}" alt="${s.name}" class="w-full h-full object-cover group-hover:scale-105 transition">
                 </div>
-            `;
-            gallery.appendChild(col);
-        });
+                <p class="text-xs text-muted mt-1 truncate">${s.name.replace('.png', '').replace(/_/g, ' ')}</p>
+            </div>
+        `).join('');
     })
     .catch(() => {
-        gallery.innerHTML = '<div class="col-12 text-center py-4 text-danger">Erreur de chargement</div>';
+        gallery.innerHTML = '<div class="col-span-full text-center py-4 text-error">Erreur de chargement</div>';
     });
 }
 
-function openScreenshot(path, name) {
-    document.getElementById('screenshotModalLabel').textContent = name.replace('.png', '').replace(/_/g, ' ');
-    document.getElementById('modalScreenshot').src = path;
-    new bootstrap.Modal(document.getElementById('screenshotModal')).show();
+function openModal(src) {
+    document.getElementById('modal-image').src = src;
+    document.getElementById('screenshot-modal').classList.remove('hidden');
+    document.getElementById('screenshot-modal').classList.add('flex');
 }
 
-function showToast(message, type) {
-    // Utiliser le système de toast existant si disponible
+function closeModal() {
+    document.getElementById('screenshot-modal').classList.add('hidden');
+    document.getElementById('screenshot-modal').classList.remove('flex');
+}
+
+function showNotification(message, type) {
     if (typeof SarfXNotifications !== 'undefined') {
         SarfXNotifications.show(message, type);
     } else {
@@ -516,10 +344,15 @@ function showToast(message, type) {
     }
 }
 
-// Charger les screenshots au démarrage
+// Init
 document.addEventListener('DOMContentLoaded', function() {
     loadScreenshots();
     checkStatus();
+});
+
+// Close modal on escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
 });
 </script>
 {% endblock %}
