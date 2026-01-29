@@ -241,29 +241,65 @@ let statusCheckInterval = null;
 function startDemo() {
     const btn = document.getElementById('start-demo-btn');
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Démarrage...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Vérification...';
     lucide.createIcons();
     
     fetch('{{ url_for("admin.run_demo") }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Démonstration lancée!', 'success');
+    .then(response => response.json().then(data => ({status: response.status, data: data})))
+    .then(({status, data}) => {
+        if (status === 200 && data.success) {
+            showNotification('✅ Démonstration lancée!', 'success');
             document.getElementById('status-banner').style.display = 'block';
             document.getElementById('demo-status').textContent = 'En cours';
             statusCheckInterval = setInterval(checkStatus, 5000);
         } else {
-            showNotification('Erreur: ' + data.message, 'error');
+            // Afficher l'erreur dans une alerte visible
+            showError(data.message || 'Erreur inconnue');
             resetButton();
         }
     })
     .catch(error => {
-        showNotification('Erreur réseau', 'error');
+        console.error('Error:', error);
+        showError('Erreur réseau - vérifiez la connexion');
         resetButton();
     });
+}
+
+function showError(message) {
+    // Créer une alerte d'erreur visible
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'card p-4 bg-red-500/10 border border-red-500/30 mb-4';
+    errorDiv.id = 'error-alert';
+    errorDiv.innerHTML = `
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+            </div>
+            <div class="flex-1">
+                <p class="font-bold text-red-500 mb-1">Erreur de démarrage</p>
+                <p class="text-sm text-default">${message}</p>
+                <p class="text-xs text-muted mt-2">💡 La démo Robot Framework nécessite Chrome, Robot Framework et Selenium installés sur le serveur.</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-muted hover:text-default">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+    `;
+    
+    // Supprimer l'ancienne alerte si elle existe
+    const oldAlert = document.getElementById('error-alert');
+    if (oldAlert) oldAlert.remove();
+    
+    // Insérer avant le bouton
+    const container = document.querySelector('.demo-container');
+    const launchCard = container.querySelector('.card.p-6.text-center');
+    container.insertBefore(errorDiv, launchCard);
+    
+    lucide.createIcons();
+    showNotification('❌ ' + message, 'error');
 }
 
 function resetButton() {

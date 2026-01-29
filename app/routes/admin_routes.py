@@ -1252,20 +1252,59 @@ def run_demo():
     """Lance la démonstration Robot Framework en arrière-plan"""
     import subprocess
     import threading
+    import shutil
+    
+    # Vérifier les prérequis
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    script_path = os.path.join(base_dir, 'run_demo_robot.sh')
+    robot_tests_dir = os.path.join(base_dir, 'robot_tests')
+    
+    # Vérifier si le script existe
+    if not os.path.exists(script_path):
+        return jsonify({
+            'success': False,
+            'message': 'Script run_demo_robot.sh non trouvé. La démo doit être exécutée localement.'
+        }), 400
+    
+    # Vérifier si robot est installé
+    robot_installed = shutil.which('robot') is not None
+    if not robot_installed:
+        # Vérifier dans le venv
+        try:
+            result = subprocess.run(['python', '-c', 'import robot'], capture_output=True)
+            robot_installed = result.returncode == 0
+        except:
+            pass
+    
+    if not robot_installed:
+        return jsonify({
+            'success': False,
+            'message': 'Robot Framework non installé. Installez avec: pip install robotframework robotframework-seleniumlibrary'
+        }), 400
+    
+    # Vérifier Chrome/Chromium
+    chrome_path = shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
+    if not chrome_path:
+        return jsonify({
+            'success': False,
+            'message': 'Chrome/Chromium non trouvé. La démo nécessite un navigateur Chrome.'
+        }), 400
+    
+    # Créer le dossier de résultats
+    demo_dir = os.path.join(base_dir, 'robot_results', 'demo')
+    os.makedirs(demo_dir, exist_ok=True)
     
     def run_demo_thread():
         try:
-            script_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                'run_demo_robot.sh'
-            )
-            
             # Exécuter le script
             subprocess.run(
                 ['bash', script_path, '--headless'],
-                cwd=os.path.dirname(script_path),
-                timeout=600  # 10 minutes max
+                cwd=base_dir,
+                timeout=600,  # 10 minutes max
+                capture_output=True
             )
+        except subprocess.TimeoutExpired:
+            print("Demo timeout after 10 minutes")
         except Exception as e:
             print(f"Demo error: {e}")
     
