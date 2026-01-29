@@ -185,24 +185,22 @@ echo ""
 print_step "Exécution des tests Robot Framework..."
 echo ""
 
-# Build command
-CMD="robot \
-    --outputdir ${RESULTS_DIR} \
+# Build command array
+echo -e "${BLUE}Commande:${NC}"
+echo "robot --outputdir ${RESULTS_DIR} --loglevel DEBUG ${INCLUDE_TAGS} ${EXCLUDE_TAGS} ${EXTRA_ARGS} ${TEST_SUITE}"
+echo ""
+
+# Run tests with proper quoting
+robot \
+    --outputdir "${RESULTS_DIR}" \
     --loglevel DEBUG \
     --timestampoutputs \
-    --reporttitle 'SarfX E2E Test Report' \
-    --logtitle 'SarfX Test Log' \
+    --reporttitle "SarfX_E2E_Test_Report" \
+    --logtitle "SarfX_Test_Log" \
     ${INCLUDE_TAGS} \
     ${EXCLUDE_TAGS} \
     ${EXTRA_ARGS} \
-    ${TEST_SUITE}"
-
-echo -e "${BLUE}Commande:${NC}"
-echo "$CMD"
-echo ""
-
-# Run tests
-$CMD && TEST_RESULT=0 || TEST_RESULT=$?
+    "${TEST_SUITE}" && TEST_RESULT=0 || TEST_RESULT=$?
 
 # Summary
 echo ""
