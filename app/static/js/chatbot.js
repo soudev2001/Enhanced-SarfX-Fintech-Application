@@ -107,8 +107,40 @@ class SarfXChatbot {
                     position: fixed;
                     bottom: 20px;
                     right: 20px;
-                    z-index: 9999;
+                    z-index: 999;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                }
+                
+                /* Mobile: position chatbot above bottom nav */
+                @media (max-width: 1023px) {
+                    .sarfx-chatbot {
+                        bottom: 90px;
+                    }
+                    
+                    .chatbot-toggle {
+                        width: 52px;
+                        height: 52px;
+                    }
+                    
+                    .chatbot-window {
+                        width: calc(100vw - 24px);
+                        max-width: 380px;
+                        right: -8px;
+                        height: calc(100vh - 180px);
+                        max-height: 500px;
+                        bottom: 70px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .sarfx-chatbot {
+                        right: 12px;
+                    }
+                    
+                    .chatbot-window {
+                        right: -4px;
+                        width: calc(100vw - 16px);
+                    }
                 }
 
                 .chatbot-toggle {
