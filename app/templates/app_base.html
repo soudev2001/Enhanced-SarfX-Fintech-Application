@@ -50,7 +50,14 @@
         {% endif %}
     {% endwith %}
 
-    <!-- DESKTOP SIDEBAR NAVIGATION (visible ≥1024px) -->
+    <!-- MOBILE ADMIN MENU TOGGLE (visible <1024px for admin users) -->
+    {% if user and (user.role == 'admin' or user.role == 'bank_superadmin') %}
+    <button class="wise-mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileSidebar()">
+        <i data-lucide="menu" class="wise-menu-icon"></i>
+    </button>
+    {% endif %}
+
+    <!-- DESKTOP SIDEBAR NAVIGATION (visible ≥1024px, toggleable on mobile for admin) -->
     <aside class="wise-sidebar" id="desktop-nav">
         <a href="/" class="wise-sidebar-logo" style="text-decoration: none;">
             <span class="wise-logo-text">Sarf<span class="wise-logo-accent">X</span></span>
@@ -350,6 +357,40 @@
                 }
             });
         }
+
+        // Mobile Sidebar Toggle (for admin users on mobile)
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('desktop-nav');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            // Create overlay if it doesn't exist
+            if (!overlay) {
+                const newOverlay = document.createElement('div');
+                newOverlay.id = 'sidebar-overlay';
+                newOverlay.className = 'wise-sidebar-overlay';
+                newOverlay.onclick = toggleMobileSidebar;
+                document.body.appendChild(newOverlay);
+            }
+            
+            sidebar.classList.toggle('mobile-open');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+            document.body.classList.toggle('sidebar-open');
+        }
+
+        // Close sidebar when clicking on a link (on mobile)
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('desktop-nav');
+            if (sidebar) {
+                const links = sidebar.querySelectorAll('a');
+                links.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 1024 && sidebar.classList.contains('mobile-open')) {
+                            toggleMobileSidebar();
+                        }
+                    });
+                });
+            }
+        });
     </script>
     
     {% block scripts %}{% endblock %}

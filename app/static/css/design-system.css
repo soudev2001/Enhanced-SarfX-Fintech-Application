@@ -2241,6 +2241,83 @@ body, .card, .wise-card, .btn, input, select {
     padding: 24px 16px;
     flex-direction: column;
     z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile Menu Toggle Button (visible only on mobile for admin) */
+.wise-mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    width: 48px;
+    height: 48px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wise-mobile-menu-toggle:hover {
+    background: var(--bg-secondary);
+    transform: scale(1.05);
+}
+
+.wise-mobile-menu-toggle:active {
+    transform: scale(0.95);
+}
+
+.wise-menu-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--text-primary);
+}
+
+/* Sidebar Overlay for mobile */
+.wise-sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wise-sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Mobile sidebar open state */
+@media (max-width: 1023px) {
+    .wise-sidebar.mobile-open {
+        display: flex;
+        transform: translateX(0);
+    }
+    
+    .wise-sidebar {
+        transform: translateX(-100%);
+    }
+    
+    body.sidebar-open {
+        overflow: hidden;
+    }
+}
+
+/* Hide mobile menu toggle on desktop */
+@media (min-width: 1024px) {
+    .wise-mobile-menu-toggle {
+        display: none;
+    }
 }
 
 .wise-sidebar-logo {
@@ -2482,6 +2559,17 @@ body, .card, .wise-card, .btn, input, select {
 .theme-dark .wise-bottom-nav {
     background: rgba(15, 23, 42, 0.98);
     border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .wise-mobile-menu-toggle,
+.theme-dark .wise-mobile-menu-toggle {
+    background: rgba(15, 23, 42, 0.98);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .wise-mobile-menu-toggle:hover,
+.theme-dark .wise-mobile-menu-toggle:hover {
+    background: rgba(30, 41, 59, 0.98);
 }
 
 /* ==================================
