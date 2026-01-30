@@ -26,5 +26,11 @@ Desktop.ini
 *.swo
 
 # Vidéos/Screenshots de démo
+sarfx_demo_output/
 demo_*.mp4
+demo_*.webm
 screenshots/
+*.webm
+*.mp4
+*.avi
+*.mov
