@@ -8,6 +8,7 @@ Library          String
 Library          DateTime
 Library          OperatingSystem
 Library          Screenshot
+Library          ${CURDIR}/ChromeOptionsLibrary.py
 
 Resource         variables.robot
 
@@ -21,27 +22,14 @@ ${SCREENSHOT_DIR}     ${CURDIR}/../../robot_results/screenshots
 # ============================================
 Open Browser To SarfX
     [Documentation]    Ouvre le navigateur Chrome en mode headless avec options compatibles
-    ${chrome_options}=    Evaluate    sys.modules['selenium.webdriver'].ChromeOptions()    sys
-    Call Method    ${chrome_options}    add_argument    --no-sandbox
-    Call Method    ${chrome_options}    add_argument    --disable-dev-shm-usage
-    Call Method    ${chrome_options}    add_argument    --disable-gpu
-    Call Method    ${chrome_options}    add_argument    --headless=new
-    Call Method    ${chrome_options}    add_argument    --window-size=1920,1080
-    Call Method    ${chrome_options}    add_argument    --disable-extensions
-    Call Method    ${chrome_options}    add_argument    --disable-infobars
-    Call Method    ${chrome_options}    add_argument    --remote-debugging-port=9222
+    ${chrome_options}=    Get Headless Chrome Options
     Create Webdriver    Chrome    options=${chrome_options}
     Set Window Size    1920    1080
     Set Selenium Timeout    30s
 
 Open Browser With Video Recording
     [Documentation]    Ouvre le navigateur pour enregistrement vidéo (non-headless)
-    ${chrome_options}=    Evaluate    sys.modules['selenium.webdriver'].ChromeOptions()    sys
-    Call Method    ${chrome_options}    add_argument    --no-sandbox
-    Call Method    ${chrome_options}    add_argument    --disable-dev-shm-usage
-    Call Method    ${chrome_options}    add_argument    --disable-gpu
-    Call Method    ${chrome_options}    add_argument    --window-size=1920,1080
-    Call Method    ${chrome_options}    add_argument    --start-maximized
+    ${chrome_options}=    Get Visible Chrome Options
     Create Webdriver    Chrome    options=${chrome_options}
     Set Window Size    1920    1080
     Set Selenium Timeout    30s

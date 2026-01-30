@@ -4,3 +4,27 @@ __pycache__/
 .env
 .DS_Store
 *.log
+
+# Base de données locale
+*.db
+sarfx_local.db
+instance/
+
+# Résultats des tests
+robot_results/
+*.html
+!app/templates/*.html
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Vidéos/Screenshots de démo
+demo_*.mp4
+screenshots/

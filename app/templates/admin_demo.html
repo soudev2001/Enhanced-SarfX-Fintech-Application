@@ -1,6 +1,6 @@
 {% extends "app_base.html" %}
 
-{% block title %}Démonstration Automatisée - SarfX Admin{% endblock %}
+{% block title %}Démonstration Vidéo - SarfX Admin{% endblock %}
 
 {% block content %}
 <div class="space-y-6 pb-24">
@@ -13,193 +13,169 @@
                 </div>
                 <span class="badge badge-error">Admin</span>
             </div>
-            <p class="text-muted text-sm mt-1">Démonstration Automatisée</p>
+            <p class="text-muted text-sm mt-1">🎬 Démonstrations Vidéo Automatisées</p>
         </div>
         <div class="flex items-center gap-2">
             <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-muted hover:text-default transition">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
-            <a href="{{ url_for('app.settings') }}" class="btn btn-ghost w-10 h-10 rounded-full flex items-center justify-center text-muted hover:text-default transition">
-                <i data-lucide="settings" class="w-5 h-5"></i>
-            </a>
         </div>
     </div>
 
-    <!-- Demo Container -->
-    <div class="demo-container">
-        <!-- Status Banner -->
-        <div class="card p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 mb-4" id="status-banner" style="display: none;">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
-                    <i data-lucide="loader-2" class="w-4 h-4 text-purple-500 animate-spin"></i>
-                </div>
-                <div>
-                    <p class="font-bold text-default">Démonstration en cours...</p>
-                    <p class="text-xs text-muted">Les résultats apparaîtront automatiquement</p>
-                </div>
+    <!-- Playwright Status Check -->
+    <div id="playwright-check" class="card p-4 border-l-4 border-info" style="display: none;">
+        <div class="flex items-center gap-3">
+            <i data-lucide="loader-2" class="w-5 h-5 text-info animate-spin"></i>
+            <span class="text-sm">Vérification de Playwright...</span>
+        </div>
+    </div>
+
+    <!-- Demo Cards - 3 Roles -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Admin Demo -->
+        <div class="card p-6 text-center demo-card" id="demo-card-admin">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">👑</span>
+            </div>
+            <h3 class="text-lg font-bold text-default mb-1">Admin Demo</h3>
+            <p class="text-xs text-muted mb-4">Dashboard, Utilisateurs, Banques, ATMs, Transactions</p>
+            <div class="demo-status mb-3" id="status-admin">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface text-xs text-muted">
+                    <i data-lucide="circle" class="w-2 h-2"></i> Prêt
+                </span>
+            </div>
+            <button onclick="startPlaywrightDemo('admin')" id="btn-admin" class="btn btn-primary w-full py-3">
+                <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                Lancer Admin Demo
+            </button>
+            <div class="mt-3 video-preview" id="video-admin" style="display: none;">
+                <video controls class="w-full rounded-lg" style="max-height: 200px;"></video>
             </div>
         </div>
 
-        <!-- Launch Button -->
-        <div class="card p-6 text-center mb-4">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="play" class="w-10 h-10 text-white"></i>
+        <!-- Bank Demo -->
+        <div class="card p-6 text-center demo-card" id="demo-card-bank">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">🏦</span>
             </div>
-            <h2 class="text-xl font-bold text-default mb-2">Robot Framework Demo</h2>
-            <p class="text-muted mb-4">Tests automatisés avec vidéo et captures d'écran</p>
-            <button onclick="startDemo()" id="start-demo-btn" class="btn btn-primary px-8 py-3 text-lg">
-                <i data-lucide="play-circle" class="w-5 h-5 mr-2"></i>
-                Lancer la Démo
+            <h3 class="text-lg font-bold text-default mb-1">Bank Respo Demo</h3>
+            <p class="text-xs text-muted mb-4">Config Banque, ATMs Banque, Convertisseur, Wallets</p>
+            <div class="demo-status mb-3" id="status-bank">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface text-xs text-muted">
+                    <i data-lucide="circle" class="w-2 h-2"></i> Prêt
+                </span>
+            </div>
+            <button onclick="startPlaywrightDemo('bank')" id="btn-bank" class="btn btn-primary w-full py-3" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                Lancer Bank Demo
+            </button>
+            <div class="mt-3 video-preview" id="video-bank" style="display: none;">
+                <video controls class="w-full rounded-lg" style="max-height: 200px;"></video>
+            </div>
+        </div>
+
+        <!-- User Demo -->
+        <div class="card p-6 text-center demo-card" id="demo-card-user">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mx-auto mb-4">
+                <span class="text-3xl">👤</span>
+            </div>
+            <h3 class="text-lg font-bold text-default mb-1">User Demo</h3>
+            <p class="text-xs text-muted mb-4">Wallets, Convertisseur, ATMs, Transactions, IA</p>
+            <div class="demo-status mb-3" id="status-user">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface text-xs text-muted">
+                    <i data-lucide="circle" class="w-2 h-2"></i> Prêt
+                </span>
+            </div>
+            <button onclick="startPlaywrightDemo('user')" id="btn-user" class="btn btn-primary w-full py-3" style="background: linear-gradient(135deg, #22c55e, #10b981);">
+                <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                Lancer User Demo
+            </button>
+            <div class="mt-3 video-preview" id="video-user" style="display: none;">
+                <video controls class="w-full rounded-lg" style="max-height: 200px;"></video>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Actions -->
+    <div class="card p-4">
+        <div class="flex flex-wrap gap-3 justify-center">
+            <button onclick="startAllDemos()" class="btn btn-ghost px-4 py-2">
+                <i data-lucide="play-circle" class="w-4 h-4 mr-2"></i>
+                Lancer les 3 Démos
+            </button>
+            <button onclick="refreshAllStatuses()" class="btn btn-ghost px-4 py-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                Actualiser
+            </button>
+            <button onclick="loadAllVideos()" class="btn btn-ghost px-4 py-2">
+                <i data-lucide="video" class="w-4 h-4 mr-2"></i>
+                Voir Vidéos
             </button>
         </div>
+    </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div class="card p-4 text-center">
-                <div class="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i data-lucide="image" class="w-6 h-6 text-primary"></i>
-                </div>
-                <p class="text-2xl font-bold text-default" id="screenshot-count">{{ screenshot_count }}</p>
-                <p class="text-xs text-muted">Screenshots</p>
-            </div>
-            <div class="card p-4 text-center">
-                <div class="bg-success/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i data-lucide="video" class="w-6 h-6 text-success"></i>
-                </div>
-                <p class="text-2xl font-bold text-default">{{ '1' if latest_video else '0' }}</p>
-                <p class="text-xs text-muted">Vidéo</p>
-            </div>
-            <div class="card p-4 text-center">
-                <div class="bg-info/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i data-lucide="file-text" class="w-6 h-6 text-info"></i>
-                </div>
-                <p class="text-2xl font-bold text-default">{{ demo_results|length }}</p>
-                <p class="text-xs text-muted">Rapports</p>
-            </div>
-            <div class="card p-4 text-center">
-                <div class="bg-warning/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i data-lucide="activity" class="w-6 h-6 text-warning"></i>
-                </div>
-                <p class="text-2xl font-bold text-default" id="demo-status">Prêt</p>
-                <p class="text-xs text-muted">Statut</p>
-            </div>
-        </div>
-
-        <!-- Video Section -->
-        <div class="card p-4 mb-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-default flex items-center gap-2">
-                    <i data-lucide="video" class="w-5 h-5 text-error"></i>
-                    Dernière Vidéo
-                </h3>
-                {% if latest_video %}
-                <a href="{{ url_for('admin.get_demo_video') }}" class="text-primary text-sm" download>
-                    <i data-lucide="download" class="w-4 h-4 inline"></i> Télécharger
-                </a>
-                {% endif %}
-            </div>
-            {% if latest_video %}
-            <div class="bg-black rounded-lg overflow-hidden">
-                <video id="demo-video" controls class="w-full" style="max-height: 400px;">
-                    <source src="{{ url_for('admin.get_demo_video') }}" type="video/mp4">
-                    Votre navigateur ne supporte pas la vidéo.
-                </video>
-            </div>
-            <p class="text-xs text-muted mt-2">📹 {{ latest_video }}</p>
-            {% else %}
-            <div class="text-center py-12 text-muted">
-                <i data-lucide="film" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
-                <p class="font-bold mb-1">Aucune vidéo disponible</p>
-                <p class="text-sm">Lancez une démonstration pour générer une vidéo</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Scenarios List -->
-        <div class="card p-4 mb-4">
-            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
-                <i data-lucide="list-checks" class="w-5 h-5 text-success"></i>
-                Scénarios de Test
+    <!-- Videos Gallery -->
+    <div class="card p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-default flex items-center gap-2">
+                <i data-lucide="film" class="w-5 h-5 text-error"></i>
+                Vidéos Enregistrées
             </h3>
-            <div class="space-y-2">
-                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
-                    <span class="w-8 h-8 rounded-full bg-primary/20 text-primary text-sm font-bold flex items-center justify-center">1</span>
-                    <div>
-                        <p class="font-bold text-default text-sm">Admin Login & Dashboard</p>
-                        <p class="text-xs text-muted">Connexion admin, exploration dashboard, users, wallets</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
-                    <span class="w-8 h-8 rounded-full bg-success/20 text-success text-sm font-bold flex items-center justify-center">2</span>
-                    <div>
-                        <p class="font-bold text-default text-sm">User Experience</p>
-                        <p class="text-xs text-muted">Login user, convertisseur USD→MAD, wallets, transactions</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
-                    <span class="w-8 h-8 rounded-full bg-warning/20 text-warning text-sm font-bold flex items-center justify-center">3</span>
-                    <div>
-                        <p class="font-bold text-default text-sm">Bank User Flow</p>
-                        <p class="text-xs text-muted">Connexion responsable banque, dashboard spécifique</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
-                    <span class="w-8 h-8 rounded-full bg-info/20 text-info text-sm font-bold flex items-center justify-center">4</span>
-                    <div>
-                        <p class="font-bold text-default text-sm">Mobile Responsive</p>
-                        <p class="text-xs text-muted">Test de l'interface sur viewport mobile</p>
-                    </div>
-                </div>
+            <button onclick="loadVideos()" class="text-primary text-sm">
+                <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> Actualiser
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="videos-gallery">
+            <div class="col-span-full text-center py-8 text-muted">
+                <i data-lucide="video-off" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                <p class="text-sm">Aucune vidéo enregistrée</p>
+                <p class="text-xs mt-1">Lancez une démonstration pour générer des vidéos</p>
             </div>
         </div>
+    </div>
 
-        <!-- Screenshots Gallery -->
-        <div class="card p-4 mb-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-default flex items-center gap-2">
-                    <i data-lucide="images" class="w-5 h-5 text-info"></i>
-                    Galerie de Screenshots
-                </h3>
+    <!-- Screenshots Gallery -->
+    <div class="card p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-default flex items-center gap-2">
+                <i data-lucide="images" class="w-5 h-5 text-info"></i>
+                Captures d'écran
+            </h3>
+            <div class="flex gap-2">
+                <select id="screenshot-filter" onchange="loadScreenshots()" class="text-sm bg-surface border border-border rounded px-2 py-1">
+                    <option value="">Tous les rôles</option>
+                    <option value="admin">Admin</option>
+                    <option value="bank">Bank</option>
+                    <option value="user">User</option>
+                </select>
                 <button onclick="loadScreenshots()" class="text-primary text-sm">
-                    <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> Actualiser
+                    <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i>
                 </button>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="screenshots-gallery">
-                <div class="col-span-full text-center py-8 text-muted">
-                    <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
-                    <p class="text-sm">Chargement des captures...</p>
-                </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" id="screenshots-gallery">
+            <div class="col-span-full text-center py-8 text-muted">
+                <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                <p class="text-sm">Chargement...</p>
             </div>
         </div>
+    </div>
 
-        <!-- History -->
-        <div class="card p-4">
-            <h3 class="font-bold text-default mb-4 flex items-center gap-2">
-                <i data-lucide="history" class="w-5 h-5 text-secondary"></i>
-                Historique des Démonstrations
-            </h3>
-            <div class="space-y-2">
-                {% for demo in demo_results %}
-                <div class="flex items-center justify-between p-3 bg-surface rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <i data-lucide="file-text" class="w-5 h-5 text-muted"></i>
-                        <div>
-                            <p class="text-sm font-bold text-default">{{ demo.timestamp }}</p>
-                            <p class="text-xs text-muted">{{ demo.report_file }}</p>
-                        </div>
-                    </div>
-                    <a href="{{ url_for('admin.get_demo_report') }}" target="_blank" class="btn btn-ghost btn-sm">
-                        <i data-lucide="external-link" class="w-4 h-4"></i>
-                    </a>
-                </div>
-                {% else %}
-                <div class="text-center py-8 text-muted">
-                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
-                    <p class="text-sm">Aucune démonstration effectuée</p>
-                </div>
-                {% endfor %}
+    <!-- Robot Framework Demo (Legacy) -->
+    <div class="card p-4">
+        <details>
+            <summary class="cursor-pointer font-bold text-default flex items-center gap-2">
+                <i data-lucide="terminal" class="w-5 h-5 text-warning"></i>
+                Robot Framework (Legacy)
+            </summary>
+            <div class="mt-4 pt-4 border-t border-border">
+                <p class="text-sm text-muted mb-4">Ancien système de démonstration avec Robot Framework et Selenium</p>
+                <button onclick="startRobotDemo()" id="robot-demo-btn" class="btn btn-ghost px-4 py-2">
+                    <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                    Lancer Robot Demo
+                </button>
             </div>
-        </div>
+        </details>
     </div>
 </div>
 
@@ -218,7 +194,7 @@
             <i data-lucide="play-circle" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Démo</span>
         </a>
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>
@@ -230,112 +206,290 @@
 </nav>
 
 <!-- Screenshot Modal -->
-<div id="screenshot-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
-    <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-3xl">&times;</button>
-    <img id="modal-image" src="" alt="Screenshot" class="max-w-full max-h-full rounded-lg">
+<div id="screenshot-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4" onclick="closeModal()">
+    <button class="absolute top-4 right-4 text-white text-3xl">&times;</button>
+    <img id="modal-image" src="" alt="Screenshot" class="max-w-full max-h-full rounded-lg" onclick="event.stopPropagation()">
 </div>
 
+<style>
+.demo-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+.demo-card.running {
+    border-color: var(--primary);
+    animation: pulse-border 2s infinite;
+}
+.demo-card.success {
+    border-color: var(--success);
+}
+.demo-card.error {
+    border-color: var(--error);
+}
+@keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(224, 90, 3, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(224, 90, 3, 0); }
+}
+</style>
+
 <script>
-let statusCheckInterval = null;
+let statusPollingInterval = null;
 
-function startDemo() {
-    const btn = document.getElementById('start-demo-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Vérification...';
-    lucide.createIcons();
+// Check Playwright installation
+async function checkPlaywright() {
+    const checkDiv = document.getElementById('playwright-check');
+    checkDiv.style.display = 'block';
     
-    fetch('{{ url_for("admin.run_demo") }}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json().then(data => ({status: response.status, data: data})))
-    .then(({status, data}) => {
-        if (status === 200 && data.success) {
-            showNotification('✅ Démonstration lancée!', 'success');
-            document.getElementById('status-banner').style.display = 'block';
-            document.getElementById('demo-status').textContent = 'En cours';
-            statusCheckInterval = setInterval(checkStatus, 5000);
-        } else {
-            // Afficher l'erreur dans une alerte visible
-            showError(data.message || 'Erreur inconnue');
-            resetButton();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showError('Erreur réseau - vérifiez la connexion');
-        resetButton();
-    });
-}
-
-function showError(message) {
-    // Créer une alerte d'erreur visible
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'card p-4 bg-red-500/10 border border-red-500/30 mb-4';
-    errorDiv.id = 'error-alert';
-    errorDiv.innerHTML = `
-        <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
-            </div>
-            <div class="flex-1">
-                <p class="font-bold text-red-500 mb-1">Erreur de démarrage</p>
-                <p class="text-sm text-default">${message}</p>
-                <p class="text-xs text-muted mt-2">💡 La démo Robot Framework nécessite Chrome, Robot Framework et Selenium installés sur le serveur.</p>
-            </div>
-            <button onclick="this.parentElement.parentElement.remove()" class="text-muted hover:text-default">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-    `;
-    
-    // Supprimer l'ancienne alerte si elle existe
-    const oldAlert = document.getElementById('error-alert');
-    if (oldAlert) oldAlert.remove();
-    
-    // Insérer avant le bouton
-    const container = document.querySelector('.demo-container');
-    const launchCard = container.querySelector('.card.p-6.text-center');
-    container.insertBefore(errorDiv, launchCard);
-    
-    lucide.createIcons();
-    showNotification('❌ ' + message, 'error');
-}
-
-function resetButton() {
-    const btn = document.getElementById('start-demo-btn');
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="play-circle" class="w-5 h-5 mr-2"></i>Lancer la Démo';
-    lucide.createIcons();
-}
-
-function checkStatus() {
-    fetch('{{ url_for("admin.demo_status") }}')
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('screenshot-count').textContent = data.screenshot_count || 0;
+    try {
+        const response = await fetch('/admin/demo/playwright/check');
+        const data = await response.json();
         
-        if (data.running) {
-            document.getElementById('demo-status').textContent = 'En cours';
+        if (data.installed && data.browsers_installed) {
+            checkDiv.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-success"></i>
+                    <span class="text-sm text-success">Playwright est prêt !</span>
+                </div>
+            `;
+            setTimeout(() => { checkDiv.style.display = 'none'; }, 2000);
         } else {
-            document.getElementById('demo-status').textContent = 'Prêt';
-            document.getElementById('status-banner').style.display = 'none';
-            resetButton();
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-                statusCheckInterval = null;
-            }
+            checkDiv.className = 'card p-4 border-l-4 border-warning';
+            checkDiv.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-warning flex-shrink-0"></i>
+                    <div>
+                        <p class="text-sm font-bold text-warning">Playwright non configuré</p>
+                        <p class="text-xs text-muted mt-1">${data.error || 'Installez avec: pip install playwright && playwright install chromium'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        lucide.createIcons();
+    } catch (error) {
+        checkDiv.className = 'card p-4 border-l-4 border-error';
+        checkDiv.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i data-lucide="x-circle" class="w-5 h-5 text-error"></i>
+                <span class="text-sm text-error">Erreur de vérification Playwright</span>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+}
+
+// Start Playwright demo for a specific role
+async function startPlaywrightDemo(role) {
+    const btn = document.getElementById(`btn-${role}`);
+    const card = document.getElementById(`demo-card-${role}`);
+    const statusDiv = document.getElementById(`status-${role}`);
+    
+    // Update UI
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Démarrage...';
+    card.classList.add('running');
+    card.classList.remove('success', 'error');
+    statusDiv.innerHTML = `
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/20 text-xs text-primary">
+            <i data-lucide="loader-2" class="w-2 h-2 animate-spin"></i> En cours...
+        </span>
+    `;
+    lucide.createIcons();
+    
+    try {
+        const response = await fetch(`/admin/demo/playwright/run/${role}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ headless: true })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`🎬 Démo ${role} lancée !`, 'success');
+            startStatusPolling();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        card.classList.remove('running');
+        card.classList.add('error');
+        statusDiv.innerHTML = `
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-error/20 text-xs text-error">
+                <i data-lucide="x-circle" class="w-2 h-2"></i> Erreur
+            </span>
+        `;
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 mr-2"></i>Réessayer`;
+        lucide.createIcons();
+        showNotification(`❌ ${error.message}`, 'error');
+    }
+}
+
+// Start all demos sequentially
+async function startAllDemos() {
+    for (const role of ['admin', 'bank', 'user']) {
+        await startPlaywrightDemo(role);
+        // Wait a bit before starting the next one
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+}
+
+// Refresh all statuses
+async function refreshAllStatuses() {
+    try {
+        const response = await fetch('/admin/demo/playwright/status');
+        const statuses = await response.json();
+        
+        for (const [role, status] of Object.entries(statuses)) {
+            updateRoleStatus(role, status);
+        }
+    } catch (error) {
+        console.error('Status refresh error:', error);
+    }
+}
+
+// Update status for a specific role
+function updateRoleStatus(role, status) {
+    const btn = document.getElementById(`btn-${role}`);
+    const card = document.getElementById(`demo-card-${role}`);
+    const statusDiv = document.getElementById(`status-${role}`);
+    const videoDiv = document.getElementById(`video-${role}`);
+    
+    card.classList.remove('running', 'success', 'error');
+    
+    if (status.running) {
+        card.classList.add('running');
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>En cours...';
+        statusDiv.innerHTML = `
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/20 text-xs text-primary">
+                <i data-lucide="loader-2" class="w-2 h-2 animate-spin"></i> Enregistrement...
+            </span>
+        `;
+    } else if (status.success === true) {
+        card.classList.add('success');
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>Relancer`;
+        statusDiv.innerHTML = `
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-success/20 text-xs text-success">
+                <i data-lucide="check-circle" class="w-2 h-2"></i> Terminé (${Math.round(status.duration)}s)
+            </span>
+        `;
+        
+        // Show video if available
+        if (status.video_path) {
+            const filename = status.video_path.split('/').pop();
+            videoDiv.style.display = 'block';
+            videoDiv.querySelector('video').src = `/admin/demo/video/${filename}`;
+        }
+    } else if (status.success === false) {
+        card.classList.add('error');
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 mr-2"></i>Réessayer`;
+        statusDiv.innerHTML = `
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-error/20 text-xs text-error">
+                <i data-lucide="x-circle" class="w-2 h-2"></i> Erreur
+            </span>
+        `;
+    } else {
+        btn.disabled = false;
+        const colors = { admin: 'from-red-500 to-pink-500', bank: 'from-blue-500 to-cyan-500', user: 'from-green-500 to-emerald-500' };
+        btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 mr-2"></i>Lancer ${role.charAt(0).toUpperCase() + role.slice(1)} Demo`;
+        statusDiv.innerHTML = `
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface text-xs text-muted">
+                <i data-lucide="circle" class="w-2 h-2"></i> Prêt
+            </span>
+        `;
+    }
+    
+    lucide.createIcons();
+}
+
+// Start polling for status updates
+function startStatusPolling() {
+    if (statusPollingInterval) return;
+    
+    statusPollingInterval = setInterval(async () => {
+        await refreshAllStatuses();
+        
+        // Check if any demo is still running
+        const response = await fetch('/admin/demo/playwright/status');
+        const statuses = await response.json();
+        const anyRunning = Object.values(statuses).some(s => s.running);
+        
+        if (!anyRunning && statusPollingInterval) {
+            clearInterval(statusPollingInterval);
+            statusPollingInterval = null;
+            loadVideos();
             loadScreenshots();
         }
-    });
+    }, 3000);
 }
 
-function loadScreenshots() {
-    const gallery = document.getElementById('screenshots-gallery');
+// Load videos gallery
+async function loadVideos() {
+    const gallery = document.getElementById('videos-gallery');
     
-    fetch('{{ url_for("admin.demo_screenshots") }}')
-    .then(response => response.json())
-    .then(screenshots => {
+    try {
+        const response = await fetch('/admin/demo/playwright/videos');
+        const videos = await response.json();
+        
+        if (videos.length === 0) {
+            gallery.innerHTML = `
+                <div class="col-span-full text-center py-8 text-muted">
+                    <i data-lucide="video-off" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                    <p class="text-sm">Aucune vidéo enregistrée</p>
+                </div>
+            `;
+        } else {
+            gallery.innerHTML = videos.map(v => {
+                const roleEmoji = v.role === 'admin' ? '👑' : v.role === 'bank' ? '🏦' : '👤';
+                const roleColor = v.role === 'admin' ? 'text-pink-500' : v.role === 'bank' ? 'text-blue-500' : 'text-green-500';
+                return `
+                    <div class="card p-3">
+                        <div class="bg-black rounded-lg overflow-hidden mb-2">
+                            <video controls class="w-full" style="max-height: 180px;">
+                                <source src="${v.path}" type="video/mp4">
+                            </video>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-bold ${roleColor}">${roleEmoji} ${v.role}</span>
+                            <span class="text-xs text-muted">${(v.size / 1024 / 1024).toFixed(1)} MB</span>
+                        </div>
+                        <p class="text-xs text-muted truncate">${v.filename}</p>
+                        <a href="${v.path}" download class="btn btn-ghost btn-sm w-full mt-2">
+                            <i data-lucide="download" class="w-3 h-3 mr-1"></i> Télécharger
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        lucide.createIcons();
+    } catch (error) {
+        gallery.innerHTML = '<div class="col-span-full text-center py-4 text-error">Erreur de chargement</div>';
+    }
+}
+
+// Load all videos inline
+function loadAllVideos() {
+    ['admin', 'bank', 'user'].forEach(role => {
+        const videoDiv = document.getElementById(`video-${role}`);
+        videoDiv.style.display = 'block';
+    });
+    loadVideos();
+}
+
+// Load screenshots gallery
+async function loadScreenshots() {
+    const gallery = document.getElementById('screenshots-gallery');
+    const roleFilter = document.getElementById('screenshot-filter').value;
+    
+    try {
+        const url = roleFilter ? `/admin/demo/playwright/screenshots?role=${roleFilter}` : '/admin/demo/playwright/screenshots';
+        const response = await fetch(url);
+        const screenshots = await response.json();
+        
         if (screenshots.length === 0) {
             gallery.innerHTML = `
                 <div class="col-span-full text-center py-8 text-muted">
@@ -343,24 +497,24 @@ function loadScreenshots() {
                     <p class="text-sm">Aucune capture disponible</p>
                 </div>
             `;
-            lucide.createIcons();
-            return;
+        } else {
+            gallery.innerHTML = screenshots.map(s => `
+                <div class="cursor-pointer group" onclick="openModal('${s.path}')">
+                    <div class="aspect-video bg-surface rounded-lg overflow-hidden">
+                        <img src="${s.path}" alt="${s.filename}" class="w-full h-full object-cover group-hover:scale-105 transition" loading="lazy">
+                    </div>
+                    <p class="text-xs text-muted mt-1 truncate">${s.filename.replace('.png', '').replace(/_/g, ' ').substring(0, 20)}</p>
+                </div>
+            `).join('');
         }
         
-        gallery.innerHTML = screenshots.map(s => `
-            <div class="cursor-pointer group" onclick="openModal('${s.path}')">
-                <div class="aspect-video bg-surface rounded-lg overflow-hidden">
-                    <img src="${s.path}" alt="${s.name}" class="w-full h-full object-cover group-hover:scale-105 transition">
-                </div>
-                <p class="text-xs text-muted mt-1 truncate">${s.name.replace('.png', '').replace(/_/g, ' ')}</p>
-            </div>
-        `).join('');
-    })
-    .catch(() => {
+        lucide.createIcons();
+    } catch (error) {
         gallery.innerHTML = '<div class="col-span-full text-center py-4 text-error">Erreur de chargement</div>';
-    });
+    }
 }
 
+// Modal functions
 function openModal(src) {
     document.getElementById('modal-image').src = src;
     document.getElementById('screenshot-modal').classList.remove('hidden');
@@ -372,18 +526,50 @@ function closeModal() {
     document.getElementById('screenshot-modal').classList.remove('flex');
 }
 
+// Robot Framework legacy demo
+async function startRobotDemo() {
+    const btn = document.getElementById('robot-demo-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Lancement...';
+    lucide.createIcons();
+    
+    try {
+        const response = await fetch('/admin/demo/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Robot Framework démo lancée', 'success');
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Erreur de lancement', 'error');
+    }
+    
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Lancer Robot Demo';
+    lucide.createIcons();
+}
+
+// Notification helper
 function showNotification(message, type) {
-    if (typeof SarfXNotifications !== 'undefined') {
-        SarfXNotifications.show(message, type);
+    if (typeof SarfXNotify !== 'undefined') {
+        SarfXNotify[type](message);
     } else {
-        alert(message);
+        console.log(`[${type}] ${message}`);
     }
 }
 
-// Init
+// Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    checkPlaywright();
+    refreshAllStatuses();
+    loadVideos();
     loadScreenshots();
-    checkStatus();
+    lucide.createIcons();
 });
 
 // Close modal on escape

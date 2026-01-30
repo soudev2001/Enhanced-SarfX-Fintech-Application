@@ -1415,3 +1415,145 @@ def get_demo_report():
     
     return "No report available", 404
 
+
+# ==================== PLAYWRIGHT DEMO ROUTES ====================
+
+@admin_bp.route('/demo/playwright/run/<role>', methods=['POST'])
+@admin_required
+def run_playwright_demo(role):
+    """Lance une démo Playwright pour un rôle spécifique"""
+    from app.services.demo_service import run_demo_async, check_playwright_installed, init_demo_dirs
+    
+    # Vérifier que le rôle est valide
+    if role not in ['admin', 'bank', 'user']:
+        return jsonify({'success': False, 'message': 'Rôle invalide'}), 400
+    
+    # Vérifier Playwright
+    pw_check = check_playwright_installed()
+    if not pw_check['installed']:
+        return jsonify({
+            'success': False, 
+            'message': 'Playwright non installé. Exécutez: pip install playwright && playwright install chromium'
+        }), 400
+    
+    if not pw_check['browsers_installed']:
+        return jsonify({
+            'success': False,
+            'message': 'Navigateurs Playwright non installés. Exécutez: playwright install chromium'
+        }), 400
+    
+    # Initialiser les dossiers
+    init_demo_dirs()
+    
+    # Lancer la démo
+    headless = request.json.get('headless', True) if request.is_json else True
+    started = run_demo_async(role, headless=headless)
+    
+    if not started:
+        return jsonify({
+            'success': False,
+            'message': f'Une démo {role} est déjà en cours'
+        }), 409
+    
+    log_history("PLAYWRIGHT_DEMO_STARTED", f"Démo Playwright {role} lancée", user=session.get('email'))
+    
+    return jsonify({
+        'success': True,
+        'message': f'Démo {role} lancée en arrière-plan',
+        'role': role
+    })
+
+
+@admin_bp.route('/demo/playwright/status')
+@admin_required
+def get_playwright_demo_status():
+    """Récupère le statut de toutes les démos Playwright"""
+    from app.services.demo_service import get_all_demo_statuses
+    
+    return jsonify(get_all_demo_statuses())
+
+
+@admin_bp.route('/demo/playwright/status/<role>')
+@admin_required
+def get_playwright_demo_status_role(role):
+    """Récupère le statut d'une démo spécifique"""
+    from app.services.demo_service import get_demo_status
+    
+    if role not in ['admin', 'bank', 'user']:
+        return jsonify({'error': 'Rôle invalide'}), 400
+    
+    return jsonify(get_demo_status(role))
+
+
+@admin_bp.route('/demo/playwright/videos')
+@admin_required
+def get_playwright_videos():
+    """Liste toutes les vidéos de démo Playwright"""
+    from app.services.demo_service import get_demo_videos
+    
+    return jsonify(get_demo_videos())
+
+
+@admin_bp.route('/demo/video/<filename>')
+@admin_required
+def serve_demo_video(filename):
+    """Sert une vidéo de démo"""
+    from flask import send_from_directory
+    
+    # Sécurité
+    if '..' in filename or not (filename.endswith('.mp4') or filename.endswith('.webm')):
+        return "Invalid file", 400
+    
+    # Essayer les deux dossiers possibles
+    video_dirs = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'playwright', 'videos'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'robot_results', 'videos')
+    ]
+    
+    for video_dir in video_dirs:
+        filepath = os.path.join(video_dir, filename)
+        if os.path.exists(filepath):
+            return send_from_directory(video_dir, filename)
+    
+    return "Video not found", 404
+
+
+@admin_bp.route('/demo/playwright/screenshots')
+@admin_required
+def get_playwright_screenshots():
+    """Liste les screenshots des démos Playwright"""
+    from app.services.demo_service import get_demo_screenshots
+    
+    role = request.args.get('role')
+    return jsonify(get_demo_screenshots(role))
+
+
+@admin_bp.route('/demo/playwright/screenshot/<filename>')
+@admin_required
+def serve_playwright_screenshot(filename):
+    """Sert un screenshot de démo Playwright"""
+    from flask import send_from_directory
+    
+    if '..' in filename or not filename.endswith('.png'):
+        return "Invalid file", 400
+    
+    screenshot_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+        'robot_results', 'playwright', 'screenshots'
+    )
+    
+    if os.path.exists(os.path.join(screenshot_dir, filename)):
+        return send_from_directory(screenshot_dir, filename)
+    
+    return "Screenshot not found", 404
+
+
+@admin_bp.route('/demo/playwright/check')
+@admin_required
+def check_playwright():
+    """Vérifie l'installation de Playwright"""
+    from app.services.demo_service import check_playwright_installed
+    
+    return jsonify(check_playwright_installed())
+
+

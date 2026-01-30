@@ -92,6 +92,16 @@ ${NAV_AI}                css:a[href*="ai"]
 ${NAV_ADMIN}             css:a[href*="admin"]
 ${USER_MENU}             css:.user-menu, .dropdown-toggle, .nav-user
 
+# Links alternatives (for compatibility)
+${LOGOUT_LINK}           ${NAV_LOGOUT}
+${USER_WALLETS_LINK}     ${NAV_WALLETS}
+${USER_TRANSACTIONS_LINK}    ${NAV_TRANSACTIONS}
+${USER_PROFILE_LINK}     ${NAV_PROFILE}
+${ADMIN_USERS_LINK}      css:a[href*="/admin/users"]
+${ADMIN_WALLETS_LINK}    css:a[href*="/admin/wallets"]
+${ADMIN_TRANSACTIONS_LINK}   css:a[href*="/admin/transactions"]
+${ADMIN_BANKS_LINK}      css:a[href*="/admin/banks"]
+
 # ============================================
 # Converter Page Selectors (FIXED)
 # ============================================

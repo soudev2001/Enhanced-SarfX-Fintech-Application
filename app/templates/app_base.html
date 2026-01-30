@@ -50,14 +50,16 @@
         {% endif %}
     {% endwith %}
 
-    <!-- MOBILE ADMIN MENU TOGGLE (visible <1024px for admin users) -->
-    {% if user and (user.role == 'admin' or user.role == 'bank_superadmin') %}
-    <button class="wise-mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileSidebar()">
-        <i data-lucide="menu" class="wise-menu-icon"></i>
+    <!-- MOBILE SIDEBAR TOGGLE BUTTON -->
+    <button class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Ouvrir le menu">
+        <i data-lucide="menu" class="toggle-icon-open"></i>
+        <i data-lucide="x" class="toggle-icon-close"></i>
     </button>
-    {% endif %}
+    
+    <!-- SIDEBAR OVERLAY (for closing on mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- DESKTOP SIDEBAR NAVIGATION (visible ≥1024px, toggleable on mobile for admin) -->
+    <!-- SIDEBAR NAVIGATION (slide-in on mobile, fixed on desktop) -->
     <aside class="wise-sidebar" id="desktop-nav">
         <a href="/" class="wise-sidebar-logo" style="text-decoration: none;">
             <span class="wise-logo-text">Sarf<span class="wise-logo-accent">X</span></span>
@@ -357,40 +359,62 @@
                 }
             });
         }
-
-        // Mobile Sidebar Toggle (for admin users on mobile)
-        function toggleMobileSidebar() {
+        
+        // Mobile Sidebar Toggle
+        (function() {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('desktop-nav');
             const overlay = document.getElementById('sidebar-overlay');
             
-            // Create overlay if it doesn't exist
-            if (!overlay) {
-                const newOverlay = document.createElement('div');
-                newOverlay.id = 'sidebar-overlay';
-                newOverlay.className = 'wise-sidebar-overlay';
-                newOverlay.onclick = toggleMobileSidebar;
-                document.body.appendChild(newOverlay);
-            }
-            
-            sidebar.classList.toggle('mobile-open');
-            document.getElementById('sidebar-overlay').classList.toggle('active');
-            document.body.classList.toggle('sidebar-open');
-        }
-
-        // Close sidebar when clicking on a link (on mobile)
-        document.addEventListener('DOMContentLoaded', () => {
-            const sidebar = document.getElementById('desktop-nav');
-            if (sidebar) {
-                const links = sidebar.querySelectorAll('a');
-                links.forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (window.innerWidth < 1024 && sidebar.classList.contains('mobile-open')) {
-                            toggleMobileSidebar();
+            if (sidebarToggle && sidebar && overlay) {
+                function openSidebar() {
+                    sidebar.classList.add('open');
+                    overlay.classList.add('active');
+                    sidebarToggle.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+                
+                function closeSidebar() {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    sidebarToggle.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                
+                sidebarToggle.addEventListener('click', () => {
+                    if (sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    } else {
+                        openSidebar();
+                    }
+                });
+                
+                overlay.addEventListener('click', closeSidebar);
+                
+                // Close sidebar when clicking a nav item on mobile
+                sidebar.querySelectorAll('.wise-nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        if (window.innerWidth < 1024) {
+                            closeSidebar();
                         }
                     });
                 });
+                
+                // Close on escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    }
+                });
+                
+                // Handle resize - close sidebar if switching to desktop
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth >= 1024) {
+                        closeSidebar();
+                    }
+                });
             }
-        });
+        })();
     </script>
     
     {% block scripts %}{% endblock %}
