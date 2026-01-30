@@ -31,19 +31,61 @@
             </div>
             <div class="flex items-center gap-4">
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="execMode" value="headless" id="mode-headless" checked class="w-4 h-4 accent-primary">
-                    <span class="text-sm">🔇 Headless (invisible)</span>
+                    <input type="radio" name="execMode" value="server-headless" id="mode-headless" checked class="w-4 h-4 accent-primary">
+                    <span class="text-sm">🔇 Serveur (headless)</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="execMode" value="visible" id="mode-visible" class="w-4 h-4 accent-primary">
-                    <span class="text-sm">🖥️ Visible (navigateur affiché)</span>
+                    <input type="radio" name="execMode" value="server-visible" id="mode-visible" class="w-4 h-4 accent-primary">
+                    <span class="text-sm">🖥️ Serveur (visible)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="execMode" value="local" id="mode-local" class="w-4 h-4 accent-primary">
+                    <span class="text-sm">💻 Ma machine (local)</span>
                 </label>
             </div>
         </div>
-        <p class="text-xs text-muted mt-2">
+        <p class="text-xs text-muted mt-2" id="mode-description">
             <i data-lucide="info" class="w-3 h-3 inline"></i>
-            <strong>Headless</strong> = Robot invisible, plus rapide. <strong>Visible</strong> = Voir le navigateur en action (nécessite un écran sur le serveur).
+            <strong>Serveur headless</strong> = Robot invisible sur le serveur. <strong>Serveur visible</strong> = Navigateur affiché sur le serveur. <strong>Local</strong> = Télécharger et exécuter sur votre machine.
         </p>
+    </div>
+    
+    <!-- Local Execution Instructions (shown when local mode selected) -->
+    <div id="local-instructions" class="card p-4 border-l-4 border-warning" style="display: none;">
+        <h4 class="font-bold text-default mb-2 flex items-center gap-2">
+            <i data-lucide="download" class="w-5 h-5 text-warning"></i>
+            Exécution sur votre machine
+        </h4>
+        <p class="text-sm text-muted mb-3">Pour voir le robot en action sur votre écran :</p>
+        <ol class="text-sm space-y-2 mb-4">
+            <li class="flex items-start gap-2">
+                <span class="bg-warning text-white w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0">1</span>
+                <span>Installez Python 3.8+ et Playwright : <code class="bg-surface px-1 rounded">pip install playwright && playwright install chromium</code></span>
+            </li>
+            <li class="flex items-start gap-2">
+                <span class="bg-warning text-white w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0">2</span>
+                <span>Téléchargez le script ci-dessous</span>
+            </li>
+            <li class="flex items-start gap-2">
+                <span class="bg-warning text-white w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0">3</span>
+                <span>Exécutez : <code class="bg-surface px-1 rounded">python sarfx_demo.py --role admin --visible</code></span>
+            </li>
+        </ol>
+        <div class="flex flex-wrap gap-2">
+            <a href="/admin/demo/download-script" class="btn btn-warning px-4 py-2">
+                <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                Télécharger sarfx_demo.py
+            </a>
+            <button onclick="copyLocalCommand('admin')" class="btn btn-ghost px-3 py-2 text-sm">
+                <i data-lucide="copy" class="w-4 h-4 mr-1"></i> Copier commande Admin
+            </button>
+            <button onclick="copyLocalCommand('bank')" class="btn btn-ghost px-3 py-2 text-sm">
+                <i data-lucide="copy" class="w-4 h-4 mr-1"></i> Copier commande Bank
+            </button>
+            <button onclick="copyLocalCommand('user')" class="btn btn-ghost px-3 py-2 text-sm">
+                <i data-lucide="copy" class="w-4 h-4 mr-1"></i> Copier commande User
+            </button>
+        </div>
     </div>
 
     <!-- Playwright Status Check -->
@@ -259,6 +301,33 @@
 <script>
 let statusPollingInterval = null;
 
+// Mode selection handling
+document.addEventListener('DOMContentLoaded', () => {
+    const modeRadios = document.querySelectorAll('input[name="execMode"]');
+    const localInstructions = document.getElementById('local-instructions');
+    
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value === 'local' && radio.checked) {
+                localInstructions.style.display = 'block';
+            } else {
+                localInstructions.style.display = 'none';
+            }
+        });
+    });
+    
+    checkPlaywright();
+    loadVideos();
+});
+
+// Copy local command to clipboard
+function copyLocalCommand(role) {
+    const command = `python sarfx_demo.py --role ${role} --visible`;
+    navigator.clipboard.writeText(command).then(() => {
+        showNotification(`📋 Commande copiée: ${command}`, 'success');
+    });
+}
+
 // Check Playwright installation
 async function checkPlaywright() {
     const checkDiv = document.getElementById('playwright-check');
@@ -302,21 +371,35 @@ async function checkPlaywright() {
 }
 
 // Get selected execution mode
-function isHeadlessMode() {
-    const headlessRadio = document.getElementById('mode-headless');
-    return headlessRadio ? headlessRadio.checked : true;
+function getExecutionMode() {
+    const serverHeadless = document.getElementById('mode-headless');
+    const serverVisible = document.getElementById('mode-visible');
+    const local = document.getElementById('mode-local');
+    
+    if (local && local.checked) return 'local';
+    if (serverVisible && serverVisible.checked) return 'server-visible';
+    return 'server-headless';
 }
 
 // Start Playwright demo for a specific role
 async function startPlaywrightDemo(role) {
+    const mode = getExecutionMode();
+    
+    // Si mode local, ouvrir le téléchargement et afficher instructions
+    if (mode === 'local') {
+        showNotification(`💻 Téléchargez le script et exécutez: python sarfx_demo.py --role ${role} --visible`, 'info');
+        window.open('/admin/demo/download-script', '_blank');
+        return;
+    }
+    
     const btn = document.getElementById(`btn-${role}`);
     const card = document.getElementById(`demo-card-${role}`);
     const statusDiv = document.getElementById(`status-${role}`);
-    const headless = isHeadlessMode();
+    const headless = mode === 'server-headless';
     
     // Update UI
     btn.disabled = true;
-    const modeText = headless ? '(headless)' : '(visible)';
+    const modeText = headless ? '(serveur headless)' : '(serveur visible)';
     btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Démarrage ${modeText}...`;
     card.classList.add('running');
     card.classList.remove('success', 'error');

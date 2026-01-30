@@ -1557,3 +1557,193 @@ def check_playwright():
     return jsonify(check_playwright_installed())
 
 
+@admin_bp.route('/demo/download-script')
+@admin_required
+def download_demo_script():
+    """Télécharge le script de démo Playwright standalone pour exécution locale"""
+    from flask import Response
+    
+    # Récupérer l'URL de base de l'app
+    base_url = request.host_url.rstrip('/')
+    
+    script_content = f'''#!/usr/bin/env python3
+"""
+SarfX Demo Robot - Script standalone pour exécution locale
+Généré depuis {base_url}
+
+Usage:
+    python sarfx_demo.py --role admin --visible
+    python sarfx_demo.py --role bank --visible
+    python sarfx_demo.py --role user --visible
+    python sarfx_demo.py --role admin --headless
+
+Prérequis:
+    pip install playwright
+    playwright install chromium
+"""
+import argparse
+import time
+import os
+from datetime import datetime
+
+# Configuration
+BASE_URL = "{base_url}"
+DEMO_ACCOUNTS = {{
+    'admin': {{'email': 'admin@sarfx.io', 'password': 'Admin123!'}},
+    'bank': {{'email': 'bank@sarfx.io', 'password': 'Bank123!'}},
+    'user': {{'email': 'user@sarfx.io', 'password': 'User123!'}}
+}}
+
+# Scénarios de navigation pour chaque rôle
+SCENARIOS = {{
+    'admin': [
+        ('/', 'Accueil SarfX'),
+        ('/login', 'Connexion'),
+        ('/app', 'Dashboard App'),
+        ('/admin', 'Dashboard Admin'),
+        ('/admin/users', 'Gestion Utilisateurs'),
+        ('/admin/banks', 'Gestion Banques'),
+        ('/admin/atms', 'Gestion ATMs'),
+        ('/app/transactions', 'Historique Transactions'),
+    ],
+    'bank': [
+        ('/', 'Accueil SarfX'),
+        ('/login', 'Connexion'),
+        ('/app', 'Dashboard App'),
+        ('/app/bank/settings', 'Configuration Banque'),
+        ('/app/bank/atms', 'ATMs de la Banque'),
+        ('/app/converter', 'Convertisseur'),
+        ('/app/wallets', 'Wallets'),
+    ],
+    'user': [
+        ('/', 'Accueil SarfX'),
+        ('/login', 'Connexion'),
+        ('/app', 'Dashboard App'),
+        ('/app/wallets', 'Mes Wallets'),
+        ('/app/converter', 'Convertisseur'),
+        ('/app/atms', 'Trouver ATMs'),
+        ('/app/beneficiaries', 'Bénéficiaires'),
+        ('/app/transactions', 'Historique'),
+        ('/app/ai-forecast', 'IA Prédictions'),
+        ('/app/faq', 'FAQ'),
+    ]
+}}
+
+
+def run_demo(role: str, headless: bool = False):
+    """Exécute la démo pour un rôle donné"""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("❌ Playwright non installé. Exécutez:")
+        print("   pip install playwright")
+        print("   playwright install chromium")
+        return
+    
+    account = DEMO_ACCOUNTS.get(role)
+    scenario = SCENARIOS.get(role)
+    
+    if not account or not scenario:
+        print(f"❌ Rôle invalide: {{role}}")
+        return
+    
+    print(f"🎬 Démarrage de la démo {{role.upper()}}...")
+    print(f"   Mode: {{'headless' if headless else 'visible'}}")
+    print(f"   URL: {{BASE_URL}}")
+    print()
+    
+    # Dossier de sortie
+    output_dir = os.path.join(os.getcwd(), 'sarfx_demo_output')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    video_path = os.path.join(output_dir, f'demo_{{role}}_{{timestamp}}')
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=headless,
+            slow_mo=300  # Ralentir pour mieux voir
+        )
+        
+        context = browser.new_context(
+            viewport={{'width': 1920, 'height': 1080}},
+            record_video_dir=video_path,
+            record_video_size={{'width': 1920, 'height': 1080}}
+        )
+        
+        page = context.new_page()
+        
+        try:
+            # Login
+            print(f"🔐 Connexion en tant que {{account['email']}}...")
+            page.goto(f"{{BASE_URL}}/login")
+            time.sleep(1)
+            
+            # Remplir le formulaire
+            page.fill('input[name="email"], input[type="email"]', account['email'])
+            page.fill('input[name="password"], input[type="password"]', account['password'])
+            page.click('button[type="submit"]')
+            time.sleep(2)
+            
+            print("✅ Connecté!")
+            print()
+            
+            # Parcourir le scénario
+            for path, description in scenario:
+                if path == '/login':
+                    continue  # Déjà fait
+                
+                print(f"📍 {{description}}...")
+                url = f"{{BASE_URL}}{{path}}"
+                page.goto(url)
+                time.sleep(2)
+                
+                # Screenshot
+                screenshot_path = os.path.join(output_dir, f'{{role}}_{{path.replace("/", "_")}}.png')
+                page.screenshot(path=screenshot_path)
+                
+                # Scroll pour montrer le contenu
+                page.evaluate('window.scrollTo(0, document.body.scrollHeight / 2)')
+                time.sleep(1)
+            
+            print()
+            print("✅ Démo terminée!")
+            
+        finally:
+            context.close()
+            browser.close()
+    
+    # Trouver la vidéo générée
+    for f in os.listdir(video_path):
+        if f.endswith('.webm'):
+            final_video = os.path.join(output_dir, f'demo_{{role}}_{{timestamp}}.webm')
+            os.rename(os.path.join(video_path, f), final_video)
+            print(f"🎥 Vidéo: {{final_video}}")
+            break
+    
+    print(f"📁 Screenshots: {{output_dir}}")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='SarfX Demo Robot')
+    parser.add_argument('--role', choices=['admin', 'bank', 'user'], required=True,
+                        help='Rôle à démontrer')
+    parser.add_argument('--visible', action='store_true',
+                        help='Mode visible (ouvre le navigateur)')
+    parser.add_argument('--headless', action='store_true',
+                        help='Mode headless (invisible)')
+    
+    args = parser.parse_args()
+    
+    headless = args.headless or not args.visible
+    run_demo(args.role, headless=headless)
+'''
+    
+    response = Response(
+        script_content,
+        mimetype='text/x-python',
+        headers={{'Content-Disposition': 'attachment;filename=sarfx_demo.py'}}
+    )
+    return response
+
+
