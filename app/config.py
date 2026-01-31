@@ -106,8 +106,12 @@ class Config:
             "https://unpkg.com",
             "https://cdn.jsdelivr.net",
             "https://api.frankfurter.app",  # Currency exchange rates API
+            "https://generativelanguage.googleapis.com",  # Gemini AI API
+            "wss://*",  # WebSocket connections
         ],
         'frame-src': ["'self'", "https://accounts.google.com"],
+        'form-action': ["'self'", "https://accounts.google.com"],  # Form submissions
+        'base-uri': ["'self'"],  # Prevent base tag hijacking
     }
 
     # Disable Talisman (CSP) in development - causes issues with hot reload
