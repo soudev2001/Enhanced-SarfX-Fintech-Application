@@ -81,10 +81,33 @@ class Config:
     # ============================================
     CSP_POLICY = {
         'default-src': "'self'",
-        'script-src': ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://accounts.google.com"],
-        'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        'font-src': ["'self'", "https://fonts.gstatic.com"],
+        'script-src': [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",  # Needed for some JS libraries
+            "https://unpkg.com",
+            "https://cdn.tailwindcss.com",
+            "https://cdn.jsdelivr.net",
+            "https://accounts.google.com",
+            "https://apis.google.com",
+        ],
+        'style-src': [
+            "'self'",
+            "'unsafe-inline'",
+            "https://fonts.googleapis.com",
+            "https://cdn.tailwindcss.com",
+        ],
+        'font-src': ["'self'", "https://fonts.gstatic.com", "data:"],
         'img-src': ["'self'", "data:", "https:", "blob:"],
-        'connect-src': ["'self'", "https://accounts.google.com", "https://www.googleapis.com"],
+        'connect-src': [
+            "'self'",
+            "https://accounts.google.com",
+            "https://www.googleapis.com",
+            "https://unpkg.com",
+            "https://cdn.jsdelivr.net",
+        ],
         'frame-src': ["'self'", "https://accounts.google.com"],
     }
+
+    # Disable Talisman (CSP) in development - causes issues with hot reload
+    TALISMAN_ENABLED = os.environ.get("FLASK_ENV") == "production"
