@@ -23,27 +23,23 @@
         const modifyingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
         if (csrfToken && modifyingMethods.includes(method)) {
-            options.headers = options.headers || {};
-
-            // Handle Headers object
-            if (options.headers instanceof Headers) {
-                if (!options.headers.has('X-CSRFToken')) {
-                    options.headers.set('X-CSRFToken', csrfToken);
-                }
-            } else {
-                // Handle plain object
-                if (!options.headers['X-CSRFToken']) {
-                    options.headers['X-CSRFToken'] = csrfToken;
-                }
+            // Ensure headers exist as an object
+            if (!options.headers) {
+                options.headers = {};
             }
-        }
 
-        return originalFetch.call(this, url, options);
-    };
+            // Convert Headers object to plain object if needed
+            if (options.headers instanceof Headers) {
+                const plainHeaders = {};
+                options.headers.forEach((value, key) => {
+                    plainHeaders[key] = value;
+                });
+                options.headers = plainHeaders;
+            }
 
-    // Also handle XMLHttpRequest for older code
-    const originalXHROpen = XMLHttpRequest.prototype.open;
-    const originalXHRSend = XMLHttpRequest.prototype.send;
+            // Add CSRF token if not already present
+            if (!options.headers['X-CSRFToken']) {
+                options.headers['X-CSRFToken'] = csrfToken;
 
     XMLHttpRequest.prototype.open = function(method, url, ...args) {
         this._csrfMethod = method.toUpperCase();
