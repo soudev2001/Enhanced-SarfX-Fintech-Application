@@ -2,8 +2,15 @@ venv/
 __pycache__/
 *.pyc
 .env
+.env.backup
 .DS_Store
 *.log
+
+# Google OAuth Credentials (SENSITIVE!)
+google_oauth_credentials.json
+client_secret*.json
+.oauth_credentials
+.oauth_credentials.bat
 
 # Base de données locale
 *.db

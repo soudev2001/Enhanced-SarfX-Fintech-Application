@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>{{ 'Inscription' if request.args.get('mode') == 'register' else 'Connexion' }} - SarfX</title>
-    
+
     <!-- Design System CSS (Local) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-    
+
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <!-- PWA Meta -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
@@ -60,16 +60,17 @@
                         {{ 'Rejoignez SarfX aujourd\'hui' if request.args.get('mode') == 'register' else 'Connectez-vous à votre compte' }}
                     </p>
                 </div>
-                
+
                 <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}" class="flex flex-col gap-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="flex flex-col gap-3">
                         <div class="input-group">
                             <div class="relative">
                                 <i data-lucide="mail" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
-                                <input type="email" name="email" 
-                                       class="input" 
+                                <input type="email" name="email"
+                                       class="input"
                                        style="padding-left: 48px;"
-                                       placeholder="Adresse email" 
+                                       placeholder="Adresse email"
                                        value="starkxgroup@gmail.com"
                                        required
                                        autocomplete="email">
@@ -79,7 +80,7 @@
                             <div class="relative">
                                 <i data-lucide="lock" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
                                 <input type="password" name="password" id="password"
-                                       class="input" 
+                                       class="input"
                                        style="padding-left: 48px; padding-right: 48px;"
                                        placeholder="Mot de passe"
                                        value="admin"
@@ -91,13 +92,31 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <button type="submit" class="btn btn-gradient btn-lg btn-block">
                         {{ 'Créer mon compte' if request.args.get('mode') == 'register' else 'Se connecter' }}
                         <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
                     </button>
                 </form>
-                
+
+                <!-- Google OAuth Divider -->
+                <div class="oauth-divider" style="display: flex; align-items: center; margin: 20px 0; gap: 16px;">
+                    <div style="flex: 1; height: 1px; background: var(--border-light);"></div>
+                    <span class="text-xs" style="color: var(--text-tertiary);">ou continuer avec</span>
+                    <div style="flex: 1; height: 1px; background: var(--border-light);"></div>
+                </div>
+
+                <!-- Google OAuth Button -->
+                <a href="{{ url_for('auth.google_login') }}" class="btn btn-google btn-lg btn-block" style="background: white; border: 1px solid var(--border-medium); color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 12px; text-decoration: none; transition: all 0.2s ease;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    <span style="font-weight: 500;">Continuer avec Google</span>
+                </a>
+
                 {% if request.args.get('mode') != 'register' %}
                 <!-- Demo Quick Login Buttons -->
                 <div class="demo-login-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light);">
@@ -106,17 +125,17 @@
                         Connexion Démo Rapide
                     </p>
                     <div class="demo-buttons" style="display: flex; flex-direction: column; gap: 8px;">
-                        <button type="button" onclick="demoLogin('admin@sarfx.io', 'admin123')" 
+                        <button type="button" onclick="demoLogin('admin@sarfx.io', 'admin123')"
                                 class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
                             Admin Demo
                         </button>
-                        <button type="button" onclick="demoLogin('bank@attijariwafa.ma', 'bank123')" 
+                        <button type="button" onclick="demoLogin('bank@attijariwafa.ma', 'bank123')"
                                 class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
                             Bank Respo Demo
                         </button>
-                        <button type="button" onclick="demoLogin('user@demo.com', 'demo123')" 
+                        <button type="button" onclick="demoLogin('user@demo.com', 'demo123')"
                                 class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                             User Demo
@@ -172,26 +191,26 @@
 
     <script>
         lucide.createIcons();
-        
+
         // Demo login function
         function demoLogin(email, password) {
             document.querySelector('input[name="email"]').value = email;
             document.querySelector('input[name="password"]').value = password;
-            
+
             // Submit form after short delay for visual feedback
             const btn = event.target.closest('button');
             btn.innerHTML = '<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Connexion...';
             lucide.createIcons();
-            
+
             setTimeout(() => {
                 document.querySelector('form').submit();
             }, 500);
         }
-        
+
         function togglePassword() {
             const input = document.getElementById('password');
             const icon = document.getElementById('eye-icon');
-            
+
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.setAttribute('data-lucide', 'eye-off');
@@ -201,7 +220,7 @@
             }
             lucide.createIcons();
         }
-        
+
         // Auto-hide notifications
         setTimeout(() => {
             const notifications = document.getElementById('notification-container');
@@ -212,11 +231,22 @@
             }
         }, 4000);
     </script>
-    
+
     <style>
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+
+        .btn-google:hover {
+            background: var(--bg-secondary) !important;
+            border-color: var(--border-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn-google:active {
+            transform: translateY(0);
         }
     </style>
 </body>
