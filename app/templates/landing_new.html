@@ -4,27 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SarfX - Le Futur du Change</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;700&display=swap');
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #0f172a; 
-            color: #f8fafc; 
-            overflow-x: hidden; 
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
         }
 
         html[dir="rtl"] body { font-family: 'Noto Kufi Arabic', sans-serif; }
-        
+
         /* Background Grid Effect */
         .bg-grid {
             background-size: 50px 50px;
@@ -45,14 +45,14 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
-        
+
         .glass-card {
             background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .glass-card:hover {
             background: rgba(30, 41, 59, 0.7);
             border-color: rgba(224, 90, 3, 0.4);
@@ -71,7 +71,7 @@
             background-clip: text;
             color: transparent;
         }
-        
+
         .blob {
             position: absolute; filter: blur(90px); z-index: -2; opacity: 0.4;
             animation: float 15s ease-in-out infinite;
@@ -80,11 +80,11 @@
         .blob-2 { background: #e05a03; animation-delay: -5s; }
         .blob-3 { background: #059669; animation-delay: -2s; }
 
-        @keyframes float { 
-            0% { transform: translate(0,0) scale(1); } 
-            33% { transform: translate(30px, -50px) scale(1.1); } 
-            66% { transform: translate(-20px, 20px) scale(0.9); } 
-            100% { transform: translate(0,0) scale(1); } 
+        @keyframes float {
+            0% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0,0) scale(1); }
         }
 
         .btn-shimmer {
@@ -99,7 +99,7 @@
             box-shadow: 0 0 0 12px #1e293b, 0 0 0 14px #334155, 0 30px 60px rgba(0,0,0,0.6);
             transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s;
         }
-        
+
         /* Phone Mockup Responsive */
         @media (max-width: 1024px) {
             .phone-mockup {
@@ -127,7 +127,7 @@
         .modal.open { opacity: 1; pointer-events: auto; }
         .modal-content { transform: scale(0.95); transition: transform 0.3s ease-in-out; }
         .modal.open .modal-content { transform: scale(1); }
-        
+
         /* Custom Scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
@@ -144,11 +144,11 @@
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3) !important;
         }
         @keyframes qr-float {
-            0%, 100% { 
+            0%, 100% {
                 transform: translateY(0);
                 box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             }
-            50% { 
+            50% {
                 transform: translateY(-8px);
                 box-shadow: 0 30px 50px rgba(0, 0, 0, 0.3);
             }
@@ -178,7 +178,7 @@
     <div id="about-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
         <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
             <button onclick="closeModal('about-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
-            
+
             <div class="text-center mb-16 relative">
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#e05a03]/10 rounded-full blur-[80px] pointer-events-none"></div>
                 <span class="font-bold text-4xl tracking-tight text-white flex items-center justify-center gap-2 mb-6 relative z-10">
@@ -260,12 +260,12 @@
     <div id="contact-modal" class="modal fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
         <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8">
             <button onclick="closeModal('contact-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
-            
+
             <div class="grid md:grid-cols-2 gap-16">
                 <div>
                     <h2 class="text-4xl font-bold text-white mb-4">Get in Touch</h2>
                     <p class="text-slate-400 mb-10 text-lg">Have questions? We'd love to hear from you.</p>
-                    
+
                     <div class="space-y-8">
                         <div class="flex items-start gap-6 group">
                             <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 transition"><i data-lucide="mail" class="w-6 h-6"></i></div>
@@ -310,7 +310,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="glass p-10 rounded-[2rem] border border-white/5 h-fit">
                     <h3 class="text-2xl font-bold text-white mb-8">Send us a message</h3>
                     <form class="space-y-5">
@@ -339,7 +339,7 @@
     <div id="terms-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
         <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
             <button onclick="closeModal('terms-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
-            
+
             <div class="mb-12">
                 <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="terms_title">Conditions d'utilisation</h2>
                 <p class="text-slate-400 text-lg" data-i18n="terms_subtitle">Veuillez lire attentivement avant d'utiliser nos services.</p>
@@ -366,7 +366,7 @@
     <div id="privacy-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
         <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
             <button onclick="closeModal('privacy-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
-            
+
             <div class="mb-12">
                 <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="privacy_title">Politique de confidentialité</h2>
                 <p class="text-slate-400 text-lg" data-i18n="privacy_subtitle">Nous prenons la protection de vos données au sérieux.</p>
@@ -389,7 +389,7 @@
     <div id="cookies-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
         <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
             <button onclick="closeModal('cookies-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
-            
+
             <div class="mb-12">
                 <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="cookies_title">Politique des Cookies</h2>
                 <p class="text-slate-400 text-lg" data-i18n="cookies_subtitle">Informations sur l'utilisation des cookies.</p>
@@ -408,7 +408,7 @@
     <div id="login-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto z-[100]">
         <div class="modal-content glass w-full max-w-md rounded-[2.5rem] p-8 md:p-12 relative border border-white/10">
             <button onclick="closeModal('login-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
-            
+
             <div class="text-center mb-10">
                 <span class="font-bold text-4xl tracking-tight text-white flex items-center justify-center gap-2 mb-4">
                     Sarf<span class="text-[#e05a03] text-glow">X</span>
@@ -420,7 +420,7 @@
             <form id="login-form" method="POST" action="/login" class="space-y-6">
                 <!-- Error Message -->
                 <div id="login-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm"></div>
-                
+
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1" data-i18n="login_email">Email</label>
                     <div class="relative">
@@ -435,7 +435,7 @@
                         <input type="password" name="password" id="login-password" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="••••••••" value="">
                     </div>
                 </div>
-                
+
                 <div class="flex items-center justify-between text-sm">
                     <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
                         <input type="checkbox" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-[#e05a03] focus:ring-[#e05a03]">
@@ -509,7 +509,7 @@
                         Sarf<span class="text-[#e05a03] text-4xl leading-none text-glow">X</span>
                     </span>
                 </a>
-                
+
                 <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300 rtl:space-x-reverse">
                     <a href="#home" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_home">
                         <i data-lucide="home" class="w-4 h-4 text-[#e05a03] group-hover:animate-bounce"></i> Accueil
@@ -530,13 +530,13 @@
                         <i data-lucide="mail" class="w-4 h-4 text-pink-400 group-hover:translate-x-1 transition"></i> Contact
                     </button>
                 </div>
-                
+
                 <div class="flex items-center gap-4">
                     <!-- Language Selector with Flags -->
                     <div class="relative group">
                         <button class="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white focus:outline-none px-3 py-2 rounded-xl hover:bg-white/5 transition">
-                            <img id="current-lang-flag" src="https://flagcdn.com/w40/fr.png" class="h-4 w-6 object-cover rounded-sm border border-white/10"> 
-                            <span id="current-lang-code">FR</span> 
+                            <img id="current-lang-flag" src="https://flagcdn.com/w40/fr.png" class="h-4 w-6 object-cover rounded-sm border border-white/10">
+                            <span id="current-lang-code">FR</span>
                             <i data-lucide="chevron-down" class="w-3 h-3"></i>
                         </button>
                         <div class="absolute right-0 mt-2 w-40 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform z-50 overflow-hidden">
@@ -593,20 +593,20 @@
                         </span>
                         <span data-i18n="hero_tag">Le futur du change de devises</span>
                     </div>
-                    
+
                     <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-8 leading-tight text-white drop-shadow-2xl">
                         <span data-i18n="hero_title_1">Le Premier Bureau de Change</span> <br/>
                         <span class="text-[#e05a03] text-glow" data-i18n="hero_title_2">100% Digitalisé</span> <br/>
                         <span data-i18n="hero_title_3">Dans ta poche.</span>
                     </h1>
-                    
+
                     <p class="mt-6 max-w-xl text-xl text-slate-400 font-light leading-relaxed" data-i18n="hero_desc">
                         Obtenez les meilleurs taux de change en temps réel grâce à l'IA. Plus de files d'attente, plus de frais cachés.
                     </p>
 
                     <div class="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
                         <button onclick="openModal('login-modal')" class="btn-shimmer px-10 py-5 text-white rounded-2xl font-bold text-xl shadow-2xl shadow-orange-600/30 transition transform hover:-translate-y-1 hover:shadow-orange-600/50 flex items-center justify-center gap-3 group">
-                            <span data-i18n="hero_cta_1">Découvrir l'App</span> 
+                            <span data-i18n="hero_cta_1">Découvrir l'App</span>
                             <i data-lucide="arrow-right" class="w-6 h-6 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition"></i>
                         </button>
                     </div>
@@ -675,14 +675,14 @@
                                     <span class="text-xs text-slate-500 mt-1 block">Bientôt disponible</span>
                                 </div>
                             </div>
-                            
+
                             <!-- Divider -->
                             <div class="flex flex-col items-center gap-2">
                                 <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-500 to-transparent"></div>
                                 <span class="text-xs text-slate-500 font-medium">OU</span>
                                 <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-500 to-transparent"></div>
                             </div>
-                            
+
                             <!-- Android QR -->
                             <div class="bg-white/95 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-xl border-2 border-emerald-500/30 text-center cursor-pointer" onclick="showComingSoon('Application Android')">
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sarfx.io/app-coming-soon&bgcolor=ffffff" alt="Play Store QR" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg mx-auto mb-2 opacity-50">
@@ -763,7 +763,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="glass rounded-[3rem] p-8 md:p-16 border border-white/10 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none"></div>
-                
+
                 <div class="grid md:grid-cols-2 gap-16 items-center relative z-10">
                     <div>
                         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-6">
@@ -847,7 +847,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="glass rounded-[3rem] p-8 md:p-16 border border-white/10 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] -ml-32 -mt-32 pointer-events-none"></div>
-                
+
                 <div class="grid md:grid-cols-2 gap-16 items-center relative z-10">
                     <!-- AI Visual -->
                     <div class="order-2 md:order-1">
@@ -938,7 +938,7 @@
                 <h2 class="text-4xl md:text-5xl font-bold text-white mb-6" data-i18n="roadmap_title">Roadmap</h2>
                 <p class="text-slate-400 text-lg" data-i18n="roadmap_desc">Le futur se construit aujourd'hui.</p>
             </div>
-            
+
             <div class="relative">
                 <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-px bg-gradient-to-b from-[#e05a03] via-blue-500 to-transparent opacity-50"></div>
 
@@ -1017,7 +1017,7 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <div>
                     <h4 class="text-white font-bold mb-6 text-lg" data-i18n="footer_products">Produits</h4>
                     <ul class="space-y-4 text-sm text-slate-400">
@@ -1026,7 +1026,7 @@
                         <li><a href="#" class="hover:text-[#e05a03] transition block flex items-center gap-2"><i data-lucide="compass" class="w-4 h-4"></i> Blablatrip</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h4 class="text-white font-bold mb-6 text-lg" data-i18n="footer_company">Entreprise</h4>
                     <ul class="space-y-4 text-sm text-slate-400">
@@ -1035,7 +1035,7 @@
                         <li><button onclick="openModal('contact-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="help-circle" class="w-4 h-4"></i> FAQ</button></li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h4 class="text-white font-bold mb-6 text-lg" data-i18n="footer_legal">Légal</h4>
                     <ul class="space-y-4 text-sm text-slate-400">
@@ -1045,7 +1045,7 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="border-t border-white/5 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-600">
                 <p>&copy; 2026 SarfX by StarkX. Tous droits réservés.</p>
                 <p class="flex items-center gap-2">Powered by <span class="text-slate-400 font-bold uppercase tracking-wider">StarkX LLC</span></p>
@@ -1058,9 +1058,9 @@
 
         // --- I18N SYSTEM ---
         const translations = {
-            fr: { 
+            fr: {
                 nav_home: "Accueil", nav_features: "Fonctionnalités", nav_atm: "ATM", nav_ai: "IA", nav_about: "À Propos", nav_contact: "Contact", btn_login: "Connexion",
-                hero_tag: "Le futur du change de devises", hero_title_1: "Le Premier Bureau de Change", hero_title_2: "100% Digitalisé", hero_title_3: "Dans ta poche.", 
+                hero_tag: "Le futur du change de devises", hero_title_1: "Le Premier Bureau de Change", hero_title_2: "100% Digitalisé", hero_title_3: "Dans ta poche.",
                 hero_desc: "Obtenez les meilleurs taux de change en temps réel grâce à l'IA. Plus de files d'attente, plus de frais cachés.",
                 hero_cta_1: "Découvrir l'App",
                 features_title: "Fonctionnalités Premium", features_desc: "Découvrez une nouvelle façon de gérer vos devises avec des outils puissants.",
@@ -1084,9 +1084,9 @@
                 login_forgot: "Mot de passe oublié ?", login_btn: "Se connecter", login_or: "Ou continuer avec",
                 login_no_account: "Pas encore de compte ?", login_signup: "S'inscrire"
             },
-            en: { 
+            en: {
                 nav_home: "Home", nav_features: "Features", nav_atm: "ATM", nav_ai: "AI", nav_about: "About", nav_contact: "Contact", btn_login: "Login",
-                hero_tag: "The future of currency exchange", hero_title_1: "The First Exchange Bureau", hero_title_2: "100% Digital", hero_title_3: "In your pocket.", 
+                hero_tag: "The future of currency exchange", hero_title_1: "The First Exchange Bureau", hero_title_2: "100% Digital", hero_title_3: "In your pocket.",
                 hero_desc: "Get the best real-time exchange rates with AI. No more queues, no more hidden fees.",
                 hero_cta_1: "Discover the App",
                 features_title: "Premium Features", features_desc: "Discover a new way to manage your currencies with powerful tools.",
@@ -1110,9 +1110,9 @@
                 login_forgot: "Forgot password?", login_btn: "Sign in", login_or: "Or continue with",
                 login_no_account: "Don't have an account?", login_signup: "Sign up"
             },
-            ar: { 
+            ar: {
                 nav_home: "الرئيسية", nav_features: "الميزات", nav_atm: "الصراف الآلي", nav_ai: "الذكاء الاصطناعي", nav_about: "حول", nav_contact: "اتصل بنا", btn_login: "تسجيل الدخول",
-                hero_tag: "مستقبل صرف العملات", hero_title_1: "أول مكتب صرف", hero_title_2: "رقمي 100٪", hero_title_3: "في جيبك.", 
+                hero_tag: "مستقبل صرف العملات", hero_title_1: "أول مكتب صرف", hero_title_2: "رقمي 100٪", hero_title_3: "في جيبك.",
                 hero_desc: "احصل على أفضل أسعار الصرف في الوقت الفعلي بفضل الذكاء الاصطناعي.",
                 hero_cta_1: "اكتشف التطبيق",
                 features_title: "ميزات مميزة", features_desc: "اكتشف طريقة جديدة لإدارة عملاتك.",
@@ -1136,9 +1136,9 @@
                 login_forgot: "نسيت كلمة المرور؟", login_btn: "تسجيل الدخول", login_or: "أو تابع مع",
                 login_no_account: "ليس لديك حساب؟", login_signup: "سجل الآن"
             },
-            es: { 
+            es: {
                 nav_home: "Inicio", nav_features: "Características", nav_atm: "ATM", nav_ai: "IA", nav_about: "Acerca de", nav_contact: "Contacto", btn_login: "Iniciar sesión",
-                hero_tag: "El futuro del cambio de divisas", hero_title_1: "La Primera Casa de Cambio", hero_title_2: "100% Digital", hero_title_3: "En tu bolsillo.", 
+                hero_tag: "El futuro del cambio de divisas", hero_title_1: "La Primera Casa de Cambio", hero_title_2: "100% Digital", hero_title_3: "En tu bolsillo.",
                 hero_desc: "Obtén las mejores tasas de cambio en tiempo real con IA. Sin colas, sin costos ocultos.",
                 hero_cta_1: "Descubrir la App",
                 features_title: "Características Premium", features_desc: "Descubre una nueva forma de gestionar tus divisas.",
@@ -1153,9 +1153,9 @@
             }
         };
 
-        const flags = { 
-            fr: "https://flagcdn.com/w40/fr.png", 
-            en: "https://flagcdn.com/w40/us.png", 
+        const flags = {
+            fr: "https://flagcdn.com/w40/fr.png",
+            en: "https://flagcdn.com/w40/us.png",
             ar: "https://flagcdn.com/w40/ma.png",
             es: "https://flagcdn.com/w40/es.png"
         };
@@ -1181,7 +1181,7 @@
             modal.classList.remove('hidden');
             setTimeout(() => modal.classList.add('open'), 10);
         }
-        
+
         function closeModal(id) {
             const modal = document.getElementById(id);
             modal.classList.remove('open');
@@ -1210,7 +1210,7 @@
                 </button>
             `;
             document.body.appendChild(notification);
-            
+
             // Auto-remove after 4 seconds
             setTimeout(() => {
                 notification.style.opacity = '0';
@@ -1230,28 +1230,28 @@
         // Login form - Submit to server
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             const errorDiv = document.getElementById('login-error');
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
-            
+
             // Show loading state
             submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Connexion...';
             submitBtn.disabled = true;
             errorDiv.classList.add('hidden');
-            
+
             try {
                 const formData = new FormData();
                 formData.append('email', email);
                 formData.append('password', password);
-                
+
                 const response = await fetch('/login', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.redirected) {
                     // Login successful - redirect to app
                     window.location.href = response.url;
@@ -1700,7 +1700,7 @@
         </div>
         <span class="chatbot-badge">IA</span>
     </button>
-    
+
     <!-- Chat Modal -->
     <div id="chatbot-modal" class="chatbot-modal">
         <!-- Header -->
@@ -1718,7 +1718,7 @@
                 <i data-lucide="minus"></i>
             </button>
         </div>
-        
+
         <!-- Messages Area -->
         <div id="chatbot-messages" class="chatbot-messages">
             <!-- Welcome Message -->
@@ -1732,7 +1732,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Suggestions -->
         <div class="chatbot-suggestions" id="chatbot-suggestions">
             <div class="suggestions-title">💡 Questions fréquentes</div>
@@ -1763,7 +1763,7 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Input Area -->
         <form id="chatbot-form" class="chatbot-form">
             <div class="chatbot-input-wrapper">
@@ -1794,7 +1794,7 @@ function toggleChatbot() {
     isChatOpen = !isChatOpen;
     chatbotBtn.classList.toggle('active', isChatOpen);
     chatbotModal.classList.toggle('open', isChatOpen);
-    
+
     if (isChatOpen) {
         chatbotInput.focus();
     }
@@ -1818,16 +1818,16 @@ function askQuestion(question) {
 function addMessage(content, isUser = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${isUser ? 'user-message' : 'bot-message'}`;
-    
+
     const avatarIcon = isUser ? 'user' : 'bot';
-    
+
     messageDiv.innerHTML = `
         <div class="message-avatar">
             <i data-lucide="${avatarIcon}"></i>
         </div>
         <div class="message-content">${content}</div>
     `;
-    
+
     chatbotMessages.appendChild(messageDiv);
     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     lucide.createIcons();
@@ -1861,17 +1861,17 @@ chatbotForm.onsubmit = async (e) => {
     e.preventDefault();
     const question = chatbotInput.value.trim();
     if (!question) return;
-    
+
     // Hide suggestions
     chatbotSuggestions.style.display = 'none';
-    
+
     // Add user message
     addMessage(question, true);
     chatbotInput.value = '';
-    
+
     // Show typing indicator
     showTypingIndicator();
-    
+
     // Security: Check for sensitive data requests
     const sensitivePatterns = [
         /mot de passe|password|mdp/i,
@@ -1886,15 +1886,15 @@ chatbotForm.onsubmit = async (e) => {
         /utilisateur|user.*email|client/i,
         /solde|balance|montant.*compte/i
     ];
-    
+
     const isSensitiveRequest = sensitivePatterns.some(pattern => pattern.test(question));
-    
+
     if (isSensitiveRequest) {
         removeTypingIndicator();
         addMessage("🔒 <strong>Sécurité</strong><br><br>Je ne peux pas divulguer d'informations sensibles ou personnelles. Pour toute question concernant votre compte, veuillez vous connecter à l'application ou contacter notre support à <strong>support@sarfx.io</strong>.", false);
         return;
     }
-    
+
     // Prepare secure context for SarfX - General responses only
     const sarfxContext = `Tu es l'assistant IA public de SarfX, une plateforme fintech de change de devises au Maroc.
 
@@ -1917,12 +1917,12 @@ Réponds en français, de manière concise et professionnelle (max 3 phrases).
 Si la question est hors sujet finance/change, indique poliment ta spécialisation.
 
 Question: ${question}`;
-    
+
     try {
         const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC4q4-n7tdL8cU9srm8q9aodCG0hTqUcoA', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 contents: [{ parts: [{ text: sarfxContext }] }],
                 generationConfig: {
                     maxOutputTokens: 300,
@@ -1934,22 +1934,22 @@ Question: ${question}`;
                 ]
             })
         });
-        
+
         const data = await res.json();
         removeTypingIndicator();
-        
+
         let answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu traiter votre demande. Veuillez réessayer.';
-        
+
         // Security: Filter any potentially leaked sensitive info from response
         answer = answer.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[email masqué]');
         answer = answer.replace(/\b\d{16,}\b/g, '[numéro masqué]');
         answer = answer.replace(/password|mot de passe|mdp/gi, '[confidentiel]');
-        
+
         // Convert markdown formatting to HTML
         answer = answer.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         answer = answer.replace(/\*(.+?)\*/g, '<em>$1</em>');
         answer = answer.replace(/\n/g, '<br>');
-        
+
         addMessage(answer, false);
     } catch (err) {
         removeTypingIndicator();
@@ -1961,17 +1961,17 @@ Question: ${question}`;
             'frais': '💰 <strong>Frais transparents</strong><br>SarfX applique une commission de 0.5% sur les conversions. Aucun frais caché !',
             'default': '👋 Je suis l\'assistant SarfX ! Je peux vous renseigner sur: les taux de change, les ATMs, les wallets et nos services. Comment puis-je vous aider ?'
         };
-        
+
         const questionLower = question.toLowerCase();
         let fallbackAnswer = fallbackResponses.default;
-        
+
         for (const [key, response] of Object.entries(fallbackResponses)) {
             if (questionLower.includes(key)) {
                 fallbackAnswer = response;
                 break;
             }
         }
-        
+
         addMessage(fallbackAnswer, false);
     }
 };

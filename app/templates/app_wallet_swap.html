@@ -299,6 +299,7 @@
             </div>
             
             <form method="POST" action="{{ url_for('app.wallet_swap') }}" id="swapForm" class="swap-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <!-- From Currency -->
                 <div class="swap-input-group" id="fromGroup">

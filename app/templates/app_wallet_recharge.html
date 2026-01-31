@@ -435,6 +435,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('app.wallet_recharge') }}" class="recharge-body" id="rechargeForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <!-- Current Balances -->
                 <div class="current-balances">

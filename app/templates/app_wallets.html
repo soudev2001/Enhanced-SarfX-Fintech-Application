@@ -445,6 +445,7 @@
             </p>
 
             <form method="POST" action="{{ url_for('app.add_wallet_currency') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
