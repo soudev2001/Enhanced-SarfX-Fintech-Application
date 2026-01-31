@@ -9,12 +9,12 @@ import os
 
 def seed_demo_users():
     """Create demo users with different roles"""
-    
+
     # Connect to MongoDB
     mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/sarfx')
     client = MongoClient(mongo_uri)
     db = client.get_default_database() if 'mongodb+srv' in mongo_uri or '/' in mongo_uri.split('@')[-1] else client['sarfx']
-    
+
     demo_users = [
         {
             "email": "admin@sarfx.io",
@@ -30,7 +30,7 @@ def seed_demo_users():
             "email": "bank@sarfx.io",
             "password": generate_password_hash("bank123"),
             "name": "Bank Manager",
-            "role": "bank_admin",
+            "role": "bank_respo",
             "is_active": True,
             "is_verified": True,
             "created_at": datetime.utcnow(),
@@ -47,11 +47,11 @@ def seed_demo_users():
             "updated_at": datetime.utcnow()
         }
     ]
-    
+
     for user_data in demo_users:
         # Check if user already exists
         existing = db.users.find_one({"email": user_data["email"]})
-        
+
         if existing:
             # Update existing user
             db.users.update_one(
@@ -69,7 +69,7 @@ def seed_demo_users():
             # Create new user
             result = db.users.insert_one(user_data)
             user_id = str(result.inserted_id)
-            
+
             # Create default wallet for user
             wallet = {
                 "user_id": user_id,
@@ -81,9 +81,9 @@ def seed_demo_users():
                 "created_at": datetime.utcnow()
             }
             db.wallets.insert_one(wallet)
-            
+
             print(f"✅ Created: {user_data['email']} ({user_data['role']})")
-    
+
     print("\n🎉 Demo users seeded successfully!")
     print("\n📋 Demo Accounts:")
     print("   Admin:  admin@sarfx.io / admin123")

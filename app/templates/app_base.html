@@ -132,15 +132,23 @@
             {% endif %}
 
             <!-- Section ADMIN ASSOCIE (admin associé banque) -->
-            {% if user and user.role == 'bank_admin' %}
+            {% if user and user.role == 'bank_respo' %}
             <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Gestion Banque</div>
-            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item">
-                <i data-lucide="building-2" class="wise-nav-icon"></i>
-                <span>Config Banque</span>
+            <a href="{{ url_for('app.admin_associate_bank') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_dashboard' else '' }}">
+                <i data-lucide="layout-dashboard" class="wise-nav-icon"></i>
+                <span>Dashboard Banque</span>
             </a>
-            <a href="{{ url_for('admin.atms') }}" class="wise-nav-item">
+            <a href="{{ url_for('app.admin_atm_management') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_atms' else '' }}">
                 <i data-lucide="map-pin" class="wise-nav-icon"></i>
-                <span>ATMs Banque</span>
+                <span>Gestion ATMs</span>
+            </a>
+            <a href="{{ url_for('app.admin_api_control') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_api' else '' }}">
+                <i data-lucide="key" class="wise-nav-icon"></i>
+                <span>Contrôle API</span>
+            </a>
+            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_settings' else '' }}">
+                <i data-lucide="settings" class="wise-nav-icon"></i>
+                <span>Paramètres</span>
             </a>
             {% endif %}
 

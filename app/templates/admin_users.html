@@ -2,143 +2,326 @@
 
 {% block title %}Utilisateurs - Admin SarfX{% endblock %}
 
+{% block extra_head %}
+<style>
+    :root {
+        --card-bg: var(--bg-secondary);
+        --card-border: var(--border-light);
+    }
+    [data-theme="dark"] {
+        --card-bg: #1e293b;
+        --card-border: #334155;
+    }
+
+    .user-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--card-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .user-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--brand-primary);
+    }
+    .user-card.selected {
+        border-color: var(--brand-primary);
+        background: rgba(var(--brand-primary-rgb), 0.05);
+    }
+
+    /* Modal Improvements */
+    #userModal {
+        backdrop-filter: blur(8px);
+    }
+    #userModal .modal-content {
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Checkbox Styling */
+    .user-checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border-light);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .user-checkbox:checked {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+    }
+
+    /* Avatar Gradient Options */
+    .avatar-blue { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+    .avatar-green { background: linear-gradient(135deg, #10b981, #059669); }
+    .avatar-pink { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+    .avatar-orange { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+    /* Dark mode improvements */
+    [data-theme="dark"] .btn-secondary {
+        background: #334155;
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+        background: #475569;
+    }
+
+    /* Bulk Actions Bar */
+    .bulk-actions-bar {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        transition: transform 0.3s ease;
+        z-index: 30;
+    }
+    .bulk-actions-bar.visible {
+        transform: translateX(-50%) translateY(0);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6 pb-24">
     <!-- Header -->
-    <div class="flex justify-between items-center pt-2">
+    <div class="flex flex-wrap gap-4 justify-between items-center pt-2">
         <div>
-            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2 hover:text-primary transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 Retour
             </a>
-            <h1 class="text-2xl font-bold text-default">Utilisateurs</h1>
-            <p class="text-muted text-sm">{{ users | length }} comptes enregistrés</p>
+            <h1 class="text-3xl font-bold text-default flex items-center gap-3">
+                <i data-lucide="users" class="w-8 h-8 text-blue-500"></i>
+                Utilisateurs
+            </h1>
+            <p class="text-muted text-sm mt-1"><span id="user-count">{{ users | length }}</span> comptes enregistrés</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ url_for('admin.export_users') }}" class="card px-3 py-2 rounded-lg text-blue-500 font-bold text-sm flex items-center gap-1">
+            <button onclick="selectAll()" class="btn btn-secondary text-sm" id="select-all-btn">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>Tout sélectionner</span>
+            </button>
+            <a href="{{ url_for('admin.export_users') }}" class="btn btn-secondary text-sm">
                 <i data-lucide="download" class="w-4 h-4"></i>
-                CSV
+                <span class="hidden sm:inline">Export CSV</span>
             </a>
-            <span class="px-2 py-1 rounded-full bg-blue-500/20 text-blue-500 text-xs font-bold uppercase">Admin</span>
         </div>
     </div>
 
-    <!-- Search & Filters -->
-    <div class="card p-4 rounded-xl">
-        <div class="flex flex-col sm:flex-row gap-3">
-            <div class="flex-1 relative">
-                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
-                <input type="text" id="search-input" placeholder="Rechercher par email..." 
-                       class="w-full pl-10 pr-4 py-2 input rounded-lg text-sm"
-                       onkeyup="filterUsers()">
-            </div>
-            <div class="flex gap-2">
-                <select id="filter-role" onchange="filterUsers()" class="input flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm bg-transparent">
-                    <option value="">Tous les rôles</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">User</option>
-                </select>
-                <select id="filter-status" onchange="filterUsers()" class="input flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm bg-transparent">
-                    <option value="">Tous statuts</option>
-                    <option value="active">Actif</option>
-                    <option value="inactive">Inactif</option>
-                </select>
-            </div>
+    <!-- Enhanced Filters -->
+    <div class="card p-4 rounded-xl space-y-3">
+        <!-- Search -->
+        <div class="relative">
+            <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-muted"></i>
+            <input type="text" id="search-input" placeholder="Rechercher par email, nom..."
+                   class="w-full pl-12 pr-4 py-3 input rounded-xl text-sm"
+                   onkeyup="filterUsers()">
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="flex flex-wrap gap-2">
+            <select id="filter-role" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm">
+                <option value="">📋 Tous les rôles</option>
+                <option value="admin">👑 Admin</option>
+                <option value="bank_respo">🏦 Bank Respo</option>
+                <option value="user">👤 User</option>
+            </select>
+            <select id="filter-status" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm">
+                <option value="">🔄 Tous statuts</option>
+                <option value="active">✅ Actifs</option>
+                <option value="inactive">❌ Inactifs</option>
+            </select>
+            <select id="filter-verified" onchange="filterUsers()" class="input px-3 py-2 rounded-lg text-sm">
+                <option value="">🔐 Vérification</option>
+                <option value="verified">✓ Vérifiés</option>
+                <option value="unverified">✗ Non vérifiés</option>
+            </select>
+            <button onclick="resetFilters()" class="btn btn-secondary text-sm">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                Réinitialiser
+            </button>
         </div>
     </div>
 
-    <!-- Users List -->
-    <div class="space-y-3" id="users-list">
+    <!-- Users Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="users-list">
         {% for user in users %}
-        <div class="card p-4 rounded-xl user-card" 
+        {% set avatar_colors = ['avatar-blue', 'avatar-green', 'avatar-pink', 'avatar-orange'] %}
+        {% set color_index = loop.index % 4 %}
+        <div class="user-card p-4 rounded-xl"
+             data-user-id="{{ user._id }}"
              data-email="{{ user.email | lower }}"
              data-role="{{ user.role | default('user') }}"
-             data-status="{{ 'active' if user.get('is_active', True) else 'inactive' }}">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3 cursor-pointer" onclick="showUserDetails('{{ user._id }}')">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {% set email_name = user.email.split('@')[0] if user.email else 'us' %}
-                        {% if '.' in email_name %}
-                            {% set email_parts = email_name.split('.') %}
-                            {{ email_parts[0][0] | upper }}{{ email_parts[1][0] | upper }}
-                        {% else %}
-                            {{ email_name[:2] | upper }}
-                        {% endif %}
+             data-status="{{ 'active' if user.get('is_active', True) else 'inactive' }}"
+             data-verified="{{ 'verified' if user.get('verified', False) else 'unverified' }}">
+
+            <!-- Card Header -->
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3 flex-1">
+                    <input type="checkbox" class="user-checkbox" onchange="toggleSelection('{{ user._id }}')">
+                    <div class="w-12 h-12 {{ avatar_colors[color_index] }} rounded-xl flex items-center justify-center text-white font-bold shadow-lg cursor-pointer"
+                         onclick="showUserDetails('{{ user._id }}')">
+                        {% set email_name = user.email.split('@')[0] if user.email else 'US' %}
+                        {{ email_name[:2] | upper }}
                     </div>
-                    <div>
-                        <p class="font-bold text-default">{{ user.email }}</p>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-default text-sm truncate">{{ user.email }}</p>
                         <p class="text-xs text-muted">
                             {% if user.created_at %}
-                            Inscrit le {{ user.created_at.strftime('%d/%m/%Y') }}
+                            {{ user.created_at.strftime('%d/%m/%Y') }}
+                            {% else %}
+                            N/A
                             {% endif %}
                         </p>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-[10px] px-2 py-0.5 rounded-full 
-                                {{ 'badge badge-warning' if user.role == 'admin' else 'bg-slate-500/10 text-slate-400 border border-slate-500/20' }}">
-                                {{ user.role | default('user') | upper }}
-                            </span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full 
-                                {{ 'badge badge-success' if user.get('is_active', True) else 'badge badge-error' }}">
-                                {{ 'Actif' if user.get('is_active', True) else 'Inactif' }}
-                            </span>
-                            {% if user.verified %}
-                            <span class="text-[10px] px-2 py-0.5 rounded-full badge badge-secondary">
-                                ✓ Vérifié
-                            </span>
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
-                
-                <!-- Actions - Responsive -->
-                <div class="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
-                    <!-- View Details -->
-                    <button onclick="showUserDetails('{{ user._id }}')" class="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition" title="Voir détails">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </button>
-                    
-                    <!-- Toggle Status -->
-                    <form action="{{ url_for('admin.toggle_user', user_id=user._id) }}" method="POST">
-                        <button type="submit" class="p-2 rounded-lg {{ 'badge badge-success' if user.get('is_active', True) else 'badge badge-error' }} hover:opacity-80 transition" 
-                                title="{{ 'Désactiver' if user.get('is_active', True) else 'Activer' }}">
-                            <i data-lucide="{{ 'toggle-right' if user.get('is_active', True) else 'toggle-left' }}" class="w-4 h-4"></i>
-                        </button>
-                    </form>
-                    
-                    <!-- Change Role - Hidden on mobile -->
-                    <form action="{{ url_for('admin.change_role', user_id=user._id) }}" method="POST" class="hidden sm:inline">
-                        <select name="role" onchange="this.form.submit()" class="input rounded-lg px-2 py-1 text-xs bg-transparent">
-                            <option value="user" {{ 'selected' if user.role != 'admin' else '' }}>User</option>
-                            <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>
-                        </select>
-                    </form>
-                    
-                    <!-- Delete -->
-                    {% if user._id != session.user_id %}
-                    <form action="{{ url_for('admin.delete_user', user_id=user._id) }}" method="POST" 
-                          onsubmit="return confirm('Supprimer cet utilisateur ?')">
-                        <button type="submit" class="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </form>
-                    {% endif %}
-                </div>
+            </div>
+
+            <!-- Badges -->
+            <div class="flex flex-wrap gap-1.5 mb-3">
+                <span class="text-[10px] px-2 py-1 rounded-full font-semibold
+                    {% if user.role == 'admin' %}bg-amber-500/20 text-amber-500
+                    {% elif user.role == 'bank_respo' %}bg-blue-500/20 text-blue-500
+                    {% else %}bg-slate-500/20 text-slate-400{% endif %}">
+                    {{ user.role | default('user') | upper }}
+                </span>
+                <span class="text-[10px] px-2 py-1 rounded-full font-semibold
+                    {{ 'bg-emerald-500/20 text-emerald-500' if user.get('is_active', True) else 'bg-red-500/20 text-red-500' }}">
+                    {{ 'ACTIF' if user.get('is_active', True) else 'INACTIF' }}
+                </span>
+                {% if user.get('verified', False) %}
+                <span class="text-[10px] px-2 py-1 rounded-full font-semibold bg-purple-500/20 text-purple-500">
+                    ✓ VÉRIFIÉ
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex gap-2">
+                <button onclick="showUserDetails('{{ user._id }}')"
+                        class="flex-1 btn btn-secondary text-xs py-2" title="Détails">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="openChangeRoleModal('{{ user._id }}', '{{ user.email }}', '{{ user.role | default('user') }}')"
+                        class="flex-1 btn btn-secondary text-xs py-2" title="Modifier le rôle">
+                    <i data-lucide="user-cog" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="toggleVerified('{{ user._id }}', {{ 'true' if user.get('verified', False) else 'false' }})"
+                        class="flex-1 btn {{ 'btn-primary' if not user.get('verified', False) else 'btn-secondary' }} text-xs py-2"
+                        title="{{ 'Marquer comme vérifié' if not user.get('verified', False) else 'Retirer vérification' }}">
+                    <i data-lucide="{{ 'shield-check' if not user.get('verified', False) else 'shield-off' }}" class="w-3.5 h-3.5"></i>
+                </button>
+                {% if user._id != session.user_id %}
+                <button onclick="deleteUser('{{ user._id }}', '{{ user.email }}')"
+                        class="btn btn-danger-outline text-xs py-2 px-3" title="Supprimer">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
+
+    <!-- Empty State -->
+    {% if not users %}
+    <div class="card p-12 rounded-xl text-center">
+        <div class="w-20 h-20 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+            <i data-lucide="users" class="w-10 h-10 text-slate-500"></i>
+        </div>
+        <h2 class="text-xl font-semibold mb-2">Aucun utilisateur</h2>
+        <p class="text-muted">Les utilisateurs apparaîtront ici après inscription</p>
+    </div>
+    {% endif %}
 </div>
 
-<!-- User Details Modal -->
-<div id="userModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeUserModal()"></div>
-    <div class="absolute bottom-0 left-0 right-0 card rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
-        <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
-        <div id="user-details-content">
-            <div class="text-center py-8">
-                <div class="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-                <p class="text-muted mt-4">Chargement...</p>
-            </div>
+<!-- Bulk Actions Bar -->
+<div class="bulk-actions-bar" id="bulk-actions">
+    <div class="card rounded-2xl p-4 shadow-2xl flex items-center gap-4">
+        <span class="text-sm font-semibold text-default">
+            <span id="selected-count">0</span> sélectionné(s)
+        </span>
+        <div class="flex gap-2">
+            <button onclick="bulkVerify()" class="btn btn-primary text-sm">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                Vérifier
+            </button>
+            <button onclick="bulkDelete()" class="btn btn-danger-outline text-sm">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Supprimer
+            </button>
+            <button onclick="deselectAll()" class="btn btn-secondary text-sm">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced User Details Modal -->
+<div id="userModal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeUserModal()"></div>
+    <div class="modal-content relative w-full max-w-2xl card rounded-t-3xl sm:rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
+        <!-- Drag Handle (Mobile) -->
+        <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+        <!-- Loading State -->
+        <div id="user-details-loading" class="text-center py-12">
+            <div class="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-muted">Chargement des détails...</p>
+        </div>
+
+        <!-- Content -->
+        <div id="user-details-content" class="hidden"></div>
+    </div>
+</div>
+
+<!-- Change Role Modal -->
+<div id="changeRoleModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeChangeRoleModal()"></div>
+    <div class="modal-content relative w-full max-w-md card rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-default flex items-center gap-2">
+                <i data-lucide="user-cog" class="w-5 h-5 text-amber-500"></i>
+                Modifier le rôle
+            </h3>
+            <button onclick="closeChangeRoleModal()" class="p-2 rounded-lg hover:bg-slate-700/50 transition">
+                <i data-lucide="x" class="w-5 h-5 text-muted"></i>
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-sm text-muted mb-1">Utilisateur</p>
+            <p class="font-semibold text-default" id="roleModalUserEmail">-</p>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-semibold text-muted mb-2">Nouveau rôle</label>
+            <select id="roleSelect" class="w-full input rounded-xl px-4 py-3 text-sm">
+                <option value="user">👤 USER - Utilisateur standard</option>
+                <option value="admin">🛡️ ADMIN - Administrateur</option>
+                <option value="bank_respo">🏦 BANK_RESPO - Responsable banque</option>
+                <option value="bank_user">🏛️ BANK_USER - Utilisateur banque</option>
+                <option value="bank_admin">⚙️ BANK_ADMIN - Admin banque</option>
+            </select>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="closeChangeRoleModal()" class="flex-1 btn btn-secondary py-3">
+                Annuler
+            </button>
+            <button onclick="confirmChangeRole()" class="flex-1 btn btn-primary py-3">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                Confirmer
+            </button>
         </div>
     </div>
 </div>
@@ -169,111 +352,359 @@
     </div>
 </nav>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
+let selectedUsers = new Set();
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
+// Filter Users
 function filterUsers() {
     const search = document.getElementById('search-input').value.toLowerCase();
-    const roleFilter = document.getElementById('filter-role').value.toLowerCase();
-    const statusFilter = document.getElementById('filter-status').value.toLowerCase();
+    const roleFilter = document.getElementById('filter-role').value;
+    const statusFilter = document.getElementById('filter-status').value;
+    const verifiedFilter = document.getElementById('filter-verified').value;
     const cards = document.querySelectorAll('.user-card');
-    
+
+    let visibleCount = 0;
     cards.forEach(card => {
         const email = card.dataset.email || '';
         const role = card.dataset.role || '';
         const status = card.dataset.status || '';
-        
+        const verified = card.dataset.verified || '';
+
         const matchesSearch = email.includes(search);
         const matchesRole = !roleFilter || role === roleFilter;
         const matchesStatus = !statusFilter || status === statusFilter;
-        
-        card.style.display = (matchesSearch && matchesRole && matchesStatus) ? 'block' : 'none';
+        const matchesVerified = !verifiedFilter || verified === verifiedFilter;
+
+        const show = matchesSearch && matchesRole && matchesStatus && matchesVerified;
+        card.style.display = show ? 'block' : 'none';
+        if (show) visibleCount++;
+    });
+
+    document.getElementById('user-count').textContent = visibleCount;
+}
+
+function resetFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('filter-role').value = '';
+    document.getElementById('filter-status').value = '';
+    document.getElementById('filter-verified').value = '';
+    filterUsers();
+}
+
+// Selection Management
+function toggleSelection(userId) {
+    const card = document.querySelector(`[data-user-id="${userId}"]`);
+    const checkbox = card.querySelector('.user-checkbox');
+
+    if (checkbox.checked) {
+        selectedUsers.add(userId);
+        card.classList.add('selected');
+    } else {
+        selectedUsers.delete(userId);
+        card.classList.remove('selected');
+    }
+
+    updateBulkActions();
+}
+
+function selectAll() {
+    const cards = document.querySelectorAll('.user-card:not([style*="display: none"])');
+    cards.forEach(card => {
+        const checkbox = card.querySelector('.user-checkbox');
+        const userId = card.dataset.userId;
+        checkbox.checked = true;
+        card.classList.add('selected');
+        selectedUsers.add(userId);
+    });
+    updateBulkActions();
+}
+
+function deselectAll() {
+    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.user-card').forEach(card => card.classList.remove('selected'));
+    selectedUsers.clear();
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const bar = document.getElementById('bulk-actions');
+    const count = document.getElementById('selected-count');
+    count.textContent = selectedUsers.size;
+
+    if (selectedUsers.size > 0) {
+        bar.classList.add('visible');
+    } else {
+        bar.classList.remove('visible');
+    }
+}
+
+// Toggle Verified Status
+function toggleVerified(userId, currentStatus) {
+    fetch(`/admin/users/${userId}/toggle-verified`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            SarfXNotify.success(data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            SarfXNotify.error(data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        SarfXNotify.error('Erreur lors du changement de statut');
     });
 }
 
+// Bulk Operations
+function bulkVerify() {
+    if (selectedUsers.size === 0) return;
+
+    if (!confirm(`Marquer ${selectedUsers.size} utilisateur(s) comme vérifiés?`)) return;
+
+    fetch('/admin/users/bulk-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_ids: Array.from(selectedUsers) })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            SarfXNotify.success(data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            SarfXNotify.error(data.message);
+        }
+    })
+    .catch(err => SarfXNotify.error('Erreur lors de la vérification'));
+}
+
+function bulkDelete() {
+    if (selectedUsers.size === 0) return;
+
+    if (!confirm(`ATTENTION: Supprimer ${selectedUsers.size} utilisateur(s)? Cette action est irréversible!`)) return;
+
+    fetch('/admin/users/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_ids: Array.from(selectedUsers) })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            SarfXNotify.success(data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            SarfXNotify.error(data.message);
+        }
+    })
+    .catch(err => SarfXNotify.error('Erreur lors de la suppression'));
+}
+
+// Delete Single User
+function deleteUser(userId, email) {
+    if (!confirm(`Supprimer l'utilisateur ${email}?`)) return;
+
+    fetch(`/admin/users/${userId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            SarfXNotify.success(data.message);
+            const card = document.querySelector(`[data-user-id="${userId}"]`);
+            if (card) {
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 300);
+            }
+        } else {
+            SarfXNotify.error(data.message);
+        }
+    })
+    .catch(err => SarfXNotify.error('Erreur lors de la suppression'));
+}
+
+// Show User Details Modal
 function showUserDetails(userId) {
-    document.getElementById('userModal').classList.remove('hidden');
-    
-    fetch('/admin/api/user/' + userId + '/details')
+    const modal = document.getElementById('userModal');
+    const loading = document.getElementById('user-details-loading');
+    const content = document.getElementById('user-details-content');
+
+    modal.classList.remove('hidden');
+    loading.classList.remove('hidden');
+    content.classList.add('hidden');
+
+    fetch(`/admin/api/user/${userId}/details`)
         .then(res => res.json())
         .then(data => {
-            const content = document.getElementById('user-details-content');
-            
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+
             if (data.error) {
-                content.innerHTML = '<p class="text-red-500 text-center py-8">Erreur: ' + data.error + '</p>';
+                content.innerHTML = `<p class="text-red-500 text-center py-8">${data.error}</p>`;
                 return;
             }
-            
+
             const balances = Object.entries(data.wallet.balances || {})
-                .map(([cur, amt]) => `<span class="px-2 py-1 card rounded-lg text-sm">${amt.toFixed(2)} ${cur}</span>`)
-                .join(' ') || '<span class="text-muted">Aucun solde</span>';
-            
+                .map(([cur, amt]) => `
+                    <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg px-4 py-2">
+                        <p class="text-2xl font-bold text-default">${amt.toFixed(2)}</p>
+                        <p class="text-xs text-muted">${cur}</p>
+                    </div>
+                `).join('') || '<p class="text-muted text-center py-4">Aucun solde</p>';
+
             const transactions = data.recent_transactions
                 .map(tx => `
-                    <div class="flex justify-between items-center py-2 border-b border-border last:border-0">
+                    <div class="flex justify-between items-center py-3 border-b border-border last:border-0">
                         <div>
-                            <p class="text-sm text-default">${tx.amount} ${tx.from} → ${tx.to}</p>
-                            <p class="text-xs text-muted">${new Date(tx.date).toLocaleDateString('fr-FR')}</p>
+                            <p class="text-sm font-semibold text-default">${tx.amount} ${tx.from} → ${tx.to}</p>
+                            <p class="text-xs text-muted">${new Date(tx.date).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'})}</p>
                         </div>
-                        <span class="px-2 py-0.5 rounded-full text-xs font-bold ${tx.status === 'completed' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${tx.status === 'completed' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-yellow-500/20 text-yellow-500'}">
                             ${tx.status}
                         </span>
                     </div>
-                `).join('') || '<p class="text-muted text-center py-4">Aucune transaction</p>';
-            
+                `).join('') || '<p class="text-muted text-center py-6 text-sm">Aucune transaction récente</p>';
+
             content.innerHTML = `
+                <!-- User Header -->
                 <div class="text-center mb-6">
-                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-                        ${data.user.email[0].toUpperCase()}
+                    <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-xl">
+                        ${data.user.email[0].toUpperCase()}${data.user.email[1] ? data.user.email[1].toUpperCase() : ''}
                     </div>
-                    <h3 class="text-xl font-bold text-default">${data.user.email}</h3>
-                    <div class="flex justify-center gap-2 mt-2">
-                        <span class="px-2 py-1 rounded-full text-xs font-bold ${data.user.role === 'admin' ? 'bg-amber-500/20 text-amber-500' : 'bg-slate-500/20 text-slate-400'}">${data.user.role.toUpperCase()}</span>
-                        <span class="px-2 py-1 rounded-full text-xs font-bold ${data.user.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}">${data.user.is_active ? 'Actif' : 'Inactif'}</span>
-                        ${data.user.verified ? '<span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-500">✓ Vérifié</span>' : ''}
+                    <h2 class="text-2xl font-bold text-default mb-2">${data.user.email}</h2>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${data.user.role === 'admin' ? 'bg-amber-500/20 text-amber-500' : 'bg-slate-500/20 text-slate-400'}">
+                            ${data.user.role.toUpperCase()}
+                        </span>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${data.user.is_active ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}">
+                            ${data.user.is_active ? 'ACTIF' : 'INACTIF'}
+                        </span>
+                        ${data.user.verified ? '<span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-500">✓ VÉRIFIÉ</span>' : ''}
                     </div>
                 </div>
-                
-                <div class="space-y-4">
-                    <div class="card p-4 rounded-xl">
-                        <h4 class="font-bold text-default mb-3">Portefeuille</h4>
-                        <div class="flex flex-wrap gap-2">${balances}</div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-default mb-1">${data.transactions_count}</p>
+                        <p class="text-xs text-muted">Transactions</p>
                     </div>
-                    
-                    <div class="card p-4 rounded-xl">
-                        <h4 class="font-bold text-default mb-3">Statistiques</h4>
-                        <div class="grid grid-cols-3 gap-4 text-center">
-                            <div>
-                                <p class="text-2xl font-bold text-default">${data.transactions_count}</p>
-                                <p class="text-xs text-muted">Transactions</p>
-                            </div>
-                            <div>
-                                <p class="text-2xl font-bold text-default">${data.beneficiaries_count}</p>
-                                <p class="text-xs text-muted">Bénéficiaires</p>
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-default">${data.user.created_at ? new Date(data.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}</p>
-                                <p class="text-xs text-muted">Inscrit</p>
-                            </div>
-                        </div>
+                    <div class="card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-default mb-1">${data.beneficiaries_count}</p>
+                        <p class="text-xs text-muted">Bénéficiaires</p>
                     </div>
-                    
-                    <div class="card p-4 rounded-xl">
-                        <h4 class="font-bold text-default mb-3">Transactions Récentes</h4>
+                    <div class="card p-4 rounded-xl text-center">
+                        <p class="text-sm font-bold text-default mb-1">${data.user.created_at ? new Date(data.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                        <p class="text-xs text-muted">Inscrit</p>
+                    </div>
+                </div>
+
+                <!-- Wallet Balances -->
+                <div class="card p-6 rounded-xl mb-4">
+                    <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-5 h-5 text-blue-500"></i>
+                        Portefeuille
+                    </h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        ${balances}
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="card p-6 rounded-xl mb-6">
+                    <h3 class="font-bold text-default mb-4 flex items-center gap-2">
+                        <i data-lucide="activity" class="w-5 h-5 text-emerald-500"></i>
+                        Transactions Récentes
+                    </h3>
+                    <div class="space-y-0">
                         ${transactions}
                     </div>
                 </div>
-                
-                <button onclick="closeUserModal()" class="w-full mt-6 py-3 card rounded-xl font-bold text-default">
-                    Fermer
-                </button>
+
+                <!-- Actions -->
+                <div class="flex gap-3">
+                    <button onclick="toggleVerified('${userId}', ${data.user.verified})"
+                            class="flex-1 btn ${data.user.verified ? 'btn-secondary' : 'btn-primary'} py-3">
+                        <i data-lucide="${data.user.verified ? 'shield-off' : 'shield-check'}" class="w-4 h-4"></i>
+                        ${data.user.verified ? 'Retirer vérification' : 'Marquer vérifié'}
+                    </button>
+                    <button onclick="closeUserModal()" class="flex-1 btn btn-secondary py-3">
+                        Fermer
+                    </button>
+                </div>
             `;
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         })
         .catch(err => {
-            document.getElementById('user-details-content').innerHTML = '<p class="text-red-500 text-center py-8">Erreur de chargement</p>';
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+            content.innerHTML = '<p class="text-red-500 text-center py-8">Erreur de chargement</p>';
         });
 }
 
 function closeUserModal() {
     document.getElementById('userModal').classList.add('hidden');
+}
+
+// Change Role Modal Functions
+let currentRoleUserId = null;
+
+function openChangeRoleModal(userId, email, currentRole) {
+    currentRoleUserId = userId;
+    document.getElementById('roleModalUserEmail').textContent = email;
+    document.getElementById('roleSelect').value = currentRole || 'user';
+    document.getElementById('changeRoleModal').classList.remove('hidden');
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeChangeRoleModal() {
+    document.getElementById('changeRoleModal').classList.add('hidden');
+    currentRoleUserId = null;
+}
+
+function confirmChangeRole() {
+    if (!currentRoleUserId) return;
+
+    const newRole = document.getElementById('roleSelect').value;
+
+    fetch(`/admin/api/user/${currentRoleUserId}/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Rôle modifié en ${newRole.toUpperCase()}`, 'success');
+            closeChangeRoleModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Erreur lors de la modification', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
 }
 </script>
 {% endblock %}

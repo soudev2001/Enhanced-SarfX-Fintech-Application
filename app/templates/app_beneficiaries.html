@@ -35,7 +35,7 @@
                 <i data-lucide="send" style="width: 24px; height: 24px;"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-value">{% set total = namespace(count=0) %}{% for b in beneficiaries if b.transactions %}{% set total.count = total.count + (b.transactions|length) %}{% endfor %}{{ total.count }}</span>
+                <span class="stat-value">{{ total_transfers }}</span>
                 <span class="stat-label">Transferts</span>
             </div>
         </div>
@@ -45,7 +45,7 @@
     {% if beneficiaries %}
     <div class="beneficiaries-list">
         {% for benef in beneficiaries %}
-        <div class="beneficiary-card">
+        <div class="beneficiary-card {% if selected_beneficiary == benef._id %}expanded{% endif %}">
             <div class="beneficiary-header">
                 <div class="beneficiary-avatar">
                     {{ benef.name[:2]|upper if benef.name else 'XX' }}
@@ -58,12 +58,27 @@
                     </p>
                     <p class="beneficiary-details">
                         <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i>
-                        {{ benef.account_number|default('****') }}
+                        {{ benef.account_number|default(benef.iban|default('****')) }}
                     </p>
                 </div>
+                <div class="beneficiary-stats">
+                    <div class="benef-stat">
+                        <span class="benef-stat-value">{{ benef.transfer_count }}</span>
+                        <span class="benef-stat-label">Transferts</span>
+                    </div>
+                    {% if benef.total_sent > 0 %}
+                    <div class="benef-stat">
+                        <span class="benef-stat-value">{{ "{:,.0f}".format(benef.total_sent) }}</span>
+                        <span class="benef-stat-label">Total envoyé</span>
+                    </div>
+                    {% endif %}
+                </div>
                 <div class="beneficiary-actions">
-                    <button class="btn-icon" onclick="sendToBeneficiary('{{ benef._id }}')" title="Envoyer">
+                    <button class="btn-icon btn-send" onclick="sendToBeneficiary('{{ benef._id }}')" title="Envoyer">
                         <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    <button class="btn-icon" onclick="toggleHistory('{{ benef._id }}')" title="Historique">
+                        <i data-lucide="history" style="width: 18px; height: 18px;"></i>
                     </button>
                     <button class="btn-icon" onclick="editBeneficiary('{{ benef._id }}')" title="Modifier">
                         <i data-lucide="pencil" style="width: 18px; height: 18px;"></i>
@@ -72,33 +87,67 @@
             </div>
 
             <!-- Transaction History for this beneficiary -->
-            {% if benef.transactions %}
-            <div class="beneficiary-history">
+            <div class="beneficiary-history" id="history-{{ benef._id }}" {% if selected_beneficiary != benef._id %}style="display: none;"{% endif %}>
                 <h4 class="history-title">
                     <i data-lucide="history" style="width: 16px; height: 16px;"></i>
-                    Historique des transferts
+                    Historique des transferts ({{ benef.transfer_count }} total)
                 </h4>
+
+                {% if benef.transactions %}
                 <div class="history-list">
                     {% for tx in benef.transactions %}
                     <div class="history-item">
-                        <div class="history-icon {{ 'success' if tx.status == 'completed' else 'pending' }}">
-                            <i data-lucide="{{ 'check' if tx.status == 'completed' else 'clock' }}" style="width: 14px; height: 14px;"></i>
+                        <div class="history-icon {{ 'success' if tx.status == 'completed' else ('pending' if tx.status == 'pending' else 'failed') }}">
+                            <i data-lucide="{{ 'check' if tx.status == 'completed' else ('clock' if tx.status == 'pending' else 'x') }}" style="width: 14px; height: 14px;"></i>
                         </div>
                         <div class="history-details">
-                            <span class="history-amount">{{ tx.amount or 0 }} {{ tx.from_currency or tx.currency or 'MAD' }}</span>
-                            <span class="history-date">{{ tx.created_at.strftime('%d/%m/%Y') if tx.created_at else 'N/A' }}</span>
+                            <span class="history-amount">-{{ "{:,.2f}".format(tx.amount or 0) }} {{ tx.from_currency or tx.currency or 'MAD' }}</span>
+                            {% if tx.final_amount %}
+                            <span class="history-received">→ {{ "{:,.2f}".format(tx.final_amount) }} {{ tx.to_currency or 'MAD' }}</span>
+                            {% endif %}
+                            <span class="history-date">{{ tx.created_at.strftime('%d/%m/%Y à %H:%M') if tx.created_at else 'N/A' }}</span>
                         </div>
-                        <span class="history-status {{ tx.status }}">{{ tx.status|default('pending') }}</span>
+                        <div class="history-meta">
+                            <span class="history-status {{ tx.status }}">
+                                {{ 'Complété' if tx.status == 'completed' else ('En attente' if tx.status == 'pending' else 'Échoué') }}
+                            </span>
+                            {% if tx.rate %}
+                            <span class="history-rate">Taux: {{ tx.rate }}</span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
+
+                <!-- Pagination for history -->
+                {% if benef.pagination and benef.pagination.pages > 1 %}
+                <div class="history-pagination">
+                    {% if benef.pagination.page > 1 %}
+                    <a href="{{ url_for('app.beneficiaries', beneficiary_id=benef._id, history_page=benef.pagination.page - 1) }}" class="pagination-btn">
+                        <i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    {% endif %}
+                    <span class="pagination-info">Page {{ benef.pagination.page }} / {{ benef.pagination.pages }}</span>
+                    {% if benef.pagination.page < benef.pagination.pages %}
+                    <a href="{{ url_for('app.beneficiaries', beneficiary_id=benef._id, history_page=benef.pagination.page + 1) }}" class="pagination-btn">
+                        <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                {% elif benef.transfer_count > 5 and selected_beneficiary != benef._id %}
+                <a href="{{ url_for('app.beneficiaries', beneficiary_id=benef._id) }}" class="view-all-btn">
+                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                    Voir tous les {{ benef.transfer_count }} transferts
+                </a>
+                {% endif %}
+
+                {% else %}
+                <div class="no-history">
+                    <i data-lucide="inbox" style="width: 24px; height: 24px; opacity: 0.5;"></i>
+                    <span>Aucun transfert vers ce bénéficiaire</span>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="beneficiary-no-history">
-                <i data-lucide="inbox" style="width: 24px; height: 24px; opacity: 0.5;"></i>
-                <span>Aucun transfert vers ce bénéficiaire</span>
-            </div>
-            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -408,6 +457,137 @@
     color: #f59e0b;
 }
 
+.history-status.failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.history-icon.failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.history-received {
+    font-size: 12px;
+    color: #10b981;
+}
+
+.history-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.history-rate {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.beneficiary-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.benef-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.benef-stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.benef-stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.btn-send {
+    background: var(--brand-primary) !important;
+    color: white !important;
+    border-color: var(--brand-primary) !important;
+}
+
+.btn-send:hover {
+    background: #ff7a2f !important;
+}
+
+.no-history {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+}
+
+.pagination-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.view-all-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--brand-primary);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.view-all-btn:hover {
+    background: var(--brand-primary);
+    color: white;
+    border-color: var(--brand-primary);
+}
+
 .beneficiary-no-history {
     padding: 20px;
     text-align: center;
@@ -640,5 +820,57 @@ function sendToBeneficiary(id) {
 function editBeneficiary(id) {
     showNotification('Édition en cours de développement', 'info');
 }
+
+function toggleHistory(beneficiaryId) {
+    const historySection = document.getElementById('history-' + beneficiaryId);
+    const btn = document.querySelector(`[data-toggle="${beneficiaryId}"]`);
+
+    if (historySection) {
+        const isHidden = historySection.style.display === 'none';
+        historySection.style.display = isHidden ? 'block' : 'none';
+
+        if (btn) {
+            const icon = btn.querySelector('[data-lucide]');
+            if (icon) {
+                icon.setAttribute('data-lucide', isHidden ? 'chevron-up' : 'chevron-down');
+                lucide.createIcons();
+            }
+        }
+    }
+}
+
+function deleteBeneficiary(id) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce bénéficiaire ?')) {
+        return;
+    }
+
+    fetch('/api/beneficiaries/' + id, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Bénéficiaire supprimé', 'success');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showNotification(data.error || 'Erreur lors de la suppression', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+// Init: Expand selected beneficiary's history
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedId = urlParams.get('selected_beneficiary');
+    if (selectedId) {
+        const historySection = document.getElementById('history-' + selectedId);
+        if (historySection) {
+            historySection.style.display = 'block';
+        }
+    }
+});
 </script>
 {% endblock %}

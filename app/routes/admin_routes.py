@@ -169,6 +169,184 @@ def delete_user(user_id):
     return redirect(url_for('admin.users'))
 
 
+@admin_bp.route('/users/<user_id>/delete', methods=['POST'])
+@admin_required
+def delete_user_api(user_id):
+    """API endpoint pour supprimer un utilisateur (retourne JSON)"""
+    db = get_db()
+    from app.services.db_service import safe_object_id
+
+    user_oid = safe_object_id(user_id)
+    if not user_oid:
+        return jsonify({"success": False, "message": "ID utilisateur invalide"}), 400
+
+    user = db.users.find_one({"_id": user_oid})
+    if not user:
+        return jsonify({"success": False, "message": "Utilisateur introuvable"}), 404
+
+    # Don't allow deleting yourself
+    if str(user['_id']) == session.get('user_id'):
+        return jsonify({"success": False, "message": "Vous ne pouvez pas supprimer votre propre compte"}), 403
+
+    db.users.delete_one({"_id": user_oid})
+    db.wallets.delete_many({"user_id": str(user_oid)})
+    log_history("USER_DELETE", f"Utilisateur {user['email']} supprimé", user=session.get('email'))
+
+    return jsonify({"success": True, "message": f"Utilisateur {user['email']} supprimé"})
+
+
+@admin_bp.route('/users/<user_id>/toggle-verified', methods=['POST'])
+@admin_required
+def toggle_user_verified(user_id):
+    """Toggle le statut vérifié d'un utilisateur"""
+    db = get_db()
+    from app.services.db_service import safe_object_id
+
+    user_oid = safe_object_id(user_id)
+    if not user_oid:
+        return jsonify({"success": False, "message": "ID utilisateur invalide"}), 400
+
+    user = db.users.find_one({"_id": user_oid})
+    if not user:
+        return jsonify({"success": False, "message": "Utilisateur introuvable"}), 404
+
+    current_verified = user.get('verified', False)
+    new_verified = not current_verified
+
+    db.users.update_one(
+        {"_id": user_oid},
+        {"$set": {"verified": new_verified, "updated_at": datetime.utcnow()}}
+    )
+
+    status_text = "vérifié" if new_verified else "non vérifié"
+    log_history("USER_VERIFY", f"Utilisateur {user['email']} marqué {status_text}", user=session.get('email'))
+
+    return jsonify({
+        "success": True,
+        "message": f"Utilisateur marqué comme {status_text}",
+        "verified": new_verified
+    })
+
+
+@admin_bp.route('/api/user/<user_id>/role', methods=['POST'])
+@admin_required
+def change_user_role(user_id):
+    """Modifier le rôle d'un utilisateur"""
+    db = get_db()
+    from app.services.db_service import safe_object_id
+
+    user_oid = safe_object_id(user_id)
+    if not user_oid:
+        return jsonify({"success": False, "error": "ID utilisateur invalide"}), 400
+
+    user = db.users.find_one({"_id": user_oid})
+    if not user:
+        return jsonify({"success": False, "error": "Utilisateur introuvable"}), 404
+
+    # Don't allow changing your own role
+    if str(user['_id']) == session.get('user_id'):
+        return jsonify({"success": False, "error": "Vous ne pouvez pas modifier votre propre rôle"}), 403
+
+    data = request.get_json()
+    new_role = data.get('role', 'user')
+
+    # Validate role
+    valid_roles = ['user', 'admin', 'bank_respo', 'bank_user', 'bank_admin', 'bank_superadmin', 'admin_associate_bank']
+    if new_role not in valid_roles:
+        return jsonify({"success": False, "error": f"Rôle invalide. Rôles acceptés: {', '.join(valid_roles)}"}), 400
+
+    old_role = user.get('role', 'user')
+    db.users.update_one(
+        {"_id": user_oid},
+        {"$set": {"role": new_role, "updated_at": datetime.utcnow()}}
+    )
+
+    log_history("USER_ROLE_CHANGE", f"Rôle de {user['email']} modifié: {old_role} → {new_role}", user=session.get('email'))
+
+    return jsonify({
+        "success": True,
+        "message": f"Rôle modifié en {new_role}",
+        "old_role": old_role,
+        "new_role": new_role
+    })
+
+
+@admin_bp.route('/users/bulk-verify', methods=['POST'])
+@admin_required
+def bulk_verify_users():
+    """Marque plusieurs utilisateurs comme vérifiés"""
+    db = get_db()
+    from app.services.db_service import safe_object_id
+
+    data = request.get_json()
+    user_ids = data.get('user_ids', [])
+
+    if not user_ids:
+        return jsonify({"success": False, "message": "Aucun utilisateur sélectionné"}), 400
+
+    # Convert to ObjectIds
+    object_ids = [safe_object_id(uid) for uid in user_ids]
+    object_ids = [oid for oid in object_ids if oid]  # Filter out invalid IDs
+
+    if not object_ids:
+        return jsonify({"success": False, "message": "IDs utilisateurs invalides"}), 400
+
+    # Update users
+    result = db.users.update_many(
+        {"_id": {"$in": object_ids}},
+        {"$set": {"verified": True, "updated_at": datetime.utcnow()}}
+    )
+
+    log_history("BULK_VERIFY", f"{result.modified_count} utilisateurs vérifiés", user=session.get('email'))
+
+    return jsonify({
+        "success": True,
+        "message": f"{result.modified_count} utilisateur(s) vérifié(s)"
+    })
+
+
+@admin_bp.route('/users/bulk-delete', methods=['POST'])
+@admin_required
+def bulk_delete_users():
+    """Supprime plusieurs utilisateurs"""
+    db = get_db()
+    from app.services.db_service import safe_object_id
+
+    data = request.get_json()
+    user_ids = data.get('user_ids', [])
+
+    if not user_ids:
+        return jsonify({"success": False, "message": "Aucun utilisateur sélectionné"}), 400
+
+    # Convert to ObjectIds
+    object_ids = [safe_object_id(uid) for uid in user_ids]
+    object_ids = [oid for oid in object_ids if oid]
+
+    if not object_ids:
+        return jsonify({"success": False, "message": "IDs utilisateurs invalides"}), 400
+
+    # Don't delete yourself
+    current_user_id = safe_object_id(session.get('user_id'))
+    if current_user_id in object_ids:
+        object_ids.remove(current_user_id)
+        if not object_ids:
+            return jsonify({"success": False, "message": "Vous ne pouvez pas supprimer votre propre compte"}), 403
+
+    # Delete users
+    result = db.users.delete_many({"_id": {"$in": object_ids}})
+
+    # Delete associated wallets
+    for oid in object_ids:
+        db.wallets.delete_many({"user_id": str(oid)})
+
+    log_history("BULK_DELETE", f"{result.deleted_count} utilisateurs supprimés", user=session.get('email'))
+
+    return jsonify({
+        "success": True,
+        "message": f"{result.deleted_count} utilisateur(s) supprimé(s)"
+    })
+
+
 # ==================== WALLETS MANAGEMENT ====================
 
 @admin_bp.route('/wallets')

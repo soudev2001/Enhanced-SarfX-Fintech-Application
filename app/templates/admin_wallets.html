@@ -113,21 +113,21 @@
     <div class="space-y-3" id="wallets-container">
         {% for wallet in wallets %}
         <div class="card p-4 rounded-xl space-y-4 wallet-card"
-             data-email="{{ wallet.user_email | lower }}"
-             data-wallet-id="{{ wallet.wallet_id }}">
+             data-email="{{ wallet.get('user_email', '')|lower }}"
+             data-wallet-id="{{ wallet.get('wallet_id', '') }}">
             <!-- User Info -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {{ wallet.user_email[0] | upper }}
+                        {{ wallet.get('user_email', 'U')[0]|upper }}
                     </div>
                     <div>
-                        <p class="font-bold text-default">{{ wallet.user_email }}</p>
-                        <p class="text-xs text-muted font-mono">{{ wallet.wallet_id[:16] }}...</p>
+                        <p class="font-bold text-default">{{ wallet.get('user_email', 'Inconnu') }}</p>
+                        <p class="text-xs text-muted font-mono">{{ wallet.get('wallet_id', '')[:16] }}...</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="showWalletHistory('{{ wallet.wallet_id }}', '{{ wallet.user_email }}')"
+                    <button onclick="showWalletHistory('{{ wallet.get('wallet_id', '') }}', '{{ wallet.get('user_email', '') }}')"
                             class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition">
                         <i data-lucide="clock" class="w-4 h-4 text-muted"></i>
                     </button>
@@ -161,7 +161,7 @@
             </div>
 
             <!-- Adjust Form -->
-            <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.wallet_id) }}" method="POST" class="space-y-2 adjust-form"
+            <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.get('wallet_id', '')) }}" method="POST" class="space-y-2 adjust-form"
                   data-balances='{{ wallet.get("balances", {}) | tojson }}'>
                 <div class="flex gap-2">
                     <select name="currency" class="currency-select input rounded-lg px-3 py-2 text-xs flex-1 bg-slate-800/50 border-slate-700 text-default">

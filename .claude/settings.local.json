@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(curl:*)",
-      "Bash(python3 -c \"import ast; exec\\(open\\(''c:\\\\Users\\\\Soufiane\\\\sarfx-landing\\\\Enhanced-SarfX-Fintech-Application\\\\app\\\\routes\\\\app_routes.py''\\).read\\(\\)\\)\")"
+      "Bash(python3 -c \"import ast; exec\\(open\\(''c:\\\\Users\\\\Soufiane\\\\sarfx-landing\\\\Enhanced-SarfX-Fintech-Application\\\\app\\\\routes\\\\app_routes.py''\\).read\\(\\)\\)\")",
+      "Bash(python -m flask:*)"
     ]
   }
 }

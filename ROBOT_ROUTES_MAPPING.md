@@ -64,7 +64,7 @@ page.click('a[href="/admin/users"]')       # Utilisateurs
 page.click('a[href="/admin/banks"]')       # Banques
 page.click('a[href="/admin/atms"]')        # ATMs Admin
 
-# Section Bank Admin (visible si bank_admin)
+# Section Bank Admin (visible si bank_respo)
 page.click('a[href="/app/bank-settings"]') # Config Banque
 
 # Footer

@@ -228,11 +228,21 @@ def profile():
         flash(error, 'error')
         transactions = []
 
+    # Récupérer les cartes bancaires de l'utilisateur
+    cards = []
+    db = get_db()
+    if db is not None:
+        try:
+            cards = list(db.user_cards.find({"user_id": str(session['user_id'])}).sort("created_at", -1))
+        except Exception as e:
+            print(f"Error fetching cards: {e}")
+
     return render_template('app_profile.html',
         active_tab='profile',
         user=user,
         wallet=wallet,
-        transactions=transactions
+        transactions=transactions,
+        cards=cards
     )
 
 
@@ -253,24 +263,62 @@ def settings():
 @app_bp.route('/transactions')
 @login_required
 def transactions():
-    """Page de l'historique des transactions"""
+    """Page de l'historique des transactions avec pagination"""
     user = get_current_user()
-    all_transactions, error = get_user_transactions(session['user_id'], limit=50)
-    if error:
-        flash(error, 'error')
-        all_transactions = []
+    db = get_db()
+
+    # Pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+
+    # Get total count and stats
+    total = 0
+    stats = {'completed': 0, 'pending': 0, 'failed': 0}
+    all_transactions = []
+
+    if db is not None:
+        try:
+            user_id = str(session['user_id'])
+
+            # Count total transactions
+            total = db.transactions.count_documents({"user_id": user_id})
+
+            # Get stats by status
+            stats['completed'] = db.transactions.count_documents({"user_id": user_id, "status": "completed"})
+            stats['pending'] = db.transactions.count_documents({"user_id": user_id, "status": "pending"})
+            stats['failed'] = db.transactions.count_documents({"user_id": user_id, "status": "failed"})
+
+            # Get paginated transactions
+            skip = (page - 1) * per_page
+            all_transactions = list(db.transactions.find(
+                {"user_id": user_id}
+            ).sort("created_at", -1).skip(skip).limit(per_page))
+
+        except Exception as e:
+            print(f"Erreur lors de la récupération des transactions: {e}")
+
+    # Calculate pagination info
+    pages = (total + per_page - 1) // per_page if total > 0 else 1
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'pages': pages
+    }
 
     return render_template('app_transactions.html',
         active_tab='transactions',
         user=user,
-        transactions=all_transactions
+        transactions=all_transactions,
+        pagination=pagination,
+        stats=stats
     )
 
 
 @app_bp.route('/beneficiaries')
 @login_required
 def beneficiaries():
-    """Page des bénéficiaires et leur historique"""
+    """Page des bénéficiaires et leur historique avec pagination"""
     try:
         user = get_current_user()
         if not user:
@@ -278,19 +326,66 @@ def beneficiaries():
 
         db = get_db()
 
+        # Pagination pour l'historique de chaque bénéficiaire
+        history_page = request.args.get('history_page', 1, type=int)
+        history_per_page = 10
+        selected_beneficiary = request.args.get('beneficiary_id', None)
+
         # Récupérer les bénéficiaires de l'utilisateur
         user_beneficiaries = []
+        total_transfers = 0
+
         if db is not None:
             try:
                 user_beneficiaries = list(db.beneficiaries.find({"user_id": str(session['user_id'])}))
 
-                # Pour chaque bénéficiaire, récupérer son historique de transactions
+                # Pour chaque bénéficiaire, récupérer son historique de transactions complet
                 for benef in user_beneficiaries:
                     benef['_id'] = str(benef['_id'])
-                    benef['transactions'] = list(db.transactions.find({
+
+                    # Compter le total des transferts pour ce bénéficiaire
+                    benef['transfer_count'] = db.transactions.count_documents({
                         "user_id": str(session['user_id']),
                         "beneficiary_id": benef['_id']
-                    }).sort("created_at", -1).limit(5))
+                    })
+                    total_transfers += benef['transfer_count']
+
+                    # Calculer le montant total envoyé
+                    pipeline = [
+                        {"$match": {
+                            "user_id": str(session['user_id']),
+                            "beneficiary_id": benef['_id']
+                        }},
+                        {"$group": {
+                            "_id": None,
+                            "total": {"$sum": "$amount"}
+                        }}
+                    ]
+                    result = list(db.transactions.aggregate(pipeline))
+                    benef['total_sent'] = result[0]['total'] if result else 0
+
+                    # Récupérer les transactions avec pagination si c'est le bénéficiaire sélectionné
+                    if selected_beneficiary == benef['_id']:
+                        skip = (history_page - 1) * history_per_page
+                        benef['transactions'] = list(db.transactions.find({
+                            "user_id": str(session['user_id']),
+                            "beneficiary_id": benef['_id']
+                        }).sort("created_at", -1).skip(skip).limit(history_per_page))
+
+                        # Info pagination
+                        benef['pagination'] = {
+                            'page': history_page,
+                            'per_page': history_per_page,
+                            'total': benef['transfer_count'],
+                            'pages': (benef['transfer_count'] + history_per_page - 1) // history_per_page if benef['transfer_count'] > 0 else 1
+                        }
+                    else:
+                        # Juste les 5 dernières par défaut
+                        benef['transactions'] = list(db.transactions.find({
+                            "user_id": str(session['user_id']),
+                            "beneficiary_id": benef['_id']
+                        }).sort("created_at", -1).limit(5))
+
             except Exception as e:
                 print(f"Erreur lors de la récupération des bénéficiaires: {e}")
                 user_beneficiaries = []
@@ -298,7 +393,9 @@ def beneficiaries():
         return render_template('app_beneficiaries.html',
             active_tab='beneficiaries',
             user=user,
-            beneficiaries=user_beneficiaries
+            beneficiaries=user_beneficiaries,
+            total_transfers=total_transfers,
+            selected_beneficiary=selected_beneficiary
         )
     except Exception as e:
         print(f"Erreur dans la route beneficiaries: {e}")
@@ -725,7 +822,7 @@ def admin_sr_bank():
 
 
 @app_bp.route('/admin-associate-bank')
-@role_required('admin', 'admin_sr_bank', 'admin_associate_bank')
+@role_required('admin', 'admin_sr_bank', 'admin_associate_bank', 'bank_respo')
 def admin_associate_bank():
     """Dashboard pour les administrateurs associés de banque avec contrôle API"""
     user = get_current_user()
@@ -758,7 +855,7 @@ def admin_associate_bank():
 
 
 @app_bp.route('/admin-associate-bank/api-control')
-@role_required('admin', 'admin_sr_bank', 'admin_associate_bank')
+@role_required('admin', 'admin_sr_bank', 'admin_associate_bank', 'bank_respo')
 def admin_api_control():
     """Page de contrôle API pour les administrateurs associés de banque"""
     user = get_current_user()
@@ -793,7 +890,7 @@ def admin_api_control():
 
 
 @app_bp.route('/admin-associate-bank/atm-management')
-@role_required('admin', 'admin_sr_bank', 'admin_associate_bank')
+@role_required('admin', 'admin_sr_bank', 'admin_associate_bank', 'bank_respo')
 def admin_atm_management():
     """Gestion des ATMs pour les administrateurs de banque"""
     user = get_current_user()

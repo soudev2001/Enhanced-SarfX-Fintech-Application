@@ -20,7 +20,7 @@ DEMO_ACCOUNTS = {
         'email': 'bank@sarfx.io',
         'password': 'bank123',
         'name': 'Bank Respo Demo',
-        'role': 'bank_admin',
+        'role': 'bank_respo',
         'emoji': '🏦'
     },
     'user': {

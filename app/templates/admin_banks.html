@@ -11,24 +11,30 @@
         --card-shadow-hover: var(--shadow-lg);
     }
     [data-theme="dark"] {
-        --card-bg: var(--bg-tertiary);
-        --card-border: var(--border-medium);
+        --card-bg: #1e293b;
+        --card-border: #334155;
     }
     .bank-card {
         background-color: var(--card-bg);
         border: 1px solid var(--card-border);
         box-shadow: var(--card-shadow);
-        transition: all 0.2s ease-in-out;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .bank-card:hover {
         transform: translateY(-4px);
         box-shadow: var(--card-shadow-hover);
+        border-color: var(--brand-primary);
     }
     .bank-logo-container {
-        width: 60px;
-        height: 60px;
-        padding: 8px; /* Give some space for the logo */
-        background-color: #ffffff; /* Always white for contrast */
+        width: 64px;
+        height: 64px;
+        padding: 8px;
+        background-color: #ffffff;
+        border: 2px solid var(--border-light);
+    }
+    [data-theme="dark"] .bank-logo-container {
+        background-color: #f8fafc;
+        border-color: #475569;
     }
     .bank-logo-img {
         width: 100%;
@@ -38,6 +44,73 @@
     .btn-action {
         flex: 1;
         text-align: center;
+    }
+    .bank-details {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .bank-details.expanded {
+        max-height: 1000px;
+        transition: max-height 0.5s ease-in;
+    }
+    .expand-btn {
+        transition: transform 0.3s ease;
+    }
+    .expand-btn.rotated {
+        transform: rotate(180deg);
+    }
+    .user-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-light);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+    [data-theme="dark"] .user-tag {
+        background: #334155;
+        border-color: #475569;
+    }
+    .user-tag:hover {
+        background: var(--brand-primary);
+        color: white;
+        border-color: var(--brand-primary);
+    }
+    .user-tag .remove-btn {
+        padding: 0.125rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .user-tag .remove-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+    /* Dark mode button improvements */
+    [data-theme="dark"] .btn-secondary {
+        background: #334155;
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+        background: #475569;
+        border-color: #64748b;
+    }
+    [data-theme="dark"] .btn-danger-outline {
+        color: #f87171;
+        border-color: #991b1b;
+    }
+    [data-theme="dark"] .btn-danger-outline:hover {
+        background: rgba(220, 38, 38, 0.1);
+        border-color: #dc2626;
+    }
+    [data-theme="dark"] .btn-primary {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
     }
 </style>
 {% endblock %}
@@ -80,7 +153,7 @@
     <div class="card p-4 rounded-xl">
         <div class="relative">
             <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted"></i>
-            <input type="text" id="search-input" onkeyup="filterBanks()" placeholder="Rechercher par nom ou code..." 
+            <input type="text" id="search-input" onkeyup="filterBanks()" placeholder="Rechercher par nom ou code..."
                    class="input w-full rounded-xl pl-12 pr-4 py-3 text-base">
         </div>
     </div>
@@ -88,10 +161,11 @@
     <!-- Banks Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="banks-grid">
         {% for bank in banks %}
-        <div class="bank-card rounded-2xl flex flex-col" data-name="{{ bank.name | lower }}" data-code="{{ bank.code | lower }}">
+        <div class="bank-card rounded-2xl flex flex-col" data-name="{{ bank.name | lower }}" data-code="{{ bank.code | lower }}" id="bank-{{ bank._id }}">
+            <!-- Card Header -->
             <div class="p-6 flex-grow">
-                <div class="flex items-start justify-between">
-                    <div class="flex items-start gap-4">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start gap-4 flex-1">
                         <div class="bank-logo-container rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                             {% if bank.logo %}
                             <img src="{{ bank.logo }}" alt="{{ bank.name }} logo" class="bank-logo-img">
@@ -99,54 +173,92 @@
                             <i data-lucide="building-2" class="w-8 h-8 text-muted"></i>
                             {% endif %}
                         </div>
-                        <div>
+                        <div class="flex-1">
                             <h3 class="font-bold text-lg text-default">{{ bank.name }}</h3>
                             <p class="text-sm text-muted">{{ bank.code }}</p>
+                            {% if bank.website %}
+                            <a href="{{ bank.website }}" target="_blank" class="text-blue-500 text-xs flex items-center gap-1 mt-1 hover:underline">
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                                Visiter
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
-                    
-                    <span class="badge {{ 'badge-success' if bank.is_active else 'badge-error' }} mt-1">
-                        {% if bank.is_active %}Actif{% else %}Inactif{% endif %}
-                    </span>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="badge {{ 'badge-success' if bank.is_active else 'badge-error' }}">
+                            {% if bank.is_active %}Actif{% else %}Inactif{% endif %}
+                        </span>
+                        <button onclick="toggleDetails('{{ bank._id }}')" class="expand-btn text-muted hover:text-primary transition-colors" aria-label="Voir détails">
+                            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                        </button>
+                    </div>
                 </div>
-                
-                {% if bank.website %}
-                <a href="{{ bank.website }}" target="_blank" class="text-blue-500 text-sm flex items-center gap-1.5 mt-3 hover:underline">
-                    <i data-lucide="external-link" class="w-4 h-4"></i>
-                    {{ bank.website | truncate(30) }}
-                </a>
-                {% endif %}
-                
-                {% if bank.description %}
-                <p class="text-sm text-muted mt-4">{{ bank.description | truncate(120) }}</p>
-                {% endif %}
+
+                <!-- Assigned Users Preview -->
+                <div class="mb-3" id="users-preview-{{ bank._id }}">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <!-- Expandable Details -->
+                <div class="bank-details" id="details-{{ bank._id }}">
+                    {% if bank.description %}
+                    <div class="mb-4">
+                        <p class="text-xs font-semibold text-muted mb-1">Description</p>
+                        <p class="text-sm text-default">{{ bank.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <p class="text-xs font-semibold text-muted mb-2">Utilisateurs Assignés</p>
+                        <div class="flex flex-wrap gap-2" id="assigned-users-{{ bank._id }}">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                            <p class="text-xs text-muted mb-1">Créée le</p>
+                            <p class="text-sm font-semibold text-default">{{ bank.created_at.strftime('%d/%m/%Y') if bank.created_at else 'N/A' }}</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                            <p class="text-xs text-muted mb-1">Mise à jour</p>
+                            <p class="text-sm font-semibold text-default">{{ bank.updated_at.strftime('%d/%m/%Y') if bank.updated_at else 'N/A' }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
+
             <!-- Actions -->
-            <div class="border-t border-border p-3">
-                 <div class="flex gap-2 mt-auto">
+            <div class="border-t border-border p-4 bg-slate-50 dark:bg-slate-800/50">
+                <div class="flex gap-2 mb-4">
                     <a href="{{ url_for('admin_banks.edit_bank', bank_id=bank._id) }}" class="btn btn-secondary btn-action">
                         <i data-lucide="edit" class="w-4 h-4"></i>
                         <span>Modifier</span>
                     </a>
-                    <button onclick="deleteBank('{{ bank._id }}', '{{ bank.name }}')" class="btn btn-danger-outline btn-icon" aria-label="Supprimer">
+                    <button onclick="deleteBank('{{ bank._id }}', '{{ bank.name }}')" class="btn btn-danger-outline px-4" aria-label="Supprimer">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <div class="flex items-center gap-3 mt-4">
-                    <div class="flex-grow">
-                        <select id="user-select-{{ bank._id }}" class="input" aria-label="Sélectionner un utilisateur">
-                            <option value="">Assigner un utilisateur...</option>
+
+                <!-- Add User Section -->
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-muted">Ajouter un responsable (bank_respo vérifiés)</label>
+                    <div class="flex items-center gap-2">
+                        <select id="user-select-{{ bank._id }}" class="input rounded-lg px-3 py-2 text-sm flex-1" aria-label="Sélectionner un utilisateur">
+                            <option value="">Sélectionner un responsable...</option>
                             {% for user in users %}
-                                {% if user.role == 'bank_admin' %}
-                                    <option value="{{ user._id }}">{{ user.email }}</option>
-                                {% endif %}
+                                <option value="{{ user._id }}">
+                                    {{ user.full_name or user.email }} {% if user.full_name %}({{ user.email }}){% endif %}
+                                </option>
                             {% endfor %}
                         </select>
+                        <button onclick="assignUserToBank('{{ bank._id }}')" class="btn btn-primary px-4 py-2" aria-label="Ajouter">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        </button>
                     </div>
-                    <button onclick="assignUserToBank('{{ bank._id }}')" class="btn btn-primary" aria-label="Assigner l'utilisateur">
-                        <i data-lucide="check" class="w-5 h-5"></i>
-                    </button>
+                    {% if not users %}
+                    <p class="text-xs text-amber-500">Aucun utilisateur vérifié avec le rôle bank_respo</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -172,10 +284,86 @@
 
 {% block scripts %}
 <script>
+// Bank data structure to store assigned users
+const bankUsers = {
+    {% for bank in banks %}
+    '{{ bank._id }}': {{ bank.get('assigned_users', []) | tojson if bank.get('assigned_users') else '[]' }},
+    {% endfor %}
+};
+
+// User email mapping
+const userEmails = {
+    {% for user in users %}
+    '{{ user._id }}': '{{ user.email }}',
+    {% endfor %}
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Populate assigned users for each bank
+    Object.keys(bankUsers).forEach(bankId => {
+        updateAssignedUsers(bankId);
+    });
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
+function toggleDetails(bankId) {
+    const details = document.getElementById(`details-${bankId}`);
+    const button = event.currentTarget;
+    const icon = button.querySelector('i');
+
+    details.classList.toggle('expanded');
+    icon.classList.toggle('rotated');
+}
+
+function updateAssignedUsers(bankId) {
+    const users = bankUsers[bankId] || [];
+    const container = document.getElementById(`assigned-users-${bankId}`);
+    const preview = document.getElementById(`users-preview-${bankId}`);
+
+    if (!container) return;
+
+    // Update detailed view
+    if (users.length === 0) {
+        container.innerHTML = '<p class="text-xs text-muted italic">Aucun utilisateur assigné</p>';
+        preview.innerHTML = '';
+    } else {
+        container.innerHTML = users.map(userId => {
+            const email = userEmails[userId] || 'Inconnu';
+            return `
+                <div class="user-tag">
+                    <i data-lucide="user" class="w-3 h-3"></i>
+                    <span>${email}</span>
+                    <div class="remove-btn" onclick="removeUserFromBank('${bankId}', '${userId}')">
+                        <i data-lucide="x" class="w-3 h-3 text-red-500"></i>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Update preview
+        preview.innerHTML = `
+            <div class="flex items-center gap-2 text-xs">
+                <i data-lucide="users" class="w-3 h-3 text-muted"></i>
+                <span class="text-muted">${users.length} responsable(s)</span>
+            </div>
+        `;
+    }
+
+    // Reinitialize icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
 function filterBanks() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const cards = document.querySelectorAll('.bank-card');
-    
+
     cards.forEach(card => {
         const name = card.dataset.name || '';
         const code = card.dataset.code || '';
@@ -192,11 +380,13 @@ function assignUserToBank(bankId) {
     const userId = userSelect.value;
 
     if (!userId) {
-        alert("Veuillez sélectionner un utilisateur.");
+        SarfXNotify.warning("Veuillez sélectionner un utilisateur.");
         return;
     }
 
-    if (!confirm('Êtes-vous sûr de vouloir assigner cet utilisateur à cette banque?')) {
+    // Check if user is already assigned
+    if (bankUsers[bankId] && bankUsers[bankId].includes(userId)) {
+        SarfXNotify.warning("Cet utilisateur est déjà assigné à cette banque.");
         return;
     }
 
@@ -210,18 +400,62 @@ function assignUserToBank(bankId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Add user to local array
+            if (!bankUsers[bankId]) {
+                bankUsers[bankId] = [];
+            }
+            bankUsers[bankId].push(userId);
+
+            // Update UI
+            updateAssignedUsers(bankId);
+
+            // Reset select
+            userSelect.value = '';
+
             SarfXNotify.success(data.message || 'Utilisateur assigné avec succès!');
-            setTimeout(() => location.reload(), 2000);
         } else {
             SarfXNotify.error('Erreur: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Erreur:', error);
-        SarfXNotify.error('Une erreur est survenue lors de l’assignation.');
+        SarfXNotify.error('Une erreur est survenue lors de l'assignation.');
     });
 }
 
+function removeUserFromBank(bankId, userId) {
+    if (!confirm('Retirer cet utilisateur de cette banque?')) {
+        return;
+    }
+
+    fetch(`/admin/banks/${bankId}/remove-user`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove user from local array
+            if (bankUsers[bankId]) {
+                bankUsers[bankId] = bankUsers[bankId].filter(id => id !== userId);
+            }
+
+            // Update UI
+            updateAssignedUsers(bankId);
+
+            SarfXNotify.success('Utilisateur retiré avec succès!');
+        } else {
+            SarfXNotify.error('Erreur: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        SarfXNotify.error('Une erreur est survenue.');
+    });
+}
 
 function deleteBank(bankId, bankName) {
     if (confirm(`Êtes-vous sûr de vouloir supprimer la banque "${bankName}"? Cette action est irréversible.`)) {
@@ -235,7 +469,11 @@ function deleteBank(bankId, bankName) {
         .then(data => {
             if (data.success) {
                 SarfXNotify.success(data.message || 'Banque supprimée avec succès.');
-                document.querySelector(`[data-code="${bankName.toLowerCase()}"]`).remove();
+                const card = document.getElementById(`bank-${bankId}`);
+                if (card) {
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 300);
+                }
             } else {
                 SarfXNotify.error('Erreur: ' + (data.message || 'Impossible de supprimer la banque.'));
             }

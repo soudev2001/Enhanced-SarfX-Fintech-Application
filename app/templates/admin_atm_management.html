@@ -137,18 +137,45 @@
 </div>
 
 <script>
+let editingATMId = null;
+
 function openAddATMModal() {
+    editingATMId = null;
+    document.querySelector('#atm-modal h2').textContent = 'Ajouter un ATM';
+    document.getElementById('atm-form').reset();
     document.getElementById('atm-modal').style.display = 'flex';
 }
 
 function closeATMModal() {
     document.getElementById('atm-modal').style.display = 'none';
     document.getElementById('atm-form').reset();
+    editingATMId = null;
 }
 
 function editATM(atmId) {
-    // TODO: Implémenter la modification
-    alert('Modification ATM: ' + atmId);
+    editingATMId = atmId;
+    document.querySelector('#atm-modal h2').textContent = 'Modifier l\'ATM';
+
+    // Récupérer les données de l'ATM
+    fetch('/api/atms/' + atmId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.atm) {
+                const atm = data.atm;
+                const form = document.getElementById('atm-form');
+                form.querySelector('[name="name"]').value = atm.name || '';
+                form.querySelector('[name="address"]').value = atm.address || '';
+                form.querySelector('[name="city"]').value = atm.city || '';
+                form.querySelector('[name="latitude"]').value = atm.latitude || '';
+                form.querySelector('[name="longitude"]').value = atm.longitude || '';
+                document.getElementById('atm-modal').style.display = 'flex';
+            } else {
+                showNotification('Erreur lors de la récupération des données', 'error');
+            }
+        })
+        .catch(() => {
+            showNotification('Erreur de connexion', 'error');
+        });
 }
 
 function deleteATM(atmId) {
@@ -170,12 +197,15 @@ function deleteATM(atmId) {
 
 document.getElementById('atm-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
-    
-    fetch('/api/atms', {
-        method: 'POST',
+
+    const url = editingATMId ? '/api/atms/' + editingATMId : '/api/atms';
+    const method = editingATMId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
         headers: {
             'Content-Type': 'application/json'
         },
@@ -184,11 +214,14 @@ document.getElementById('atm-form').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('ATM ajouté avec succès', 'success');
+            showNotification(editingATMId ? 'ATM modifié avec succès' : 'ATM ajouté avec succès', 'success');
             setTimeout(() => location.reload(), 1000);
         } else {
-            showNotification('Erreur lors de l\'ajout', 'error');
+            showNotification(data.error || 'Erreur lors de l\'opération', 'error');
         }
+    })
+    .catch(() => {
+        showNotification('Erreur de connexion', 'error');
     });
 });
 

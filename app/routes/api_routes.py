@@ -66,7 +66,7 @@ def seed_demo_users():
 
     demo_users = [
         {"email": "admin@sarfx.io", "password": "admin123", "name": "Admin SarfX", "role": "admin"},
-        {"email": "bank@sarfx.io", "password": "bank123", "name": "Bank Manager", "role": "bank_admin"},
+        {"email": "bank@sarfx.io", "password": "bank123", "name": "Bank Manager", "role": "bank_respo"},
         {"email": "user@sarfx.io", "password": "user123", "name": "Demo User", "role": "user"}
     ]
 
@@ -114,7 +114,7 @@ def seed_demo_users():
         "message": "Demo users seeded successfully",
         "accounts": [
             {"email": "admin@sarfx.io", "password": "admin123", "role": "admin"},
-            {"email": "bank@sarfx.io", "password": "bank123", "role": "bank_admin"},
+            {"email": "bank@sarfx.io", "password": "bank123", "role": "bank_respo"},
             {"email": "user@sarfx.io", "password": "user123", "role": "user"}
         ]
     })
@@ -1312,6 +1312,120 @@ def toggle_favorite_beneficiary(beneficiary_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# ==================== BANK CARDS ====================
+
+@api_bp.route('/cards', methods=['GET'])
+@login_required_api
+def get_user_cards():
+    """Récupère les cartes bancaires de l'utilisateur"""
+    try:
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+
+        user_id = session.get('user_id')
+        cards = list(db.user_cards.find({"user_id": str(user_id)}).sort("created_at", -1))
+
+        # Convertir ObjectId en string
+        for card in cards:
+            card['_id'] = str(card['_id'])
+
+        return jsonify({
+            "success": True,
+            "cards": cards
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/cards', methods=['POST'])
+@login_required_api
+def add_user_card():
+    """Ajoute une carte bancaire (stocke uniquement les 4 derniers chiffres)"""
+    try:
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+
+        user_id = session.get('user_id')
+        data = request.json
+
+        last_four = data.get('last_four', '')
+        expiry = data.get('expiry', '')
+        holder_name = data.get('holder_name', '')
+
+        # Validation
+        if not last_four or len(last_four) != 4 or not last_four.isdigit():
+            return jsonify({"success": False, "error": "4 derniers chiffres invalides"}), 400
+
+        if not expiry or len(expiry) != 5 or '/' not in expiry:
+            return jsonify({"success": False, "error": "Date d'expiration invalide (format MM/AA)"}), 400
+
+        if not holder_name or len(holder_name) < 2:
+            return jsonify({"success": False, "error": "Nom du titulaire requis"}), 400
+
+        # Vérifier si la carte existe déjà
+        existing = db.user_cards.find_one({
+            "user_id": str(user_id),
+            "last_four": last_four,
+            "expiry": expiry
+        })
+
+        if existing:
+            return jsonify({"success": False, "error": "Cette carte existe déjà"}), 400
+
+        # Créer la carte (JAMAIS stocker le numéro complet ou le CVV)
+        card = {
+            "user_id": str(user_id),
+            "last_four": last_four,
+            "expiry": expiry,
+            "holder_name": holder_name.upper(),
+            "created_at": datetime.utcnow()
+        }
+
+        result = db.user_cards.insert_one(card)
+        card['_id'] = str(result.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "card": card,
+            "message": "Carte ajoutée avec succès"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/cards/<card_id>', methods=['DELETE'])
+@login_required_api
+def delete_user_card(card_id):
+    """Supprime une carte bancaire"""
+    try:
+        from bson import ObjectId
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 500
+
+        user_id = session.get('user_id')
+
+        # Vérifier que la carte appartient à l'utilisateur
+        card = db.user_cards.find_one({
+            "_id": ObjectId(card_id),
+            "user_id": str(user_id)
+        })
+
+        if not card:
+            return jsonify({"success": False, "error": "Carte non trouvée"}), 404
+
+        db.user_cards.delete_one({"_id": ObjectId(card_id)})
+
+        return jsonify({
+            "success": True,
+            "message": "Carte supprimée avec succès"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ==================== BANK SETTINGS (for bank_respo) ====================
 
 @api_bp.route('/bank-settings', methods=['POST'])
@@ -1742,7 +1856,7 @@ def manage_atms():
         user_id = session.get('user_id')
         user = db.users.find_one({"_id": ObjectId(user_id)})
 
-        if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
+        if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank', 'bank_respo']:
             return jsonify({"success": False, "error": "Non autorisé"}), 403
 
         data = request.get_json()
@@ -1773,7 +1887,7 @@ def manage_atm(atm_id):
     user_id = session.get('user_id')
     user = db.users.find_one({"_id": ObjectId(user_id)})
 
-    if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
+    if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank', 'bank_respo']:
         return jsonify({"success": False, "error": "Non autorisé"}), 403
 
     if request.method == 'DELETE':
