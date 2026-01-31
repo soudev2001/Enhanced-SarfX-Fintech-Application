@@ -105,6 +105,7 @@ class Config:
             "https://www.googleapis.com",
             "https://unpkg.com",
             "https://cdn.jsdelivr.net",
+            "https://api.frankfurter.app",  # Currency exchange rates API
         ],
         'frame-src': ["'self'", "https://accounts.google.com"],
     }
