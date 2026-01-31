@@ -29,25 +29,25 @@
         <!-- Search -->
         <div class="relative">
             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted"></i>
-            <input type="text" id="search-input" onkeyup="filterTransactions()" placeholder="Rechercher par email, ID..." 
+            <input type="text" id="search-input" onkeyup="filterTransactions()" placeholder="Rechercher par email, ID..."
                    class="input w-full rounded-xl pl-10 pr-4 py-2 text-sm">
         </div>
-        
+
         <!-- Status Filters -->
         <div class="flex gap-2 overflow-x-auto pb-1">
-            <a href="{{ url_for('admin.transactions') }}" 
+            <a href="{{ url_for('admin.transactions') }}"
                class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'bg-blue-500 text-white' if not request.args.get('status') else 'card text-muted' }}">
                 Toutes
             </a>
-            <a href="{{ url_for('admin.transactions', status='completed') }}" 
+            <a href="{{ url_for('admin.transactions', status='completed') }}"
                class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'badge badge-success' if request.args.get('status') == 'completed' else 'card text-muted' }}">
                 Complétées
             </a>
-            <a href="{{ url_for('admin.transactions', status='pending') }}" 
+            <a href="{{ url_for('admin.transactions', status='pending') }}"
                class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'badge badge-warning' if request.args.get('status') == 'pending' else 'card text-muted' }}">
                 En attente
             </a>
-            <a href="{{ url_for('admin.transactions', status='failed') }}" 
+            <a href="{{ url_for('admin.transactions', status='failed') }}"
                class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap {{ 'badge badge-error' if request.args.get('status') == 'failed' else 'card text-muted' }}">
                 Échouées
             </a>
@@ -76,10 +76,10 @@
                     <p class="text-xs text-muted">→ {{ "{:,.2f}".format(tx.final_amount or 0) }} {{ tx.to_currency or '?' }}</p>
                 </div>
             </div>
-            
+
             <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded-full 
+                    <span class="px-2 py-0.5 rounded-full
                         {% if tx.status == 'completed' %}badge badge-success
                         {% elif tx.status == 'pending' %}badge badge-warning
                         {% else %}badge badge-error{% endif %}">
@@ -89,9 +89,10 @@
                         {{ tx.created_at.strftime('%d/%m/%Y %H:%M') if tx.created_at else '--' }}
                     </span>
                 </div>
-                
+
                 <!-- Status Update -->
                 <form action="{{ url_for('admin.update_transaction_status', tx_id=(tx.transaction_id or tx._id|string)) }}" method="POST" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <select name="status" onchange="this.form.submit()" class="input rounded px-2 py-1 text-xs bg-transparent">
                         <option value="pending" {{ 'selected' if tx.status == 'pending' else '' }}>En attente</option>
                         <option value="completed" {{ 'selected' if tx.status == 'completed' else '' }}>Complétée</option>
@@ -99,7 +100,7 @@
                     </select>
                 </form>
             </div>
-            
+
             {% if tx.recipient_name %}
             <div class="bg-slate-800/30 p-2 rounded-lg text-xs">
                 <span class="text-muted">Bénéficiaire:</span>
@@ -151,11 +152,11 @@
 function filterTransactions() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const cards = document.querySelectorAll('.tx-card');
-    
+
     cards.forEach(card => {
         const email = card.dataset.email || '';
         const id = card.dataset.id || '';
-        
+
         const matches = email.includes(search) || id.includes(search);
         card.style.display = matches ? 'block' : 'none';
     });

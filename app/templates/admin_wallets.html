@@ -163,6 +163,7 @@
             <!-- Adjust Form -->
             <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.get('wallet_id', '')) }}" method="POST" class="space-y-2 adjust-form"
                   data-balances='{{ wallet.get("balances", {}) | tojson }}'>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="flex gap-2">
                     <select name="currency" class="currency-select input rounded-lg px-3 py-2 text-xs flex-1 bg-slate-800/50 border-slate-700 text-default">
                         <option value="USD" data-balance="{{ wallet.get('balances', {}).get('USD', 0) }}">🇺🇸 USD</option>

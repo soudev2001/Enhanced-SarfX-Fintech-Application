@@ -20,7 +20,7 @@
         <div class="flex gap-3">
             <div class="flex-1 relative">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
-                <input type="text" id="search-input" placeholder="Rechercher par nom, email, IBAN..." 
+                <input type="text" id="search-input" placeholder="Rechercher par nom, email, IBAN..."
                        class="w-full pl-10 pr-4 py-2 input rounded-lg text-sm"
                        onkeyup="filterBeneficiaries()">
             </div>
@@ -37,8 +37,8 @@
     <!-- Beneficiaries List -->
     <div class="space-y-3" id="beneficiaries-list">
         {% for ben in beneficiaries %}
-        <div class="card p-4 rounded-xl beneficiary-card" 
-             data-name="{{ ben.name | lower }}" 
+        <div class="card p-4 rounded-xl beneficiary-card"
+             data-name="{{ ben.name | lower }}"
              data-email="{{ ben.email | lower if ben.email else '' }}"
              data-iban="{{ ben.iban | lower if ben.iban else '' }}"
              data-bank="{{ ben.bank_code | lower if ben.bank_code else '' }}">
@@ -61,15 +61,16 @@
                         {{ ben.bank_code | upper }}
                     </span>
                     {% endif %}
-                    <form action="{{ url_for('admin.delete_beneficiary', ben_id=ben._id) }}" method="POST" 
+                    <form action="{{ url_for('admin.delete_beneficiary', ben_id=ben._id) }}" method="POST"
                           onsubmit="return confirm('Supprimer ce bénéficiaire?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-red-500 hover:text-red-400 transition">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </form>
                 </div>
             </div>
-            
+
             <!-- Owner Info -->
             <div class="mt-3 pt-3 border-t border-border flex justify-between items-center">
                 <div class="flex items-center gap-2">
@@ -86,7 +87,7 @@
             </div>
         </div>
         {% endfor %}
-        
+
         {% if not beneficiaries %}
         <div class="card p-12 rounded-xl text-center">
             <i data-lucide="contact" class="w-16 h-16 text-muted mx-auto mb-4"></i>
@@ -149,16 +150,16 @@ function filterBeneficiaries() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const bankFilter = document.getElementById('filter-bank').value.toLowerCase();
     const cards = document.querySelectorAll('.beneficiary-card');
-    
+
     cards.forEach(card => {
         const name = card.dataset.name || '';
         const email = card.dataset.email || '';
         const iban = card.dataset.iban || '';
         const bank = card.dataset.bank || '';
-        
+
         const matchesSearch = name.includes(search) || email.includes(search) || iban.includes(search);
         const matchesBank = !bankFilter || bank.includes(bankFilter);
-        
+
         card.style.display = (matchesSearch && matchesBank) ? 'block' : 'none';
     });
 }

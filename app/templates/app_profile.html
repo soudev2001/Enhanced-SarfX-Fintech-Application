@@ -110,6 +110,7 @@
         <h3 class="wise-empty-title">Aucun Portefeuille</h3>
         <p class="wise-empty-text">Créez votre premier portefeuille pour commencer</p>
         <form action="{{ url_for('api.create_wallet') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="wise-btn wise-btn-primary">
                 <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
                 Créer un portefeuille

@@ -37,6 +37,7 @@
     <!-- Upload Form -->
     <div class="card p-6 rounded-xl">
         <form method="POST" enctype="multipart/form-data" id="import-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div id="dropzone" class="border-2 border-dashed border-border rounded-xl p-12 text-center cursor-pointer hover:border-primary transition">
                 <input type="file" name="file" id="file-input" accept=".csv" class="hidden" required>
                 <i data-lucide="upload-cloud" class="w-16 h-16 mx-auto text-muted mb-4"></i>

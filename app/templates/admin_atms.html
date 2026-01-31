@@ -194,6 +194,7 @@
                     </button>
                     <form action="{{ url_for('admin.delete_atm', atm_id=atm.atm_id) }}" method="POST" class="inline"
                           onsubmit="return confirm('Supprimer cet ATM ?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition" title="Supprimer">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>

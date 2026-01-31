@@ -308,6 +308,7 @@
             </div>
         </div>
         <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="amount" id="form-amount">
             <input type="hidden" name="from_currency" id="form-from-currency">
             <input type="hidden" name="to_currency" id="form-to-currency" value="MAD">

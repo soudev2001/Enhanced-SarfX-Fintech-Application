@@ -368,6 +368,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('app.send_to_beneficiary', beneficiary_id=beneficiary._id) }}" class="send-body" id="sendForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <!-- Beneficiary Preview -->
                 <div class="beneficiary-preview">

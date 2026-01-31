@@ -241,6 +241,7 @@
         </a>
         <form action="{{ url_for('admin.delete_atm', atm_id=atm.atm_id) }}" method="POST" class="flex-1"
               onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet ATM ?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="w-full btn btn-ghost py-4 rounded-xl font-bold text-rose-500">
                 <i data-lucide="trash-2" class="w-5 h-5 mr-2 inline"></i>
                 Supprimer

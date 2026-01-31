@@ -15,7 +15,7 @@
         <h1 class="wise-page-title">Réglages</h1>
         <p class="wise-page-subtitle">Personnalisez votre expérience SarfX</p>
     </div>
-    
+
     <!-- Theme Toggle -->
     <div class="wise-section wise-setting-row">
         <div class="wise-setting-info">
@@ -40,7 +40,7 @@
             </div>
             Compte
         </h3>
-        
+
         <div class="wise-account-list">
             <div class="wise-account-item">
                 <span class="wise-account-label">
@@ -81,7 +81,7 @@
                 <p class="wise-admin-subtitle">Accès réservé aux administrateurs</p>
             </div>
         </div>
-        
+
         <!-- Admin Links -->
         <div class="wise-admin-grid">
             <a href="{{ url_for('admin.dashboard') }}" class="wise-admin-card">
@@ -94,7 +94,7 @@
                 </div>
                 <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
             </a>
-            
+
             <a href="{{ url_for('admin.users') }}" class="wise-admin-card">
                 <div class="wise-admin-card-icon" style="background: rgba(168, 85, 247, 0.15);">
                     <i data-lucide="users" style="width: 22px; height: 22px; color: #a855f7;"></i>
@@ -105,7 +105,7 @@
                 </div>
                 <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
             </a>
-            
+
             <a href="{{ url_for('suppliers.list_suppliers') }}" class="wise-admin-card">
                 <div class="wise-admin-card-icon wise-bg-info">
                     <i data-lucide="building-2" class="wise-status-info" style="width: 22px; height: 22px;"></i>
@@ -116,7 +116,7 @@
                 </div>
                 <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
             </a>
-            
+
             <a href="{{ url_for('admin.wallets') }}" class="wise-admin-card">
                 <div class="wise-admin-card-icon wise-bg-warning">
                     <i data-lucide="wallet" class="wise-status-warning" style="width: 22px; height: 22px;"></i>
@@ -127,7 +127,7 @@
                 </div>
                 <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
             </a>
-            
+
             <a href="{{ url_for('admin.transactions') }}" class="wise-admin-card">
                 <div class="wise-admin-card-icon wise-bg-error">
                     <i data-lucide="receipt" class="wise-status-error" style="width: 22px; height: 22px;"></i>
@@ -149,13 +149,14 @@
                 Configuration API IA
             </h4>
             <form action="{{ url_for('api.save_settings') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="wise-form-group">
                     <label class="wise-form-label">
                         <i data-lucide="link" style="width: 14px; height: 14px;"></i>
                         URL Backend
                     </label>
-                    <input type="text" name="ai_backend_url" 
-                           value="{{ settings.ai_backend_url | default('https://sarfx-backend-ai-618432953337.europe-west1.run.app') }}" 
+                    <input type="text" name="ai_backend_url"
+                           value="{{ settings.ai_backend_url | default('https://sarfx-backend-ai-618432953337.europe-west1.run.app') }}"
                            class="wise-form-input">
                 </div>
                 <button type="submit" class="wise-btn wise-btn-primary" style="width: 100%; margin-top: 16px;">

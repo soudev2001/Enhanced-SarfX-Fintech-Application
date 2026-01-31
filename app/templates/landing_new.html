@@ -418,6 +418,7 @@
             </div>
 
             <form id="login-form" method="POST" action="/login" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <!-- Error Message -->
                 <div id="login-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm"></div>
 
