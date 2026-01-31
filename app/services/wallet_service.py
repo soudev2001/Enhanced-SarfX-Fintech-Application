@@ -48,6 +48,25 @@ def get_wallet_by_user_id(user_id):
     return wallet, None
 
 
+def create_wallet(user_id, email=None):
+    """
+    Public function to create a wallet for a new user.
+    Called from auth_routes when a new user registers.
+    
+    Args:
+        user_id: The user's ID (string)
+        email: The user's email (optional, for logging)
+    
+    Returns:
+        tuple: (wallet, error_message)
+    """
+    db = get_db()
+    if db is None:
+        return None, "Database connection failed"
+    
+    return _create_wallet(user_id, db)
+
+
 def _create_wallet(user_id, db):
     """
     Creates a new wallet for a user with default currencies.
