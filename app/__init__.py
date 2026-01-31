@@ -39,4 +39,31 @@ def create_app():
     def internal_server_error(e):
         return render_template('500.html', error=e), 500
 
+    # Custom Jinja2 filters
+    @app.template_filter('get_flag')
+    def get_flag(currency):
+        flags = {
+            'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧', 'MAD': '🇲🇦',
+            'CHF': '🇨🇭', 'CAD': '🇨🇦', 'AED': '🇦🇪', 'SAR': '🇸🇦'
+        }
+        return flags.get(currency, '💵')
+
+    @app.template_filter('get_transaction_icon')
+    def get_transaction_icon(transaction_type):
+        icons = {
+            'deposit': 'arrow-down-left',
+            'withdrawal': 'arrow-up-right',
+            'transfer': 'arrow-right-left'
+        }
+        return icons.get(transaction_type, 'activity')
+
+    @app.template_filter('number_format')
+    def number_format(value):
+        if isinstance(value, (int, float)):
+            try:
+                return f"{int(value):,}"
+            except (ValueError, TypeError):
+                return value
+        return value
+
     return app

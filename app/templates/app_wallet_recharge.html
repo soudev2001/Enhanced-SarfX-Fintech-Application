@@ -1,0 +1,676 @@
+{% extends "app_base.html" %}
+
+{% block title %}Recharger mon Portefeuille - SarfX{% endblock %}
+
+{% block extra_head %}
+<style>
+    .recharge-container {
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .recharge-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .recharge-header {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(224, 90, 3, 0.15));
+        padding: 28px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .recharge-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text-default);
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .recharge-header p {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .recharge-body {
+        padding: 28px;
+    }
+
+    /* Card Visual */
+    .card-visual {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        border-radius: 16px;
+        padding: 24px;
+        color: white;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-visual::before {
+        content: '';
+        position: absolute;
+        top: -60%;
+        right: -30%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(224, 90, 3, 0.4) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .card-visual::after {
+        content: '';
+        position: absolute;
+        bottom: -40%;
+        left: -20%;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .card-logo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .card-logo .sarfx-logo {
+        font-size: 20px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #e05a03, #ff8c42);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .card-chip {
+        width: 45px;
+        height: 35px;
+        background: linear-gradient(135deg, #ffd700, #ffaa00);
+        border-radius: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .card-chip::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 70%;
+        height: 60%;
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+    }
+
+    .card-number {
+        font-family: 'SF Mono', 'Courier New', monospace;
+        font-size: 22px;
+        letter-spacing: 4px;
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-details {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        text-transform: uppercase;
+        position: relative;
+        z-index: 1;
+    }
+
+    .card-details span {
+        opacity: 0.7;
+    }
+
+    .card-details strong {
+        display: block;
+        font-size: 14px;
+        margin-top: 4px;
+        letter-spacing: 1px;
+    }
+
+    /* Input Group */
+    .card-input-group {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .card-input-group:focus-within {
+        border-color: var(--brand-orange);
+        box-shadow: 0 0 0 4px rgba(224, 90, 3, 0.1);
+    }
+
+    .card-input-group h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-default);
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .input-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .input-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .input-group {
+        flex: 1;
+    }
+
+    .input-group label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .input-group input,
+    .input-group select {
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 16px;
+        color: var(--text-default);
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+        border-color: var(--brand-orange);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(224, 90, 3, 0.1);
+    }
+
+    .input-group input::placeholder {
+        color: var(--text-muted);
+        opacity: 0.6;
+    }
+
+    /* Amount Section */
+    .amount-section {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(224, 90, 3, 0.05));
+        border: 2px solid rgba(34, 197, 94, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .amount-section h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #22c55e;
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .amount-presets {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .amount-preset {
+        padding: 14px 8px;
+        background: var(--card-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--text-default);
+        transition: all 0.2s ease;
+    }
+
+    .amount-preset:hover {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: #22c55e;
+        color: #22c55e;
+        transform: translateY(-2px);
+    }
+
+    .amount-preset.active {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-color: #22c55e;
+        color: white;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Submit Button */
+    .recharge-btn {
+        width: 100%;
+        padding: 18px 24px;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+    }
+
+    .recharge-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(34, 197, 94, 0.4);
+    }
+
+    .recharge-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Secure Badge */
+    .secure-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
+        padding: 12px;
+        background: rgba(34, 197, 94, 0.1);
+        border-radius: 10px;
+        font-size: 13px;
+        color: #22c55e;
+        font-weight: 500;
+    }
+
+    /* Test Card Info */
+    .test-card-info {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 14px;
+        padding: 18px;
+        margin-top: 24px;
+    }
+
+    .test-card-info h4 {
+        color: #3b82f6;
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .test-card-info p {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .test-card-info code {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-family: 'SF Mono', monospace;
+        font-size: 13px;
+        color: #a78bfa;
+    }
+
+    /* Balance Display */
+    .current-balances {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .current-balances h4 {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 0 0 12px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .balance-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .balance-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .balance-chip .flag {
+        font-size: 16px;
+    }
+
+    @media (max-width: 480px) {
+        .recharge-container {
+            padding: 0 8px;
+        }
+
+        .recharge-body {
+            padding: 20px;
+        }
+
+        .card-number {
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+
+        .amount-presets {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .input-row {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+
+    <!-- Back Button -->
+    <a href="{{ url_for('app.wallets') }}" class="inline-flex items-center gap-2 text-muted hover:text-default transition">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span class="text-sm">Retour aux portefeuilles</span>
+    </a>
+
+    <div class="recharge-container">
+        <div class="recharge-card">
+            <div class="recharge-header">
+                <h1>
+                    <i data-lucide="credit-card" class="w-7 h-7 text-green-500"></i>
+                    Recharger mon Portefeuille
+                </h1>
+                <p>Ajoutez des fonds instantanément via carte bancaire</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('app.wallet_recharge') }}" class="recharge-body" id="rechargeForm">
+
+                <!-- Current Balances -->
+                <div class="current-balances">
+                    <h4>Soldes actuels</h4>
+                    <div class="balance-chips">
+                        {% for currency, balance in wallet.balances.items() %}
+                        <div class="balance-chip">
+                            <span class="flag">
+                                {% if currency == 'USD' %}🇺🇸{% elif currency == 'EUR' %}🇪🇺{% elif currency == 'GBP' %}🇬🇧{% elif currency == 'MAD' %}🇲🇦{% elif currency == 'CHF' %}🇨🇭{% elif currency == 'CAD' %}🇨🇦{% elif currency == 'AED' %}🇦🇪{% elif currency == 'SAR' %}🇸🇦{% else %}💵{% endif %}
+                            </span>
+                            <span>{{ "%.2f"|format(balance) }} {{ currency }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Card Visual -->
+                <div class="card-visual">
+                    <div class="card-logo">
+                        <span class="sarfx-logo">SarfX</span>
+                        <div class="card-chip"></div>
+                    </div>
+                    <div class="card-number" id="cardPreview">4242 4242 4242 4242</div>
+                    <div class="card-details">
+                        <div>
+                            <span>Titulaire</span>
+                            <strong id="namePreview">JEAN DUPONT</strong>
+                        </div>
+                        <div>
+                            <span>Expire</span>
+                            <strong id="expiryPreview">12/28</strong>
+                        </div>
+                        <div>
+                            <span>CVV</span>
+                            <strong>•••</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Details Input -->
+                <div class="card-input-group">
+                    <h3>
+                        <i data-lucide="credit-card" class="w-4 h-4 text-amber-500"></i>
+                        Informations de la carte
+                    </h3>
+
+                    <div class="input-group" style="margin-bottom: 16px;">
+                        <label>Numéro de carte</label>
+                        <input type="text"
+                               name="card_number"
+                               id="cardNumber"
+                               value="4242 4242 4242 4242"
+                               placeholder="4242 4242 4242 4242"
+                               maxlength="19"
+                               autocomplete="cc-number"
+                               required>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Date d'expiration</label>
+                            <input type="text"
+                                   name="card_expiry"
+                                   id="cardExpiry"
+                                   value="12/28"
+                                   placeholder="MM/AA"
+                                   maxlength="5"
+                                   autocomplete="cc-exp"
+                                   required>
+                        </div>
+                        <div class="input-group">
+                            <label>Code CVV</label>
+                            <input type="text"
+                                   name="card_cvv"
+                                   id="cardCvv"
+                                   value="123"
+                                   placeholder="123"
+                                   maxlength="4"
+                                   autocomplete="cc-csc"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-top: 16px;">
+                        <label>Nom sur la carte</label>
+                        <input type="text"
+                               name="card_name"
+                               id="cardName"
+                               value="JEAN DUPONT"
+                               placeholder="JEAN DUPONT"
+                               autocomplete="cc-name"
+                               style="text-transform: uppercase;"
+                               required>
+                    </div>
+                </div>
+
+                <!-- Amount Section -->
+                <div class="amount-section">
+                    <h3>
+                        <i data-lucide="coins" class="w-4 h-4"></i>
+                        Montant à recharger
+                    </h3>
+
+                    <div class="amount-presets">
+                        <div class="amount-preset" onclick="setAmount(50)">50</div>
+                        <div class="amount-preset" onclick="setAmount(100)">100</div>
+                        <div class="amount-preset" onclick="setAmount(250)">250</div>
+                        <div class="amount-preset" onclick="setAmount(500)">500</div>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-group" style="flex: 2;">
+                            <label>Montant personnalisé</label>
+                            <input type="number"
+                                   name="amount"
+                                   id="rechargeAmount"
+                                   placeholder="100.00"
+                                   step="0.01"
+                                   min="10"
+                                   max="10000"
+                                   required>
+                        </div>
+                        <div class="input-group">
+                            <label>Devise</label>
+                            <select name="currency" id="rechargeCurrency">
+                                {% for currency in wallet.balances.keys() %}
+                                <option value="{{ currency }}" {% if currency == 'EUR' %}selected{% endif %}>
+                                    {% if currency == 'USD' %}🇺🇸{% elif currency == 'EUR' %}🇪🇺{% elif currency == 'GBP' %}🇬🇧{% elif currency == 'MAD' %}🇲🇦{% elif currency == 'CHF' %}🇨🇭{% elif currency == 'CAD' %}🇨🇦{% elif currency == 'AED' %}🇦🇪{% elif currency == 'SAR' %}🇸🇦{% endif %} {{ currency }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="recharge-btn" id="submitBtn">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    <span>Recharger maintenant</span>
+                </button>
+
+                <!-- Secure Badge -->
+                <div class="secure-badge">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    Paiement sécurisé avec chiffrement 256-bit SSL
+                </div>
+
+                <!-- Test Card Info -->
+                <div class="test-card-info">
+                    <h4>
+                        <i data-lucide="flask-conical" class="w-4 h-4"></i>
+                        Mode Démonstration
+                    </h4>
+                    <p>
+                        Pour tester, utilisez la carte : <code>4242 4242 4242 4242</code><br>
+                        Avec n'importe quelle date future (ex: 12/28) et CVV (ex: 123)
+                    </p>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Card number formatting & preview
+    const cardNumberInput = document.getElementById('cardNumber');
+    cardNumberInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/g, '');
+        let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formatted;
+
+        // Update preview
+        const preview = document.getElementById('cardPreview');
+        if (formatted.length > 0) {
+            preview.textContent = formatted.padEnd(19, '•').replace(/(\d{4})/g, '$1 ').trim();
+        } else {
+            preview.textContent = '•••• •••• •••• ••••';
+        }
+    });
+
+    // Expiry formatting
+    const expiryInput = document.getElementById('cardExpiry');
+    expiryInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length >= 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        }
+        e.target.value = value;
+        document.getElementById('expiryPreview').textContent = value || 'MM/AA';
+    });
+
+    // Name preview
+    const nameInput = document.getElementById('cardName');
+    nameInput.addEventListener('input', function(e) {
+        const value = e.target.value.toUpperCase();
+        e.target.value = value;
+        document.getElementById('namePreview').textContent = value || 'VOTRE NOM';
+    });
+
+    // CVV hide (just for show)
+    const cvvInput = document.getElementById('cardCvv');
+    cvvInput.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+
+    // Form submission
+    document.getElementById('rechargeForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = `
+            <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+            <span>Traitement en cours...</span>
+        `;
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+});
+
+// Set amount from preset
+function setAmount(amount) {
+    document.getElementById('rechargeAmount').value = amount;
+
+    // Update active state
+    document.querySelectorAll('.amount-preset').forEach(preset => {
+        preset.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

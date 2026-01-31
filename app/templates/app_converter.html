@@ -22,33 +22,56 @@
                 <div class="wise-field-input">
                     <input type="number" id="smart-amount" value="1000" min="0" class="wise-amount-input" placeholder="0.00">
                     <select id="from-currency" class="wise-currency-select">
-                        <option value="USD" selected>🇺🇸 USD</option>
-                        <option value="EUR">🇪🇺 EUR</option>
-                        <option value="GBP">🇬🇧 GBP</option>
-                        <option value="CHF">🇨🇭 CHF</option>
-                        <option value="CAD">🇨🇦 CAD</option>
+                        <option value="USD" selected>🇺🇸 USD ($)</option>
+                        <option value="EUR">🇪🇺 EUR (€)</option>
+                        <option value="GBP">🇬🇧 GBP (£)</option>
+                        <option value="CHF">🇨🇭 CHF (Fr)</option>
+                        <option value="CAD">🇨🇦 CAD ($)</option>
                     </select>
                 </div>
+                <!-- Affichage du solde disponible -->
+                {% if wallet and wallet.balances %}
+                <div class="wise-balance-indicator" id="balance-indicator">
+                    <i data-lucide="wallet" style="width: 14px; height: 14px;"></i>
+                    <span>Solde disponible: <strong id="available-balance">--</strong></span>
+                </div>
+                <div class="wise-balance-warning" id="balance-warning" style="display: none;">
+                    <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                    <span>Solde insuffisant!</span>
+                </div>
+                {% endif %}
             </div>
-            
+
             <div class="wise-exchange-arrow">
                 <i data-lucide="arrow-right" style="width: 24px; height: 24px;"></i>
             </div>
-            
+
             <div class="wise-exchange-field">
                 <label class="wise-field-label">Le bénéficiaire reçoit</label>
                 <div class="wise-field-input">
-                    <input type="text" id="recipient-amount" value="--" class="wise-amount-input wise-amount-result" readonly>
-                    <select id="to-currency" class="wise-currency-select" onchange="calculateExchange()">
-                        <option value="EUR">🇪🇺 EUR</option>
-                        <option value="MAD" selected>🇲🇦 MAD</option>
-                        <option value="GBP">🇬🇧 GBP</option>
-                        <option value="USD">🇺🇸 USD</option>
+                    <input type="text" id="recipient-amount" value="" class="wise-amount-input wise-amount-result" readonly placeholder="Calcul en cours...">
+                    <select id="to-currency" class="wise-currency-select" onchange="calculateSmartExchange()">
+                        <option value="EUR">🇪🇺 EUR (€)</option>
+                        <option value="MAD" selected>🇲🇦 MAD (DH)</option>
+                        <option value="GBP">🇬🇧 GBP (£)</option>
+                        <option value="USD">🇺🇸 USD ($)</option>
                     </select>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Rate Info Box (like Wise) -->
+        <div class="wise-rate-info-box">
+            <div class="wise-rate-line">
+                <span>Taux SarfX</span>
+                <span class="wise-rate-value" id="conv-rate-display">--</span>
+            </div>
+            <div class="wise-rate-line">
+                <span>Frais SarfX</span>
+                <span class="wise-fees-badge" id="conv-fees-display">0.00 €</span>
+            </div>
+        </div>
+
         <div class="wise-exchange-footer">
             <div class="wise-last-updated">
                 <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
@@ -59,7 +82,7 @@
                 Refresh Rates
             </button>
         </div>
-        
+
         <!-- AI Status Messages -->
         <div class="wise-ai-status">
             <div class="wise-ai-message">
@@ -130,7 +153,7 @@
                     Set Rate Alert
                 </h3>
                 <p class="wise-text-muted">Get notified when the rate reaches your target</p>
-                
+
                 <div class="wise-alert-form-grid">
                     <div class="wise-form-group">
                         <label>Currency Pair</label>
@@ -153,13 +176,13 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <button class="wise-btn wise-btn-primary" onclick="createAlert()">
                     <i data-lucide="bell-plus" style="width: 18px; height: 18px;"></i>
                     Create Alert
                 </button>
             </div>
-            
+
             <div class="wise-active-alerts">
                 <h4>Your Active Alerts</h4>
                 <div class="wise-alerts-empty">
@@ -181,7 +204,7 @@
                 <p class="wise-card-desc">Sélectionnez ou ajoutez un destinataire</p>
             </div>
         </div>
-        
+
         <!-- Saved Beneficiaries Dropdown -->
         <div class="wise-beneficiary-selector">
             <label class="wise-input-label">
@@ -195,14 +218,14 @@
                 </select>
             </div>
         </div>
-        
+
         <!-- Manual Input Fields (hidden when beneficiary selected) -->
         <div id="manual-recipient-fields" class="wise-form-grid" style="margin-top: 12px;">
             <input type="text" id="recipient-name" placeholder="Nom complet" class="wise-input">
             <input type="text" id="recipient-account" placeholder="IBAN / Numéro de compte" class="wise-input">
             <input type="tel" id="recipient-phone" placeholder="Téléphone (optionnel)" class="wise-input">
         </div>
-        
+
         <!-- Selected Beneficiary Preview -->
         <div id="selected-beneficiary-preview" class="wise-beneficiary-preview hidden">
             <div class="wise-beneficiary-avatar">
@@ -265,15 +288,29 @@
                 </p>
                 <h2 class="wise-result-amount" id="smart-final-amount">--</h2>
             </div>
-            <div class="wise-result-currency-tag">
-                <span>🇲🇦</span>
-                <span>MAD</span>
+            <div class="wise-result-currency-tag" id="result-currency-tag">
+                <span id="result-currency-flag">🇲🇦</span>
+                <span id="result-currency-code">MAD</span>
+            </div>
+        </div>
+        <div class="wise-result-details">
+            <div class="wise-detail-row">
+                <span>Montant envoyé</span>
+                <span id="summary-send-amount">-- USD</span>
+            </div>
+            <div class="wise-detail-row">
+                <span>Taux de change</span>
+                <span id="summary-rate">--</span>
+            </div>
+            <div class="wise-detail-row">
+                <span>Frais SarfX</span>
+                <span id="summary-fees" class="wise-fees-highlight">--</span>
             </div>
         </div>
         <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
             <input type="hidden" name="amount" id="form-amount">
             <input type="hidden" name="from_currency" id="form-from-currency">
-            <input type="hidden" name="to_currency" value="MAD">
+            <input type="hidden" name="to_currency" id="form-to-currency" value="MAD">
             <input type="hidden" name="rate" id="form-rate">
             <input type="hidden" name="final_amount" id="form-final-amount">
             <input type="hidden" name="supplier_id" id="form-supplier-id">
@@ -334,8 +371,42 @@
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 24px;
+    padding: 32px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto 24px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+    .wise-exchange-card {
+        max-width: 1100px;
+        padding: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .wise-exchange-card {
+        padding: 20px;
+        border-radius: 16px;
+        margin: 0 12px 20px;
+    }
+}
+
+.wise-currency-select {
+    font-size: 16px;
+    padding: 12px 16px;
+    min-width: 160px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.wise-currency-select option {
+    font-size: 16px;
+    padding: 8px;
 }
 
 .wise-exchange-row {
@@ -365,7 +436,7 @@
 }
 
 .wise-field-input {
-    display: flex;
+    display: grid;
     align-items: center;
     gap: 12px;
     background: var(--bg-secondary);
@@ -484,6 +555,80 @@
     50% { opacity: 0.5; transform: scale(0.8); }
 }
 
+/* Rate Info Box */
+.wise-rate-info-box {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #86efac;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 16px;
+}
+
+.wise-rate-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #166534;
+    margin-bottom: 6px;
+}
+
+.wise-rate-line:last-child {
+    margin-bottom: 0;
+}
+
+.wise-rate-value {
+    font-weight: 700;
+    font-family: 'SF Mono', Monaco, monospace;
+}
+
+.wise-fees-badge {
+    background: #22c55e;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* Balance Indicator */
+.wise-balance-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #166534;
+}
+
+.wise-balance-indicator strong {
+    font-family: 'SF Mono', Monaco, monospace;
+}
+
+.wise-balance-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.wise-balance-indicator.insufficient {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+}
+
 /* Tabs */
 .wise-providers-tabs {
     display: flex;
@@ -569,6 +714,7 @@
     width: 32px;
     height: 32px;
     object-fit: contain;
+    border-radius: 6px;
 }
 
 .wise-provider-info {
@@ -1321,6 +1467,44 @@
     font-size: 20px;
 }
 
+/* Result Details */
+.wise-result-details {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wise-detail-row:last-child {
+    border-bottom: none;
+}
+
+.wise-detail-row span:first-child {
+    opacity: 0.7;
+}
+
+.wise-detail-row span:last-child {
+    font-weight: 600;
+}
+
+.wise-fees-highlight {
+    color: #4ade80 !important;
+    background: rgba(74, 222, 128, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
 .wise-confirm-btn {
     display: flex;
     align-items: center;
@@ -1480,87 +1664,92 @@
     .wise-rate-header {
         padding: 16px 0;
     }
-    
+
     .wise-rate-title {
         font-size: 20px;
     }
-    
+
     .wise-rate-subtitle {
         font-size: 13px;
     }
-    
+
     .wise-exchange-card {
         padding: 16px;
         border-radius: 16px;
     }
-    
+
     .wise-amount-input {
         font-size: 18px;
         padding: 10px 12px;
     }
-    
+
     .wise-currency-select {
         padding: 10px 12px;
         font-size: 13px;
     }
-    
+
     .wise-exchange-arrow {
         width: 36px;
         height: 36px;
     }
-    
+
     .wise-providers-tabs {
         gap: 4px;
         padding: 4px;
     }
-    
+
     .wise-tab {
         padding: 10px 12px;
         font-size: 12px;
     }
-    
+
     .wise-provider-card {
         padding: 14px;
         flex-wrap: wrap;
         gap: 12px;
     }
-    
+
     .wise-provider-logo {
         width: 40px;
         height: 40px;
         font-size: 20px;
     }
-    
+
+    .wise-provider-logo img {
+        width: 28px;
+        height: 28px;
+    }
+
     .wise-provider-name {
         font-size: 14px;
     }
-    
+
     .wise-provider-badge {
         font-size: 10px;
         padding: 2px 6px;
     }
-    
+
     .wise-provider-result {
         font-size: 16px !important;
     }
-    
+
     .wise-provider-details {
         font-size: 11px;
     }
-    
+
     .wise-pairs-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
-    
+
     .wise-pair-card {
         padding: 14px 12px;
     }
-    
+
     .wise-pair-flags {
         font-size: 20px;
     }
-    
+
     .wise-pair-rate {
         font-size: 16px;
     }
@@ -1571,47 +1760,47 @@
         font-size: 11px;
         padding: 6px 12px;
     }
-    
+
     .wise-rate-title {
         font-size: 18px;
     }
-    
+
     .wise-exchange-card {
         padding: 14px;
     }
-    
+
     .wise-amount-input {
         font-size: 16px;
     }
-    
+
     .wise-provider-card {
         padding: 12px;
     }
-    
+
     .wise-provider-amount {
         width: 100%;
         padding-top: 10px;
         border-top: 1px solid var(--border-light);
         text-align: left;
     }
-    
+
     .wise-tab {
         padding: 8px 10px;
         font-size: 11px;
     }
-    
+
     .wise-pairs-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .wise-alert-form-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .wise-section {
         padding: 14px;
     }
-    
+
     .wise-section-header {
         flex-direction: column;
         gap: 12px;
@@ -1626,12 +1815,71 @@
 <script>
     // Suppliers data from server
     const suppliers = {{ suppliers | tojson | safe }};
-    const SARFX_FEE_PCT = 0.01;
+    const SARFX_FEE_PCT = 0.0025; // SarfX = 0.25% (2.50 pour 1000) - moins que Wise!
     let bestSupplier = null;
     let selectedBank = null;
     let userLocation = null;
     let beneficiariesData = [];
     let selectedBeneficiary = null;
+
+    // Fallback country → currency mapping for beneficiary selection
+    const countryCurrencyMap = {
+        'Maroc': 'MAD', 'Morocco': 'MAD',
+        'France': 'EUR', 'Espagne': 'EUR', 'Spain': 'EUR',
+        'Allemagne': 'EUR', 'Germany': 'EUR', 'Italie': 'EUR', 'Italy': 'EUR',
+        'Belgique': 'EUR', 'Belgium': 'EUR', 'Pays-Bas': 'EUR', 'Netherlands': 'EUR',
+        'Portugal': 'EUR',
+        'UK': 'GBP', 'Royaume-Uni': 'GBP', 'United Kingdom': 'GBP',
+        'USA': 'USD', 'United States': 'USD', 'Etats-Unis': 'USD',
+        'Canada': 'CAD', 'Suisse': 'CHF', 'Switzerland': 'CHF'
+    };
+
+    // Initial values from Flask session
+    const initialAmount = {{ initial_amount | tojson | safe }};
+    const initialFromCurrency = {{ initial_from | tojson | safe }};
+    const initialToCurrency = {{ initial_to | tojson | safe }};
+
+    // Wallet balances from Flask
+    {% if wallet and wallet.balances %}
+    const walletBalances = {{ wallet.balances | tojson | safe }};
+    {% else %}
+    const walletBalances = {};
+    {% endif %}
+
+    // Function to check and update balance display
+    function updateBalanceDisplay() {
+        const fromCurrency = document.getElementById('from-currency').value;
+        const amount = parseFloat(document.getElementById('smart-amount').value) || 0;
+        const balanceIndicator = document.getElementById('balance-indicator');
+        const balanceWarning = document.getElementById('balance-warning');
+        const availableBalanceEl = document.getElementById('available-balance');
+        const submitBtn = document.querySelector('#exchange-form button[type="submit"]');
+
+        if (!balanceIndicator || !availableBalanceEl) return;
+
+        const availableBalance = parseFloat(walletBalances[fromCurrency] || 0);
+        availableBalanceEl.textContent = `${availableBalance.toFixed(2)} ${fromCurrency}`;
+
+        if (amount > availableBalance) {
+            // Solde insuffisant
+            balanceIndicator.classList.add('insufficient');
+            if (balanceWarning) balanceWarning.style.display = 'flex';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+        } else {
+            // Solde suffisant
+            balanceIndicator.classList.remove('insufficient');
+            if (balanceWarning) balanceWarning.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        }
+    }
 
     // Currency symbols map
     const currencySymbols = {
@@ -1652,20 +1900,75 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('smart-amount').addEventListener('input', calculateSmartExchange);
-        document.getElementById('from-currency').addEventListener('change', calculateSmartExchange);
-        calculateSmartExchange();
+        console.log('🚀 DOMContentLoaded - Initialisation...');
+
+        // Lire les paramètres URL (venant de app_home)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAmount = urlParams.get('amount');
+        const urlFrom = urlParams.get('from');
+        const urlTo = urlParams.get('to');
+        const urlRate = urlParams.get('rate');
+        const urlResult = urlParams.get('result');
+
+        console.log('📥 Paramètres URL:', { urlAmount, urlFrom, urlTo, urlRate, urlResult });
+        console.log('📥 Valeurs Flask:', { initialAmount, initialFromCurrency, initialToCurrency });
+
+        // Priorité aux paramètres URL, sinon valeurs Flask
+        const finalAmount = urlAmount || initialAmount;
+        const finalFrom = urlFrom || initialFromCurrency;
+        const finalTo = urlTo || initialToCurrency;
+
+        // Initialiser les champs
+        if (finalAmount) {
+            document.getElementById('smart-amount').value = finalAmount;
+            console.log('✅ Montant initialisé:', finalAmount);
+        }
+        if (finalFrom) {
+            document.getElementById('from-currency').value = finalFrom;
+            console.log('✅ Devise source initialisée:', finalFrom);
+        }
+        if (finalTo) {
+            document.getElementById('to-currency').value = finalTo;
+            console.log('✅ Devise destination initialisée:', finalTo);
+        }
+
+        // Si on a un résultat pré-calculé depuis app_home, l'afficher temporairement
+        if (urlResult) {
+            const recipientEl = document.getElementById('recipient-amount');
+            if (recipientEl) {
+                recipientEl.value = urlResult.replace('.', ',') + ' DH';
+            }
+        }
+
+        document.getElementById('smart-amount').addEventListener('input', () => {
+            calculateSmartExchange();
+            updateBalanceDisplay();
+        });
+        document.getElementById('from-currency').addEventListener('change', () => {
+            calculateSmartExchange();
+            updateBalanceDisplay();
+        });
+
+        // Charger les données d'abord
         loadBanks();
         loadBeneficiaries();
+
+        // Calculer après un court délai pour s'assurer que tout est initialisé
+        console.log('⏱️ Lancement du calcul dans 200ms...');
+        setTimeout(() => {
+            console.log('▶️ Exécution du calcul maintenant');
+            calculateSmartExchange();
+            updateBalanceDisplay();  // Mise à jour initiale du solde
+        }, 200);
     });
 
     // ==================== BENEFICIARIES ====================
-    
+
     async function loadBeneficiaries() {
         try {
             const response = await fetch('/api/beneficiaries');
             const data = await response.json();
-            
+
             if (data.success && data.beneficiaries) {
                 beneficiariesData = data.beneficiaries;
                 populateBeneficiaryDropdown(data.beneficiaries);
@@ -1677,16 +1980,16 @@
 
     function populateBeneficiaryDropdown(beneficiaries) {
         const select = document.getElementById('saved-beneficiaries');
-        
+
         // Clear existing options except first two
         while (select.options.length > 2) {
             select.remove(2);
         }
-        
+
         // Add favorites first
         const favorites = beneficiaries.filter(b => b.is_favorite);
         const others = beneficiaries.filter(b => !b.is_favorite);
-        
+
         if (favorites.length > 0) {
             const favGroup = document.createElement('optgroup');
             favGroup.label = '⭐ Favoris';
@@ -1699,7 +2002,7 @@
             });
             select.appendChild(favGroup);
         }
-        
+
         if (others.length > 0) {
             const othersGroup = document.createElement('optgroup');
             othersGroup.label = '📋 Autres';
@@ -1717,7 +2020,7 @@
     function selectBeneficiary(value) {
         const manualFields = document.getElementById('manual-recipient-fields');
         const preview = document.getElementById('selected-beneficiary-preview');
-        
+
         if (!value || value === '') {
             // Reset to manual entry
             manualFields.style.display = 'flex';
@@ -1727,7 +2030,7 @@
             document.getElementById('recipient-account').value = '';
             return;
         }
-        
+
         if (value === 'new') {
             // Show manual entry for new beneficiary
             manualFields.style.display = 'flex';
@@ -1738,28 +2041,45 @@
             document.getElementById('recipient-name').focus();
             return;
         }
-        
+
         // Find selected beneficiary
         const ben = beneficiariesData.find(b => (b._id || b.beneficiary_id) === value);
-        
+
         if (ben) {
             selectedBeneficiary = ben;
-            
+
+            // Sync destination currency to match beneficiary's currency
+            const benCurrency = ben.currency || countryCurrencyMap[ben.country] || 'MAD';
+            const toCurrencySelect = document.getElementById('to-currency');
+            const existingOpt = Array.from(toCurrencySelect.options).find(o => o.value === benCurrency);
+            if (existingOpt) {
+                toCurrencySelect.value = benCurrency;
+            } else {
+                const newOpt = document.createElement('option');
+                newOpt.value = benCurrency;
+                newOpt.textContent = benCurrency;
+                toCurrencySelect.appendChild(newOpt);
+                toCurrencySelect.value = benCurrency;
+            }
+
             // Hide manual fields, show preview
             manualFields.style.display = 'none';
             preview.classList.remove('hidden');
-            
+
             // Update preview
             const initials = getInitials(ben.name);
             document.getElementById('beneficiary-initials').textContent = initials;
             document.getElementById('preview-ben-name').textContent = ben.name;
             document.getElementById('preview-ben-bank').textContent = ben.bank_name || ben.bank_code;
             document.getElementById('preview-ben-iban').textContent = ben.iban ? maskIBAN(ben.iban) : '--';
-            
+
             // Fill hidden form fields
             document.getElementById('recipient-name').value = ben.name;
+
+            // Recalculer le montant après sélection du bénéficiaire
+            calculateSmartExchange();
             document.getElementById('recipient-account').value = ben.iban || ben.rib || '';
-            
+
             showNotification(`Bénéficiaire: ${ben.name}`, 'success');
             lucide.createIcons();
         }
@@ -1788,7 +2108,10 @@
         const amountInput = document.getElementById('smart-amount');
         const amount = parseFloat(amountInput.value) || 0;
         const fromCurrency = document.getElementById('from-currency').value;
-        
+        const toCurrency = document.getElementById('to-currency').value;
+
+        console.log('🔄 calculateSmartExchange called:', { amount, fromCurrency, toCurrency });
+
         const resSection = document.getElementById('exchange-results');
         const sumSection = document.getElementById('summary-section');
         const recSection = document.getElementById('recipient-section');
@@ -1796,6 +2119,9 @@
         const atmSection = document.getElementById('atm-section');
 
         if (amount <= 0) {
+            console.warn('⚠️ Montant invalide ou zéro, affichage vide');
+            // Vider le champ recipient-amount si montant invalide
+            document.getElementById('recipient-amount').value = '';
             [resSection, sumSection, recSection, bankSection, atmSection].forEach(sec => {
                 if (sec) {
                     sec.classList.add('hidden-opacity');
@@ -1812,7 +2138,7 @@
                 sec.classList.add('visible-opacity');
             }
         });
-        
+
         if (selectedBank && atmSection) {
             atmSection.classList.remove('hidden-opacity');
             atmSection.classList.add('visible-opacity');
@@ -1820,21 +2146,58 @@
 
         const sarfxFee = amount * SARFX_FEE_PCT;
         const amountToConvert = amount - sarfxFee;
-        
+
         // Default providers matching HOMEPAGE.txt design
         const defaultProviders = [
-            { name: 'Wise', icon: '🔷', rating: 4.9, delivery: 'instant', fee: 4.50, rateMultiplier: 1.002 },
-            { name: 'Revolut', icon: '⚡', rating: 4.7, delivery: '1-2 hours', fee: 5.00, rateMultiplier: 0.998 },
-            { name: 'PayPal', icon: '🅿️', rating: 4.3, delivery: 'instant', fee: 8.50, rateMultiplier: 0.994 },
-            { name: 'Western Union', icon: '🌐', rating: 4.1, delivery: '1 day', fee: 12.00, rateMultiplier: 0.991 },
-            { name: 'MoneyGram', icon: '💰', rating: 4.0, delivery: '1 day', fee: 10.00, rateMultiplier: 0.990 },
-            { name: 'Bank Transfer', icon: '🏦', rating: 3.8, delivery: '3-5 days', fee: 25.00, rateMultiplier: 0.980 }
+            { name: 'Wise', icon: '/static/images/source-service/wise.svg', rating: 4.9, delivery: 'instant', fee: 4.50, rateMultiplier: 1.002 },
+            { name: 'Revolut', icon: '/static/images/source-service/revolut.svg', rating: 4.7, delivery: '1-2 hours', fee: 5.00, rateMultiplier: 0.998 },
+            { name: 'PayPal', icon: '/static/images/source-service/paypal.svg', rating: 4.3, delivery: 'instant', fee: 8.50, rateMultiplier: 0.994 },
+            { name: 'Western Union', icon: '/static/images/source-service/western-union.svg', rating: 4.1, delivery: '1 day', fee: 12.00, rateMultiplier: 0.991 },
+            { name: 'MoneyGram', icon: '/static/images/source-service/moneygram.svg', rating: 4.0, delivery: '1 day', fee: 10.00, rateMultiplier: 0.990 },
+            { name: 'Bank Transfer', icon: '/static/images/source-service/bank-transfer.svg', rating: 3.8, delivery: '3-5 days', fee: 25.00, rateMultiplier: 0.980 }
         ];
 
-        // Get base rate from suppliers or use default
-        const baseRate = suppliers.length > 0 ? suppliers[0].rate : 0.9234;
-        const toCurrency = document.getElementById('to-currency').value;
-        
+        // Taux par défaut réalistes selon la paire de devises
+        const pair = `${fromCurrency}${toCurrency}`;
+        const defaultRates = {
+            'EURMAD': 10.82,
+            'USDMAD': 10.05,
+            'GBPMAD': 12.67,
+            'CHFMAD': 11.23,
+            'CADMAD': 7.45,
+            'MADEUR': 0.092,
+            'MADUSD': 0.099,
+            'MADGBP': 0.079,
+            'EUREUR': 1.00,
+            'USDEUR': 0.93,
+            'GBPEUR': 1.17,
+            'CHFEUR': 1.09,
+            'CADEUR': 0.68,
+            'EURUSD': 1.08,
+            'USDUSD': 1.00,
+            'GBPUSD': 1.26,
+            'CHFUSD': 1.17,
+            'CADUSD': 0.73,
+            'EURGBP': 0.85,
+            'USDGBP': 0.79,
+            'GBPGBP': 1.00,
+            'CHFGBP': 0.93,
+            'CADGBP': 0.58,
+            'EURCHF': 0.92,
+            'USDCHF': 0.85,
+            'GBPCHF': 1.07,
+            'CHFCHF': 1.00,
+            'CADCHF': 0.62,
+            'EURCAD': 1.47,
+            'USDCAD': 1.37,
+            'GBPCAD': 1.72,
+            'CHFCAD': 1.61,
+            'CADCAD': 1.00
+        };
+
+        let baseRate = defaultRates[pair] || 1.00;
+        console.log('🔄 Conversion:', fromCurrency, '→', toCurrency, '| Taux:', baseRate);
+
         // Calculate for each provider
         const providers = defaultProviders.map(p => {
             const rate = baseRate * p.rateMultiplier;
@@ -1846,43 +2209,79 @@
                 finalAmount: finalAmount > 0 ? finalAmount : 0
             };
         });
-        
+
         // Sort by final amount (best first)
         providers.sort((a, b) => b.finalAmount - a.finalAmount);
-        
-        bestSupplier = providers[0];
-        const finalAmount = bestSupplier.finalAmount;
 
-        // Update recipient amount display with currency
-        document.getElementById('recipient-amount').value = formatAmountWithCurrency(finalAmount, toCurrency);
-        
+        bestSupplier = providers[0];
+
+        // Calculate SarfX rate (best rate) - calculer AVANT de mettre à jour l'affichage
+        const sarfxRate = baseRate * 1.005;
+        const sarfxFinalAmount = (amountToConvert - sarfxFee) * sarfxRate;
+
+        // Update recipient amount display with SarfX amount (le meilleur)
+        const recipientAmountField = document.getElementById('recipient-amount');
+        if (!recipientAmountField) {
+            console.error('❌ Élément recipient-amount introuvable dans le DOM!');
+            return;
+        }
+
+        const formattedValue = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
+        console.log('📝 Avant mise à jour - Field value:', recipientAmountField.value);
+        console.log('📝 Valeur à assigner:', formattedValue);
+
+        recipientAmountField.value = formattedValue;
+
+        console.log('✅ Après mise à jour - Field value:', recipientAmountField.value);
+        console.log('✅ Montant final affiché:', formattedValue, '| Raw:', sarfxFinalAmount.toFixed(2), toCurrency);
+
         // Update time
         const now = new Date();
         document.getElementById('update-time').textContent = now.toTimeString().split(' ')[0];
 
-        // Form fields
+        // Update rate info box
+        const rateDisplay = document.getElementById('conv-rate-display');
+        const feesDisplay = document.getElementById('conv-fees-display');
+        if (rateDisplay) {
+            rateDisplay.textContent = `1 ${fromCurrency} = ${sarfxRate.toFixed(4)} ${toCurrency}`;
+        }
+        if (feesDisplay) {
+            feesDisplay.textContent = sarfxFee.toFixed(2) + ' ' + fromCurrency;
+        }
+
+        // Currency flags mapping
+        const currencyFlags = {
+            'MAD': '🇲🇦', 'EUR': '🇪🇺', 'USD': '🇺🇸', 'GBP': '🇬🇧', 'CHF': '🇨🇭', 'CAD': '🇨🇦'
+        };
+
+        // Update summary section with dynamic values
+        document.getElementById('smart-final-amount').textContent = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
+        document.getElementById('result-currency-flag').textContent = currencyFlags[toCurrency] || '💱';
+        document.getElementById('result-currency-code').textContent = toCurrency;
+        document.getElementById('summary-send-amount').textContent = `${amount.toFixed(2)} ${fromCurrency}`;
+        document.getElementById('summary-rate').textContent = `1 ${fromCurrency} = ${sarfxRate.toFixed(4)} ${toCurrency}`;
+        document.getElementById('summary-fees').textContent = `${sarfxFee.toFixed(2)} ${fromCurrency}`;
+
+        // Form fields - utiliser les valeurs SarfX
         document.getElementById('form-amount').value = amount;
         document.getElementById('form-from-currency').value = fromCurrency;
-        document.getElementById('form-rate').value = bestSupplier.rate;
-        document.getElementById('form-final-amount').value = finalAmount.toFixed(2);
-        document.getElementById('form-supplier-id').value = bestSupplier.name;
+        document.getElementById('form-to-currency').value = toCurrency;
+        document.getElementById('form-rate').value = sarfxRate.toFixed(4);
+        document.getElementById('form-final-amount').value = sarfxFinalAmount.toFixed(2);
+        document.getElementById('form-supplier-id').value = 'SarfX';
 
         // Render providers - SarfX as the best, others for comparison only
         const list = document.getElementById('suppliers-list');
         list.innerHTML = '';
-        
-        // Calculate SarfX rate (best rate)
-        const sarfxRate = baseRate * 1.005;
-        const sarfxFinalAmount = (amountToConvert - sarfxFee) * sarfxRate;
-        
+
         // SarfX Card - Always the best option
         const sarfxDiv = document.createElement('div');
         sarfxDiv.className = 'wise-provider-card best selected';
         sarfxDiv.innerHTML = `
-            <div class="wise-provider-logo">🔶</div>
+            <div class="wise-provider-logo" style="background: linear-gradient(135deg, #e05a03, #f97316); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(224,90,3,0.3);">S</div>
             <div class="wise-provider-info">
                 <div class="wise-provider-header">
-                    <span class="wise-provider-name">SarfX</span>
+                    <span class="wise-provider-name" style="font-weight: 700; font-size: 16px;">SarfX</span>
                     <span class="wise-provider-badge" style="background: linear-gradient(135deg, #e05a03, #f97316);">Meilleur Taux</span>
                 </div>
                 <div class="wise-provider-meta">
@@ -1899,19 +2298,19 @@
             </div>
         `;
         list.appendChild(sarfxDiv);
-        
+
         // Update form with SarfX values
         document.getElementById('form-supplier-id').value = 'SarfX';
         document.getElementById('form-rate').value = sarfxRate;
         document.getElementById('form-final-amount').value = sarfxFinalAmount.toFixed(2);
         document.getElementById('recipient-amount').value = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
-        
+
         // Comparison label
         const compLabel = document.createElement('div');
         compLabel.style.cssText = 'padding: 16px 0 12px; font-size: 13px; color: var(--text-tertiary); font-weight: 500; border-top: 1px solid var(--border-light); margin-top: 16px;';
         compLabel.innerHTML = '📊 Comparaison avec les autres services <span style="color: var(--error);">(plus chers)</span>';
         list.appendChild(compLabel);
-        
+
         // Other providers - comparison only (no select button)
         providers.forEach((p, i) => {
             const savings = sarfxFinalAmount - p.finalAmount;
@@ -1919,7 +2318,7 @@
             div.className = 'wise-provider-card';
             div.style.opacity = '0.75';
             div.innerHTML = `
-                <div class="wise-provider-logo">${p.icon}</div>
+                <div class="wise-provider-logo"><img src="${p.icon}" alt="${p.name}" onerror="this.style.display='none'; this.parentElement.textContent='${p.name.charAt(0)}'"></div>
                 <div class="wise-provider-info">
                     <div class="wise-provider-header">
                         <span class="wise-provider-name">${p.name}</span>
@@ -1948,13 +2347,13 @@
         document.getElementById('form-rate').value = provider.rate;
         document.getElementById('form-final-amount').value = provider.finalAmount.toFixed(2);
         document.getElementById('recipient-amount').value = formatAmountWithCurrency(provider.finalAmount, toCurrency);
-        
+
         // Highlight selected card
         document.querySelectorAll('.wise-provider-card').forEach(card => {
             card.classList.remove('selected');
         });
         event.currentTarget.closest('.wise-provider-card')?.classList.add('selected');
-        
+
         showNotification(`${provider.name} selected! Rate: ${provider.rate.toFixed(4)}`, 'success');
     }
 
@@ -1962,9 +2361,9 @@
     function refreshRates() {
         const btn = document.querySelector('.wise-refresh-btn');
         btn.innerHTML = '<i data-lucide="loader" class="animate-spin" style="width: 16px; height: 16px;"></i> Refreshing...';
-        
+
         setTimeout(() => {
-            calculateExchange();
+            calculateSmartExchange();
             btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh Rates';
             lucide.createIcons();
             showNotification('Rates updated!', 'success');
@@ -1976,7 +2375,7 @@
         document.getElementById('from-currency').value = from;
         document.getElementById('to-currency').value = to;
         calculateExchange();
-        
+
         // Switch to providers tab
         document.querySelectorAll('.wise-tab').forEach(t => t.classList.remove('active'));
         document.querySelector('.wise-tab[data-tab="providers"]').classList.add('active');
@@ -1989,12 +2388,12 @@
         const pair = document.getElementById('alert-pair').value;
         const rate = document.getElementById('alert-rate').value;
         const condition = document.getElementById('alert-condition').value;
-        
+
         if (!rate) {
             showNotification('Please enter a target rate', 'error');
             return;
         }
-        
+
         showNotification(`Alert created for ${pair} ${condition.toLowerCase()} ${rate}`, 'success');
     }
 
@@ -2002,10 +2401,10 @@
     document.querySelectorAll('.wise-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             const tabName = this.dataset.tab;
-            
+
             document.querySelectorAll('.wise-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
-            
+
             document.querySelectorAll('.wise-tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
         });
@@ -2015,26 +2414,26 @@
     document.getElementById('exchange-form').addEventListener('submit', function(e) {
         const name = document.getElementById('recipient-name').value;
         const account = document.getElementById('recipient-account').value;
-        
+
         if (!name || !account) {
             e.preventDefault();
             showNotification('Veuillez remplir les informations du bénéficiaire', 'error');
             return;
         }
-        
+
         // Add recipient info to form
         const nameInput = document.createElement('input');
         nameInput.type = 'hidden';
         nameInput.name = 'recipient_name';
         nameInput.value = name;
         this.appendChild(nameInput);
-        
+
         const accountInput = document.createElement('input');
         accountInput.type = 'hidden';
         accountInput.name = 'recipient_account';
         accountInput.value = account;
         this.appendChild(accountInput);
-        
+
         // Add bank selection
         if (selectedBank) {
             const bankInput = document.createElement('input');
@@ -2050,11 +2449,11 @@
         try {
             const response = await fetch('/api/banks');
             const data = await response.json();
-            
+
             if (data.success) {
                 const banksGrid = document.getElementById('banks-grid');
                 banksGrid.innerHTML = '';
-                
+
                 data.banks.forEach(bank => {
                     const bankCard = document.createElement('div');
                     bankCard.className = 'wise-bank-select-item';
@@ -2067,7 +2466,7 @@
                     bankCard.onclick = () => selectBank(bank, bankCard);
                     banksGrid.appendChild(bankCard);
                 });
-                
+
                 lucide.createIcons();
             }
         } catch (error) {
@@ -2078,16 +2477,16 @@
     // Select bank
     function selectBank(bank, cardElement) {
         selectedBank = bank;
-        
+
         document.querySelectorAll('.wise-bank-select-item').forEach(card => {
             card.classList.remove('selected');
         });
         cardElement.classList.add('selected');
-        
+
         const atmSection = document.getElementById('atm-section');
         atmSection.classList.remove('hidden-opacity');
         atmSection.classList.add('visible-opacity');
-        
+
         loadATMsForBank(bank.code);
         showNotification(`Banque: ${bank.name}`, 'success');
     }
@@ -2097,10 +2496,10 @@
         const atmList = document.getElementById('atm-list');
         atmList.innerHTML = '<div class="wise-atm-empty"><i data-lucide="loader-2" style="width: 32px; height: 32px; animation: spin 1s linear infinite;"></i><p>Chargement...</p></div>';
         lucide.createIcons();
-        
+
         try {
             let url = `/api/atms?bank_code=${bankCode}&limit=20`;
-            
+
             if (userLocation) {
                 const response = await fetch('/api/atms/nearest', {
                     method: 'POST',
@@ -2119,7 +2518,7 @@
                     return;
                 }
             }
-            
+
             const response = await fetch(url);
             const data = await response.json();
             if (data.success) displayATMs(data.atms, false);
@@ -2131,25 +2530,25 @@
     // Display ATMs - Wise style
     function displayATMs(atms, withDistance) {
         const atmList = document.getElementById('atm-list');
-        
+
         if (atms.length === 0) {
             atmList.innerHTML = '<div class="wise-atm-empty">Aucun distributeur trouvé</div>';
             return;
         }
-        
+
         atmList.innerHTML = '';
-        
+
         atms.forEach(atm => {
             const atmCard = document.createElement('div');
             atmCard.className = 'wise-atm-item';
-            
-            const distanceHTML = withDistance && atm.distance_km 
+
+            const distanceHTML = withDistance && atm.distance_km
                 ? `<span class="wise-atm-distance">${atm.distance_km} km • ~${atm.walk_time_min} min</span>` : '';
-            
-            const hoursHTML = atm.available_24h 
+
+            const hoursHTML = atm.available_24h
                 ? '<span class="wise-atm-hours wise-atm-24h">🕐 24/7</span>'
                 : `<span class="wise-atm-hours">${atm.hours || ''}</span>`;
-            
+
             atmCard.innerHTML = `
                 <div class="wise-atm-name">${atm.name}</div>
                 <div class="wise-atm-address">
@@ -2161,11 +2560,11 @@
                     ${hoursHTML}
                 </div>
             `;
-            
+
             atmCard.onclick = () => openInMaps(atm);
             atmList.appendChild(atmCard);
         });
-        
+
         lucide.createIcons();
     }
 
@@ -2173,28 +2572,28 @@
     function getUserLocation() {
         const btn = document.getElementById('location-btn');
         const subtitle = document.getElementById('atm-subtitle');
-        
+
         if (!navigator.geolocation) {
             showNotification('Géolocalisation non supportée', 'error');
             return;
         }
-        
+
         btn.disabled = true;
         btn.innerHTML = '<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Détection...';
         lucide.createIcons();
-        
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 userLocation = {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 };
-                
+
                 btn.innerHTML = '<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> OK';
                 btn.classList.add('success');
                 subtitle.textContent = 'Triés par distance';
                 lucide.createIcons();
-                
+
                 if (selectedBank) loadATMsForBank(selectedBank.code);
                 showNotification('Position détectée!', 'success');
             },

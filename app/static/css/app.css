@@ -266,7 +266,7 @@ body.theme-light {
     color: white;
     position: relative;
     overflow: hidden;
-    box-shadow: 
+    box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.5),
         0 0 0 1px rgba(255, 255, 255, 0.05),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -280,7 +280,7 @@ body.theme-light {
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
+    background:
         radial-gradient(ellipse at 20% 20%, rgba(224, 90, 3, 0.15) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
     pointer-events: none;
@@ -307,7 +307,7 @@ body.theme-light {
 /* Light theme wallet card */
 .theme-light .wallet-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    box-shadow: 
+    box-shadow:
         0 25px 50px -12px rgba(102, 126, 234, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.2);
 }
@@ -727,7 +727,7 @@ body.theme-light {
         transform: translateX(-50%);
         border-radius: 1rem 1rem 0 0;
     }
-    
+
     .bank-card {
         min-height: 100px;
     }
@@ -736,37 +736,41 @@ body.theme-light {
 /* --- ENHANCED MOBILE RESPONSIVE --- */
 @media (max-width: 640px) {
     .wise-main-content {
-        padding: 16px !important;
-        padding-bottom: 90px !important;
+        padding: 10px !important;
+        padding-bottom: 85px !important;
     }
-    
+
+    .wise-content-inner {
+        max-width: 100% !important;
+    }
+
     .wise-page-title {
         font-size: 1.5rem !important;
     }
-    
+
     .wise-page-subtitle {
         font-size: 0.875rem !important;
     }
-    
+
     .wise-section {
-        padding: 16px !important;
-        border-radius: 16px !important;
+        padding: 14px !important;
+        border-radius: 14px !important;
     }
-    
+
     .wise-section-title {
         font-size: 1rem !important;
     }
-    
+
     /* Cards grid responsive */
     .wise-stats-grid {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
+        gap: 10px !important;
     }
-    
+
     .wise-stat-card {
-        padding: 14px !important;
+        padding: 12px !important;
     }
-    
+
     .wise-stat-value {
         font-size: 1.25rem !important;
     }
@@ -774,66 +778,70 @@ body.theme-light {
 
 @media (max-width: 480px) {
     .wise-main-content {
-        padding: 12px !important;
-        padding-bottom: 85px !important;
+        padding: 8px !important;
+        padding-bottom: 80px !important;
     }
-    
+
+    .wise-content-inner {
+        max-width: 100% !important;
+    }
+
     .wise-page-header {
-        padding: 16px !important;
-        border-radius: 16px !important;
+        padding: 12px !important;
+        border-radius: 14px !important;
     }
-    
+
     .wise-page-title {
         font-size: 1.25rem !important;
     }
-    
+
     /* Provider cards responsive */
     .wise-provider-card {
-        padding: 12px !important;
+        padding: 10px !important;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
     }
-    
+
     .wise-provider-logo {
         font-size: 1.5rem !important;
     }
-    
+
     .wise-provider-info {
         flex: 1;
         min-width: 120px;
     }
-    
+
     .wise-provider-amount {
         width: 100%;
         text-align: left;
         padding-top: 8px;
         border-top: 1px solid var(--border-light);
     }
-    
+
     /* ATM cards responsive */
     .wise-atm-stats {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px !important;
     }
-    
+
     .wise-atm-stat-card {
         padding: 14px 10px !important;
     }
-    
+
     .wise-atm-stat-value {
         font-size: 1.25rem !important;
     }
-    
+
     /* Banks grid responsive */
     .wise-banks-select-grid {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     /* Navigation bottom */
     .wise-nav-bottom {
         padding: 10px 8px !important;
     }
-    
+
     .wise-nav-bottom-item span {
         font-size: 9px !important;
     }
@@ -841,13 +849,14 @@ body.theme-light {
 
 @media (max-width: 360px) {
     .wise-main-content {
-        padding: 10px !important;
+        padding: 6px !important;
+        padding-bottom: 78px !important;
     }
-    
+
     .wise-stats-grid {
         grid-template-columns: 1fr !important;
     }
-    
+
     .wise-atm-stats {
         grid-template-columns: 1fr !important;
     }

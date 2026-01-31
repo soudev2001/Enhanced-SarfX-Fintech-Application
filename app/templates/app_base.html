@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>{% block title %}SarfX - Le Futur du Change{% endblock %}</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
-    
+
     <!-- Design System CSS (Local - No CDN) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-    
+
     <!-- Icons (Lucide) & Charts -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    
+
     <!-- PWA Meta -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
@@ -24,11 +24,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
-    
+
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+
     {% block head %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
@@ -55,7 +55,7 @@
         <i data-lucide="menu" class="toggle-icon-open"></i>
         <i data-lucide="x" class="toggle-icon-close"></i>
     </button>
-    
+
     <!-- SIDEBAR OVERLAY (for closing on mobile) -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -64,7 +64,7 @@
         <a href="/" class="wise-sidebar-logo" style="text-decoration: none;">
             <span class="wise-logo-text">Sarf<span class="wise-logo-accent">X</span></span>
         </a>
-        
+
         <nav class="wise-sidebar-nav">
             <!-- Navigation pour tous les utilisateurs -->
             <a href="{{ url_for('app.home') }}" class="wise-nav-item {{ 'active' if active_tab == 'home' else '' }}">
@@ -121,7 +121,7 @@
                 <i data-lucide="users" class="wise-nav-icon"></i>
                 <span>Utilisateurs</span>
             </a>
-            <a href="{{ url_for('admin.banks') }}" class="wise-nav-item">
+            <a href="{{ url_for('admin_banks.list_banks') }}" class="wise-nav-item">
                 <i data-lucide="landmark" class="wise-nav-icon"></i>
                 <span>Banques</span>
             </a>
@@ -153,7 +153,7 @@
             </a>
             {% endif %}
         </nav>
-        
+
         <div class="wise-sidebar-footer">
             <a href="{{ url_for('app.settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'settings' else '' }}">
                 <i data-lucide="settings" class="wise-nav-icon"></i>
@@ -213,16 +213,16 @@
             const body = document.body;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
+
             html.setAttribute('data-theme', newTheme);
             body.classList.toggle('theme-dark', newTheme === 'dark');
             body.style.background = newTheme === 'dark' ? 'var(--bg-primary)' : 'var(--bg-primary)';
             body.style.color = 'var(--text-primary)';
-            
+
             localStorage.setItem('sarfx_theme', newTheme);
             updateThemeToggleUI(newTheme === 'dark');
             updateThemeColor(newTheme);
-            
+
             // Sync with server
             fetch('/api/theme', {
                 method: 'POST',
@@ -237,7 +237,7 @@
             const themeLabel = document.getElementById('theme-label');
             const dot = document.getElementById('theme-toggle-dot');
             const btn = document.getElementById('theme-toggle-btn');
-            
+
             if (lightIcon && darkIcon) {
                 lightIcon.style.display = isDark ? 'block' : 'none';
                 darkIcon.style.display = isDark ? 'none' : 'block';
@@ -249,7 +249,7 @@
                 dot.style.transform = isDark ? 'translateX(0)' : 'translateX(24px)';
             }
         }
-        
+
         function updateThemeColor(theme) {
             const themeColor = theme === 'dark' ? '#0f172a' : '#ffffff';
             document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
@@ -257,10 +257,10 @@
 
         // Notifications - Enhanced with close button and stacking
         const MAX_TOASTS = 5;
-        
+
         function showNotification(message, type = 'info', duration = null) {
             const container = document.getElementById('notification-container');
-            
+
             // Auto duration based on type
             const durations = {
                 success: 3000,
@@ -269,23 +269,23 @@
                 info: 4000
             };
             const autoDuration = duration || durations[type] || 4000;
-            
+
             // Limit number of toasts
             const existingToasts = container.querySelectorAll('.toast');
             if (existingToasts.length >= MAX_TOASTS) {
                 existingToasts[0].remove();
             }
-            
+
             const toast = document.createElement('div');
             toast.className = `toast toast-${type} toast-enter`;
-            
+
             const icons = {
                 success: 'check-circle',
                 error: 'x-circle',
                 info: 'info',
                 warning: 'alert-triangle'
             };
-            
+
             toast.innerHTML = `
                 <div class="toast-content">
                     <i data-lucide="${icons[type] || 'info'}" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
@@ -295,35 +295,35 @@
                     <i data-lucide="x" style="width: 16px; height: 16px;"></i>
                 </button>
             `;
-            
+
             container.appendChild(toast);
             lucide.createIcons();
-            
+
             // Close button handler
             const closeBtn = toast.querySelector('.toast-close');
             closeBtn.addEventListener('click', () => dismissToast(toast));
-            
+
             // Auto dismiss
             const timeoutId = setTimeout(() => dismissToast(toast), autoDuration);
             toast.dataset.timeoutId = timeoutId;
         }
-        
+
         function dismissToast(toast) {
             if (!toast || !toast.parentNode) return;
-            
+
             // Clear timeout if exists
             if (toast.dataset.timeoutId) {
                 clearTimeout(parseInt(toast.dataset.timeoutId));
             }
-            
+
             toast.classList.remove('toast-enter');
             toast.classList.add('toast-exit');
-            
+
             setTimeout(() => {
                 if (toast.parentNode) toast.remove();
             }, 300);
         }
-        
+
         // Global notification function for external scripts
         window.SarfXNotify = {
             success: (msg, duration) => showNotification(msg, 'success', duration),
@@ -337,17 +337,17 @@
             const savedTheme = localStorage.getItem('sarfx_theme') || '{{ user_theme | default("light") }}';
             const html = document.documentElement;
             const body = document.body;
-            
+
             html.setAttribute('data-theme', savedTheme);
             body.classList.toggle('theme-dark', savedTheme === 'dark');
-            
+
             updateThemeToggleUI(savedTheme === 'dark');
             updateThemeColor(savedTheme);
-            
+
             // Re-init icons after DOM ready
             setTimeout(() => lucide.createIcons(), 100);
         });
-        
+
         // Detect system theme preference
         if (window.matchMedia) {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
@@ -359,13 +359,13 @@
                 }
             });
         }
-        
+
         // Mobile Sidebar Toggle
         (function() {
             const sidebarToggle = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('desktop-nav');
             const overlay = document.getElementById('sidebar-overlay');
-            
+
             if (sidebarToggle && sidebar && overlay) {
                 function openSidebar() {
                     sidebar.classList.add('open');
@@ -373,14 +373,14 @@
                     sidebarToggle.classList.add('active');
                     document.body.style.overflow = 'hidden';
                 }
-                
+
                 function closeSidebar() {
                     sidebar.classList.remove('open');
                     overlay.classList.remove('active');
                     sidebarToggle.classList.remove('active');
                     document.body.style.overflow = '';
                 }
-                
+
                 sidebarToggle.addEventListener('click', () => {
                     if (sidebar.classList.contains('open')) {
                         closeSidebar();
@@ -388,9 +388,9 @@
                         openSidebar();
                     }
                 });
-                
+
                 overlay.addEventListener('click', closeSidebar);
-                
+
                 // Close sidebar when clicking a nav item on mobile
                 sidebar.querySelectorAll('.wise-nav-item').forEach(item => {
                     item.addEventListener('click', () => {
@@ -399,14 +399,14 @@
                         }
                     });
                 });
-                
+
                 // Close on escape key
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && sidebar.classList.contains('open')) {
                         closeSidebar();
                     }
                 });
-                
+
                 // Handle resize - close sidebar if switching to desktop
                 window.addEventListener('resize', () => {
                     if (window.innerWidth >= 1024) {
@@ -416,12 +416,12 @@
             }
         })();
     </script>
-    
+
     {% block scripts %}{% endblock %}
-    
+
     <!-- Notifications System -->
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-    
+
     <!-- Chatbot SarfX avec API Gemini -->
     <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 </body>

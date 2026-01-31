@@ -44,7 +44,7 @@
                 <p class="text-sm text-muted">ou cliquez pour sélectionner un fichier</p>
                 <p id="file-name" class="text-primary font-bold mt-4 hidden"></p>
             </div>
-            
+
             <div class="mt-6 flex gap-4">
                 <a href="{{ url_for('admin.export_atms') }}" class="flex-1 btn btn-ghost py-4 rounded-xl text-center">
                     <i data-lucide="download" class="w-5 h-5 mr-2 inline"></i>
@@ -157,7 +157,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Transactions</span>
         </a>
-        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>

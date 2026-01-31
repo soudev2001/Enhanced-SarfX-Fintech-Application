@@ -1,0 +1,254 @@
+/* ==========================================
+   SarfX Converter Styles
+   ========================================== */
+
+.wise-converter {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding-bottom: 8rem;
+}
+
+/* Rate Header */
+.wise-rate-header {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.wise-rate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--brand-primary-bg, rgba(224, 90, 3, 0.1));
+    color: var(--brand-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    margin-bottom: 1rem;
+}
+
+.wise-rate-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-extrabold);
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.wise-rate-subtitle {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Exchange Card */
+.wise-exchange-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-2xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.wise-exchange-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.wise-exchange-field {
+    flex: 1;
+}
+
+.wise-field-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.wise-field-input {
+    display: grid;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 0.25rem;
+    transition: border-color 0.2s;
+}
+
+.wise-field-input:focus-within {
+    border-color: var(--brand-primary);
+}
+
+.wise-amount-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    padding: 1rem;
+    outline: none;
+}
+
+.wise-amount-result {
+    color: var(--brand-primary);
+}
+
+.currency-selector {
+    display: flex;
+    align-items: center;
+    background-color: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+}
+.currency-flag {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+}
+.wise-currency-select {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.wise-exchange-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    background: var(--bg-tertiary);
+    border-radius: 50%;
+    color: var(--text-secondary);
+}
+
+.wise-exchange-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.wise-last-updated {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.wise-refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-refresh-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: var(--surface-hover);
+}
+
+/* AI Status */
+.wise-ai-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.wise-ai-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.wise-ai-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Tabs */
+.wise-providers-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--bg-secondary);
+    padding: 0.5rem;
+    border-radius: var(--radius-lg);
+}
+
+.wise-tab {
+    flex: 1;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-tab:hover {
+    color: var(--text-primary);
+}
+
+.wise-tab.active {
+    background: var(--surface);
+    color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.wise-tab-content {
+    display: none;
+}
+
+.wise-tab-content.active {
+    display: block;
+    margin-top: 1.5rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .wise-exchange-row {
+        flex-direction: column;
+    }
+    .wise-exchange-arrow {
+        transform: rotate(90deg);
+    }
+    .wise-providers-tabs {
+        flex-direction: column;
+    }
+}

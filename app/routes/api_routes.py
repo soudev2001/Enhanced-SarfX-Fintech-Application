@@ -1,10 +1,47 @@
 from flask import Blueprint, jsonify, request, session
 from functools import wraps
 from app.services.db_service import get_db
+from app.config import Config
 from datetime import datetime
+from bson import ObjectId
+from bson.errors import InvalidId
 import uuid
+import requests
+import time
 
 api_bp = Blueprint('api', __name__)
+
+
+def safe_object_id(id_value):
+    """Safely convert a value to ObjectId"""
+    if id_value is None:
+        return None
+    if isinstance(id_value, ObjectId):
+        return id_value
+    try:
+        return ObjectId(str(id_value))
+    except (InvalidId, TypeError):
+        return None
+
+
+# ==================== RATE CACHE ====================
+_rate_cache = {}
+_cache_ttl = Config.RATES_CACHE_TTL  # 30 secondes par défaut
+
+def get_cached_rate(cache_key):
+    """Récupère un taux du cache s'il est encore valide"""
+    if cache_key in _rate_cache:
+        cached = _rate_cache[cache_key]
+        if time.time() - cached['timestamp'] < _cache_ttl:
+            return cached['data']
+    return None
+
+def set_cached_rate(cache_key, data):
+    """Met en cache un taux avec timestamp"""
+    _rate_cache[cache_key] = {
+        'data': data,
+        'timestamp': time.time()
+    }
 
 def login_required_api(f):
     """Décorateur pour protéger les routes API"""
@@ -22,23 +59,23 @@ def login_required_api(f):
 def seed_demo_users():
     """Crée les utilisateurs de démonstration"""
     from werkzeug.security import generate_password_hash
-    
+
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     demo_users = [
         {"email": "admin@sarfx.io", "password": "admin123", "name": "Admin SarfX", "role": "admin"},
         {"email": "bank@sarfx.io", "password": "bank123", "name": "Bank Manager", "role": "bank_admin"},
         {"email": "user@sarfx.io", "password": "user123", "name": "Demo User", "role": "user"}
     ]
-    
+
     created = []
     updated = []
-    
+
     for user_data in demo_users:
         existing = db.users.find_one({"email": user_data["email"]})
-        
+
         if existing:
             db.users.update_one(
                 {"email": user_data["email"]},
@@ -61,7 +98,7 @@ def seed_demo_users():
                 "created_at": datetime.utcnow()
             }
             result = db.users.insert_one(new_user)
-            
+
             # Create wallet
             db.wallets.insert_one({
                 "user_id": str(result.inserted_id),
@@ -69,7 +106,7 @@ def seed_demo_users():
                 "created_at": datetime.utcnow()
             })
             created.append(user_data["email"])
-    
+
     return jsonify({
         "success": True,
         "created": created,
@@ -83,6 +120,153 @@ def seed_demo_users():
     })
 
 
+# ==================== SMART RATE (IA Backend) ====================
+
+# Fallback rates when AI backend is unavailable
+FALLBACK_RATES = {
+    'EURMAD': 10.82, 'USDMAD': 10.05, 'GBPMAD': 12.67, 'CHFMAD': 11.23, 'CADMAD': 7.45,
+    'MADEUR': 0.092, 'MADUSD': 0.099, 'MADGBP': 0.079,
+    'EURUSD': 1.08, 'USDEUR': 0.93, 'GBPUSD': 1.26, 'USDGBP': 0.79,
+    'EURGBP': 0.85, 'GBPEUR': 1.17, 'CHFEUR': 1.09, 'CHFUSD': 1.17,
+    'CADEUR': 0.68, 'CADUSD': 0.73, 'CADGBP': 0.58
+}
+
+@api_bp.route('/smart-rate/<base>/<target>')
+def get_smart_rate(base, target):
+    """
+    Récupère le taux intelligent depuis le backend IA SarfX.
+    Utilise un cache de 30s et un fallback si l'API est indisponible.
+    """
+    amount = request.args.get('amount', 1000, type=float)
+    cache_key = f"{base}_{target}_{amount}"
+
+    # Check cache first
+    cached = get_cached_rate(cache_key)
+    if cached:
+        cached['from_cache'] = True
+        return jsonify(cached)
+
+    # Try AI Backend
+    try:
+        ai_url = f"{Config.AI_BACKEND_URL}/smart-rate/{base}/{target}"
+        response = requests.get(
+            ai_url,
+            params={'amount': amount},
+            timeout=Config.AI_BACKEND_TIMEOUT
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+
+            # Normalize response structure
+            result = {
+                'success': True,
+                'source': 'ai_backend',
+                'base': base,
+                'target': target,
+                'amount': amount,
+                'sarfx_offer': data.get('sarfx_offer', {
+                    'rate': data.get('rate', FALLBACK_RATES.get(f"{base}{target}", 1.0)),
+                    'final_amount': data.get('final_amount', amount * FALLBACK_RATES.get(f"{base}{target}", 1.0)),
+                    'fees': amount * 0.005
+                }),
+                'market_intelligence': data.get('market_intelligence', {
+                    'bank_rate': FALLBACK_RATES.get(f"{base}{target}", 1.0) * 0.975,
+                    'market_rate': FALLBACK_RATES.get(f"{base}{target}", 1.0),
+                    'best_liquidity_source': 'market',
+                    'savings': 0
+                }),
+                'providers': data.get('providers', []),
+                'ai_advisor': data.get('ai_advisor', {
+                    'signal': 'NEUTRE',
+                    'confidence': 0.7,
+                    'message': 'Taux stables'
+                }),
+                'timestamp': datetime.utcnow().isoformat(),
+                'from_cache': False
+            }
+
+            # Cache the result
+            set_cached_rate(cache_key, result)
+            return jsonify(result)
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ AI Backend unavailable: {e}")
+    except Exception as e:
+        print(f"❌ Error calling AI Backend: {e}")
+
+    # Fallback to hardcoded rates
+    pair = f"{base}{target}"
+    fallback_rate = FALLBACK_RATES.get(pair, 1.0)
+    sarfx_rate = fallback_rate * 1.005  # SarfX gets slightly better rate
+    bank_rate = fallback_rate * 0.975
+    fees = amount * 0.005
+    final_amount = (amount - fees) * sarfx_rate
+
+    result = {
+        'success': True,
+        'source': 'fallback',
+        'base': base,
+        'target': target,
+        'amount': amount,
+        'sarfx_offer': {
+            'rate': sarfx_rate,
+            'final_amount': final_amount,
+            'fees': fees
+        },
+        'market_intelligence': {
+            'bank_rate': bank_rate,
+            'market_rate': fallback_rate,
+            'best_liquidity_source': 'fallback',
+            'savings': (final_amount) - ((amount - 25) * bank_rate)  # 25€ typical bank fee
+        },
+        'providers': [
+            {'name': 'SarfX', 'rate': sarfx_rate, 'fee': fees, 'final': final_amount, 'delivery': 'instant', 'best': True},
+            {'name': 'Wise', 'rate': fallback_rate * 1.002, 'fee': 4.50, 'final': (amount - 4.50) * fallback_rate * 1.002, 'delivery': 'instant'},
+            {'name': 'Revolut', 'rate': fallback_rate * 0.998, 'fee': 5.00, 'final': (amount - 5.00) * fallback_rate * 0.998, 'delivery': '1-2h'},
+            {'name': 'Western Union', 'rate': fallback_rate * 0.991, 'fee': 12.00, 'final': (amount - 12.00) * fallback_rate * 0.991, 'delivery': '1 day'},
+            {'name': 'Bank Transfer', 'rate': bank_rate, 'fee': 25.00, 'final': (amount - 25.00) * bank_rate, 'delivery': '3-5 days'}
+        ],
+        'ai_advisor': {
+            'signal': 'NEUTRE',
+            'confidence': 0.6,
+            'message': 'Service IA temporairement indisponible, taux estimés'
+        },
+        'timestamp': datetime.utcnow().isoformat(),
+        'from_cache': False
+    }
+
+    # Cache even fallback for consistency
+    set_cached_rate(cache_key, result)
+    return jsonify(result)
+
+
+@api_bp.route('/smart-rate/status')
+def smart_rate_status():
+    """Vérifie le statut du backend IA"""
+    try:
+        response = requests.get(
+            f"{Config.AI_BACKEND_URL}/",
+            timeout=2
+        )
+        if response.status_code == 200:
+            return jsonify({
+                'status': 'online',
+                'backend_url': Config.AI_BACKEND_URL,
+                'cache_ttl': _cache_ttl,
+                'cached_pairs': len(_rate_cache)
+            })
+    except:
+        pass
+
+    return jsonify({
+        'status': 'offline',
+        'backend_url': Config.AI_BACKEND_URL,
+        'fallback_active': True,
+        'cached_pairs': len(_rate_cache)
+    })
+
+
 # ==================== RATES ====================
 
 @api_bp.route('/rates')
@@ -91,7 +275,7 @@ def get_rates():
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     suppliers = list(db.suppliers.find({"is_active": True}))
     rates = []
     for s in suppliers:
@@ -103,7 +287,7 @@ def get_rates():
             "fee": s.get('fee', 0),
             "logo": s.get('logo', '')
         })
-    
+
     return jsonify({
         "rates": rates,
         "timestamp": datetime.utcnow().isoformat()
@@ -116,7 +300,7 @@ def get_suppliers():
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     suppliers = list(db.suppliers.find({"is_active": True}))
     result = []
     for s in suppliers:
@@ -129,7 +313,7 @@ def get_suppliers():
             "logo": s.get('logo', ''),
             "is_active": s.get('is_active', True)
         })
-    
+
     return jsonify(result)
 
 
@@ -140,10 +324,10 @@ def get_rate_history_chart():
     """Récupère l'historique des taux de change pour les graphiques"""
     import random
     from datetime import timedelta
-    
+
     pair = request.args.get('pair', 'USD-MAD')
     time_range = request.args.get('range', '24h')
-    
+
     # Déterminer le nombre de points de données
     ranges = {
         '24h': (48, 30),     # 48 points, 30 min each
@@ -151,9 +335,9 @@ def get_rate_history_chart():
         '30d': (120, 360),   # 120 points, 6 hours each
         '90d': (90, 1440)    # 90 points, 1 day each
     }
-    
+
     points, interval = ranges.get(time_range, (48, 30))
-    
+
     # Base rates par paire
     base_rates = {
         'USD-MAD': 10.05,
@@ -161,9 +345,9 @@ def get_rate_history_chart():
         'GBP-MAD': 12.65,
         'USD-EUR': 0.92
     }
-    
+
     base_rate = base_rates.get(pair, 10.0)
-    
+
     # Générer l'historique simulé
     history = []
     now = datetime.utcnow()
@@ -171,27 +355,27 @@ def get_rate_history_chart():
     min_rate = rate
     max_rate = rate
     first_rate = None
-    
+
     for i in range(points, -1, -1):
         timestamp = now - timedelta(minutes=i * interval)
         # Variation aléatoire réaliste
         change = (random.random() - 0.5) * 0.03 * base_rate
         rate = max(base_rate * 0.95, min(base_rate * 1.05, rate + change))
-        
+
         if first_rate is None:
             first_rate = rate
-        
+
         min_rate = min(min_rate, rate)
         max_rate = max(max_rate, rate)
-        
+
         history.append({
             'timestamp': timestamp.isoformat(),
             'rate': round(rate, 4)
         })
-    
+
     current_rate = history[-1]['rate'] if history else base_rate
     change_pct = ((current_rate - first_rate) / first_rate * 100) if first_rate else 0
-    
+
     return jsonify({
         'success': True,
         'pair': pair,
@@ -211,7 +395,7 @@ def get_best_rates():
     """Récupère les meilleurs taux de change"""
     db = get_db()
     amount = float(request.args.get('amount', 1000))
-    
+
     if db is None:
         # Données mock
         return jsonify({
@@ -224,9 +408,9 @@ def get_best_rates():
                 {'supplier': 'Banque Populaire', 'type': 'Bank', 'rate': 9.85, 'fee': 20}
             ]
         })
-    
+
     suppliers = list(db.suppliers.find({"is_active": True}).sort("rate", -1))
-    
+
     rates = []
     for s in suppliers:
         rates.append({
@@ -235,7 +419,7 @@ def get_best_rates():
             'rate': s.get('rate', 10.0),
             'fee': s.get('fee', 0)
         })
-    
+
     return jsonify({
         'success': True,
         'rates': rates
@@ -248,13 +432,13 @@ def rate_alerts():
     """Gestion des alertes de taux"""
     db = get_db()
     user_id = session['user_id']
-    
+
     if request.method == 'GET':
         alerts = list(db.rate_alerts.find({"user_id": user_id})) if db else []
         for a in alerts:
             a['_id'] = str(a['_id'])
         return jsonify({'success': True, 'alerts': alerts})
-    
+
     elif request.method == 'POST':
         data = request.get_json()
         alert = {
@@ -266,13 +450,13 @@ def rate_alerts():
             'created_at': datetime.utcnow(),
             'triggered': False
         }
-        
+
         if db is not None:
             result = db.rate_alerts.insert_one(alert)
             alert['_id'] = str(result.inserted_id)
-        
+
         return jsonify({'success': True, 'alert': alert})
-    
+
     elif request.method == 'DELETE':
         alert_id = request.args.get('id')
         if db is not None and alert_id:
@@ -286,61 +470,111 @@ def rate_alerts():
 @api_bp.route('/exchange', methods=['POST'])
 @login_required_api
 def create_exchange():
-    """Crée une nouvelle transaction d'échange"""
+    """Crée une nouvelle transaction d'échange - AVEC VÉRIFICATION DU SOLDE"""
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     data = request.form if request.form else request.json
-    
+
     # Validation
     required_fields = ['amount', 'from_currency', 'to_currency', 'rate', 'final_amount']
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Champ manquant: {field}"}), 400
-    
+
     try:
         amount = float(data['amount'])
         rate = float(data['rate'])
         final_amount = float(data['final_amount'])
     except ValueError:
         return jsonify({"error": "Valeurs numériques invalides"}), 400
-    
+
+    from_currency = data['from_currency']
+    to_currency = data['to_currency']
+    user_id = session['user_id']
+
+    # ========== VÉRIFICATION DU SOLDE ==========
+    from app.services.wallet_service import get_wallet_by_user_id, withdraw_from_wallet
+
+    wallet, wallet_error = get_wallet_by_user_id(user_id)
+    if not wallet or wallet_error:
+        error_msg = wallet_error or "Vous n'avez pas de portefeuille. Veuillez en créer un d'abord."
+        if request.form:
+            from flask import redirect, url_for, flash
+            flash(error_msg, "error")
+            return redirect(url_for('app.converter'))
+        return jsonify({"error": error_msg}), 400
+
+    # Vérifier le solde disponible
+    balances = wallet.get('balances', {})
+    current_balance = float(balances.get(from_currency, 0))
+
+    if current_balance < amount:
+        error_msg = f"Solde insuffisant! Vous avez {current_balance:.2f} {from_currency} mais vous essayez d'envoyer {amount:.2f} {from_currency}."
+        if request.form:
+            from flask import redirect, url_for, flash
+            flash(error_msg, "error")
+            return redirect(url_for('app.converter'))
+        return jsonify({"error": error_msg}), 400
+
+    # ========== DÉBITER LE WALLET ==========
+    recipient_name = data.get('recipient_name', 'Inconnu')
+    success, message = withdraw_from_wallet(
+        user_id=user_id,
+        currency=from_currency,
+        amount=amount,
+        destination=f"Échange vers {to_currency} - {recipient_name}"
+    )
+
+    if not success:
+        error_msg = f"Erreur lors du débit: {message}"
+        if request.form:
+            from flask import redirect, url_for, flash
+            flash(error_msg, "error")
+            return redirect(url_for('app.converter'))
+        return jsonify({"error": error_msg}), 400
+
     # Créer la transaction
     transaction = {
         "transaction_id": str(uuid.uuid4()),
-        "user_id": session['user_id'],
+        "user_id": user_id,
         "type": "send",
         "amount": amount,
-        "from_currency": data['from_currency'],
-        "to_currency": data['to_currency'],
+        "from_currency": from_currency,
+        "to_currency": to_currency,
         "rate": rate,
         "final_amount": final_amount,
         "fee": amount * 0.01,  # 1% fee
         "supplier_id": data.get('supplier_id'),
-        "recipient_name": data.get('recipient_name', ''),
+        "recipient_name": recipient_name,
         "recipient_account": data.get('recipient_account', ''),
         "status": "completed",
+        "wallet_debited": True,
+        "previous_balance": current_balance,
+        "new_balance": current_balance - amount,
         "created_at": datetime.utcnow()
     }
-    
+
     result = db.transactions.insert_one(transaction)
-    
+
     # Log history
     from app.services.db_service import log_history
-    log_history("EXCHANGE", f"Échange de {amount} {data['from_currency']} vers {final_amount} {data['to_currency']}", 
+    log_history("EXCHANGE", f"Échange de {amount} {from_currency} vers {final_amount} {to_currency} (wallet débité)",
                 user=session.get('email', 'Unknown'))
-    
+
     # Redirect or return JSON based on request type
     if request.form:
         from flask import redirect, url_for, flash
-        flash(f"Échange réussi! {final_amount:.2f} {data['to_currency']} envoyés.", "success")
+        flash(f"Échange réussi! {amount:.2f} {from_currency} débité de votre wallet. {final_amount:.2f} {to_currency} envoyés.", "success")
         return redirect(url_for('app.profile'))
-    
+
     return jsonify({
         "success": True,
         "transaction_id": transaction['transaction_id'],
-        "message": f"Échange réussi: {final_amount:.2f} {data['to_currency']}"
+        "message": f"Échange réussi: {final_amount:.2f} {to_currency}",
+        "wallet_debited": amount,
+        "new_balance": current_balance - amount
     })
 
 
@@ -353,7 +587,7 @@ def create_wallet():
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     # Vérifier si l'utilisateur a déjà un wallet
     existing = db.wallets.find_one({"user_id": session['user_id']})
     if existing:
@@ -362,7 +596,7 @@ def create_wallet():
             flash("Vous avez déjà un portefeuille", "error")
             return redirect(url_for('app.profile'))
         return jsonify({"error": "Wallet already exists"}), 400
-    
+
     wallet = {
         "wallet_id": str(uuid.uuid4()),
         "user_id": session['user_id'],
@@ -375,18 +609,18 @@ def create_wallet():
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
-    
+
     db.wallets.insert_one(wallet)
-    
+
     from app.services.db_service import log_history
-    log_history("WALLET_CREATE", f"Nouveau portefeuille créé: {wallet['wallet_id']}", 
+    log_history("WALLET_CREATE", f"Nouveau portefeuille créé: {wallet['wallet_id']}",
                 user=session.get('email', 'Unknown'))
-    
+
     if request.form:
         from flask import redirect, url_for, flash
         flash("Portefeuille créé avec succès!", "success")
         return redirect(url_for('app.profile'))
-    
+
     return jsonify({
         "success": True,
         "wallet_id": wallet['wallet_id']
@@ -400,15 +634,123 @@ def get_wallet_balance():
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     wallet = db.wallets.find_one({"user_id": session['user_id']})
     if not wallet:
         return jsonify({"error": "Wallet not found"}), 404
-    
+
     return jsonify({
         "wallet_id": wallet['wallet_id'],
         "balances": wallet['balances']
     })
+
+
+# ==================== WALLET SWAP ====================
+
+@api_bp.route('/wallet/swap/preview', methods=['POST'])
+@login_required_api
+def swap_preview():
+    """Preview a currency swap without executing it"""
+    from app.services.wallet_service import calculate_swap_preview
+
+    data = request.json or {}
+    from_currency = data.get('from_currency', '').upper()
+    to_currency = data.get('to_currency', '').upper()
+    amount = float(data.get('amount', 0))
+
+    if not from_currency or not to_currency:
+        return jsonify({"error": "from_currency and to_currency are required"}), 400
+
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+
+    preview, error = calculate_swap_preview(from_currency, to_currency, amount)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify({
+        "success": True,
+        **preview
+    })
+
+
+@api_bp.route('/wallet/swap', methods=['POST'])
+@login_required_api
+def execute_wallet_swap():
+    """Execute a currency swap in the user's wallet"""
+    from app.services.wallet_service import execute_swap
+
+    data = request.json or {}
+    from_currency = data.get('from_currency', '').upper()
+    to_currency = data.get('to_currency', '').upper()
+    amount = float(data.get('amount', 0))
+
+    if not from_currency or not to_currency:
+        return jsonify({"error": "from_currency and to_currency are required"}), 400
+
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+
+    result, error = execute_swap(session['user_id'], from_currency, to_currency, amount)
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify(result)
+
+
+@api_bp.route('/wallet/swap/rates')
+@login_required_api
+def get_swap_rates():
+    """Get all available swap rates for user's wallet currencies"""
+    from app.services.wallet_service import get_wallet_swap_rates
+
+    rates, error = get_wallet_swap_rates(session['user_id'])
+
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify({
+        "success": True,
+        "rates": rates,
+        "timestamp": datetime.utcnow().isoformat()
+    })
+
+
+@api_bp.route('/wallet/deposit', methods=['POST'])
+@login_required_api
+def wallet_deposit():
+    """Deposit funds to wallet (for testing/admin)"""
+    from app.services.wallet_service import deposit_to_wallet
+
+    # Check if admin or demo mode
+    db = get_db()
+    user = db.users.find_one({"_id": safe_object_id(session['user_id'])}) if db else None
+    is_admin = user and user.get('role') in ['admin', 'superadmin']
+
+    # In production, this would be triggered by payment webhook
+    # For now, allow for testing
+    data = request.json or {}
+    currency = data.get('currency', '').upper()
+    amount = float(data.get('amount', 0))
+
+    if not currency:
+        return jsonify({"error": "Currency is required"}), 400
+
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+
+    # Limit non-admin deposits for security
+    if not is_admin and amount > 1000:
+        return jsonify({"error": "Maximum deposit amount is 1000 for non-admin users"}), 400
+
+    success, message = deposit_to_wallet(session['user_id'], currency, amount, source="api")
+
+    if success:
+        return jsonify({"success": True, "message": message})
+    else:
+        return jsonify({"error": message}), 400
 
 
 # ==================== THEME ====================
@@ -419,9 +761,9 @@ def set_theme():
     try:
         data = request.json or {}
         theme = data.get('theme', 'dark')
-        
+
         session['theme'] = theme
-        
+
         # Si l'utilisateur est connecté, sauvegarder dans la DB
         if 'user_id' in session:
             db = get_db()
@@ -433,7 +775,7 @@ def set_theme():
                         {"_id": user_id},
                         {"$set": {"theme": theme}}
                     )
-        
+
         return jsonify({"success": True, "theme": theme})
     except Exception as e:
         print(f"Theme error: {e}")
@@ -449,7 +791,7 @@ def save_settings():
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     # Vérifier si admin
     from app.services.db_service import safe_object_id
     user_id = safe_object_id(session['user_id'])
@@ -460,9 +802,9 @@ def save_settings():
             flash("Accès non autorisé", "error")
             return redirect(url_for('app.settings'))
         return jsonify({"error": "Unauthorized"}), 403
-    
+
     data = request.form if request.form else request.json
-    
+
     # Mise à jour des paramètres
     settings_update = {
         "type": "app",
@@ -470,21 +812,21 @@ def save_settings():
         "updated_at": datetime.utcnow(),
         "updated_by": session['user_id']
     }
-    
+
     db.settings.update_one(
         {"type": "app"},
         {"$set": settings_update},
         upsert=True
     )
-    
+
     from app.services.db_service import log_history
     log_history("SETTINGS_UPDATE", "Paramètres mis à jour", user=session.get('email', 'Unknown'))
-    
+
     if request.form:
         from flask import redirect, url_for, flash
         flash("Paramètres sauvegardés!", "success")
         return redirect(url_for('app.settings'))
-    
+
     return jsonify({"success": True})
 
 
@@ -494,7 +836,7 @@ def save_settings():
 def get_forecast(pair):
     """Proxy vers le backend IA pour les prévisions - utilise le service ai_service avec fallback"""
     from app.services.ai_service import fetch_prediction
-    
+
     result = fetch_prediction(pair)
     return jsonify(result)
 
@@ -509,11 +851,11 @@ def get_live_rate():
     Returns rate with 4 decimals precision.
     """
     from app.services.exchange_service import get_live_rate as fetch_live_rate
-    
+
     base = request.args.get('from', 'EUR').upper()
     quote = request.args.get('to', 'USD').upper()
     use_cache = request.args.get('cache', 'true').lower() == 'true'
-    
+
     result = fetch_live_rate(base, quote, use_cache=use_cache)
     return jsonify(result)
 
@@ -525,7 +867,7 @@ def get_all_rates():
     Query params: base (default EUR)
     """
     from app.services.exchange_service import get_all_rates as fetch_all_rates
-    
+
     base = request.args.get('base', 'EUR').upper()
     result = fetch_all_rates(base)
     return jsonify(result)
@@ -539,15 +881,15 @@ def convert_currency():
     Returns result with 4 decimals.
     """
     from app.services.exchange_service import convert_currency as do_convert
-    
+
     try:
         amount = float(request.args.get('amount', 1))
     except ValueError:
         return jsonify({'success': False, 'error': 'Invalid amount'}), 400
-    
+
     from_currency = request.args.get('from', 'EUR').upper()
     to_currency = request.args.get('to', 'USD').upper()
-    
+
     result = do_convert(amount, from_currency, to_currency)
     return jsonify(result)
 
@@ -560,13 +902,13 @@ def get_rate_history(base, quote):
     Data stored in MongoDB for analytics.
     """
     from app.services.exchange_service import get_rate_history as fetch_history
-    
+
     try:
         days = int(request.args.get('days', 30))
         days = min(days, 365)  # Max 1 year
     except ValueError:
         days = 30
-    
+
     result = fetch_history(base.upper(), quote.upper(), days)
     return jsonify(result)
 
@@ -578,12 +920,12 @@ def get_rate_analytics(base, quote):
     Query params: days (default 30)
     """
     from app.services.exchange_service import get_analytics_summary
-    
+
     try:
         days = int(request.args.get('days', 30))
     except ValueError:
         days = 30
-    
+
     result = get_analytics_summary(base.upper(), quote.upper(), days)
     return jsonify(result)
 
@@ -592,7 +934,7 @@ def get_rate_analytics(base, quote):
 def get_currencies():
     """Get list of supported currencies with metadata"""
     from app.services.exchange_service import get_supported_currencies
-    
+
     result = get_supported_currencies()
     return jsonify(result)
 
@@ -606,15 +948,15 @@ def get_banks():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         # Récupérer toutes les banques actives depuis la collection banks
         banks_data = list(db.banks.find({"is_active": True}))
-        
+
         banks = []
         for bank in banks_data:
             # Compter les ATM pour cette banque
             atm_count = db.atm_locations.count_documents({"bank_code": bank['code']})
-            
+
             banks.append({
                 "code": bank['code'],
                 "name": bank['name'],
@@ -623,7 +965,7 @@ def get_banks():
                 "description": bank.get('description', ''),
                 "atm_count": atm_count
             })
-        
+
         return jsonify({
             "success": True,
             "banks": banks,
@@ -641,13 +983,13 @@ def get_bank_details(bank_code):
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         atm_service = ATMService(db)
         bank = atm_service.get_bank_by_code(bank_code)
-        
+
         if not bank:
             return jsonify({"success": False, "error": "Banque non trouvée"}), 404
-        
+
         return jsonify({
             "success": True,
             "bank": bank
@@ -667,13 +1009,13 @@ def get_atms():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         atm_service = ATMService(db)
-        
+
         bank_code = request.args.get('bank_code')
         city = request.args.get('city')
         limit = int(request.args.get('limit', 50))
-        
+
         if city:
             atms = atm_service.get_atms_by_city(city, bank_code)
         elif bank_code:
@@ -681,7 +1023,7 @@ def get_atms():
         else:
             # Retourner tous les ATM (limité)
             atms = list(db.atm_locations.find({"status": "active"}, {"_id": 0}).limit(limit))
-        
+
         return jsonify({
             "success": True,
             "atms": atms,
@@ -702,26 +1044,26 @@ def get_nearest_atms():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         data = request.get_json()
-        
+
         if not data or 'latitude' not in data or 'longitude' not in data:
             return jsonify({
                 "success": False,
                 "error": "Latitude et longitude requis"
             }), 400
-        
+
         latitude = float(data['latitude'])
         longitude = float(data['longitude'])
         bank_code = data.get('bank_code')
         max_distance_km = int(data.get('max_distance_km', 10))
         limit = int(data.get('limit', 10))
-        
+
         atm_service = ATMService(db)
         atms = atm_service.get_nearest_atms(
             latitude, longitude, bank_code, max_distance_km, limit
         )
-        
+
         return jsonify({
             "success": True,
             "atms": atms,
@@ -746,19 +1088,19 @@ def search_atms():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         search_term = request.args.get('q', '')
         bank_code = request.args.get('bank_code')
-        
+
         if not search_term:
             return jsonify({
                 "success": False,
                 "error": "Terme de recherche requis"
             }), 400
-        
+
         atm_service = ATMService(db)
         atms = atm_service.search_atms(search_term, bank_code)
-        
+
         return jsonify({
             "success": True,
             "atms": atms,
@@ -777,13 +1119,13 @@ def get_atm_details(atm_id):
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         atm_service = ATMService(db)
         atm = atm_service.get_atm_by_id(atm_id)
-        
+
         if not atm:
             return jsonify({"success": False, "error": "ATM non trouvé"}), 404
-        
+
         return jsonify({
             "success": True,
             "atm": atm
@@ -800,12 +1142,12 @@ def get_cities():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         bank_code = request.args.get('bank_code')
-        
+
         atm_service = ATMService(db)
         cities = atm_service.get_cities_with_atms(bank_code)
-        
+
         return jsonify({
             "success": True,
             "cities": cities,
@@ -825,20 +1167,20 @@ def get_beneficiaries():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         user_id = session.get('user_id')
-        
+
         # Récupérer les bénéficiaires de l'utilisateur
         beneficiaries = list(db.beneficiaries.find({"user_id": str(user_id)}).sort([
             ("is_favorite", -1),
             ("transfer_count", -1),
             ("name", 1)
         ]))
-        
+
         # Convertir ObjectId en string
         for b in beneficiaries:
             b['_id'] = str(b['_id'])
-        
+
         return jsonify({
             "success": True,
             "beneficiaries": beneficiaries,
@@ -856,17 +1198,17 @@ def create_beneficiary():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         data = request.get_json()
         user_id = session.get('user_id')
         user_email = session.get('email', '')
-        
+
         # Validation
         required_fields = ['name', 'bank_code', 'iban']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({"success": False, "error": f"Champ requis: {field}"}), 400
-        
+
         # Créer le bénéficiaire
         beneficiary = {
             "beneficiary_id": str(uuid.uuid4())[:12].upper(),
@@ -892,10 +1234,10 @@ def create_beneficiary():
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
-        
+
         result = db.beneficiaries.insert_one(beneficiary)
         beneficiary['_id'] = str(result.inserted_id)
-        
+
         return jsonify({
             "success": True,
             "message": "Bénéficiaire créé",
@@ -914,18 +1256,18 @@ def delete_beneficiary(beneficiary_id):
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         user_id = session.get('user_id')
-        
+
         # Vérifier que le bénéficiaire appartient à l'utilisateur
         result = db.beneficiaries.delete_one({
             "_id": ObjectId(beneficiary_id),
             "user_id": str(user_id)
         })
-        
+
         if result.deleted_count == 0:
             return jsonify({"success": False, "error": "Bénéficiaire non trouvé"}), 404
-        
+
         return jsonify({
             "success": True,
             "message": "Bénéficiaire supprimé"
@@ -943,25 +1285,25 @@ def toggle_favorite_beneficiary(beneficiary_id):
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         user_id = session.get('user_id')
-        
+
         # Récupérer le bénéficiaire
         beneficiary = db.beneficiaries.find_one({
             "_id": ObjectId(beneficiary_id),
             "user_id": str(user_id)
         })
-        
+
         if not beneficiary:
             return jsonify({"success": False, "error": "Bénéficiaire non trouvé"}), 404
-        
+
         # Toggle favorite
         new_favorite = not beneficiary.get('is_favorite', False)
         db.beneficiaries.update_one(
             {"_id": ObjectId(beneficiary_id)},
             {"$set": {"is_favorite": new_favorite, "updated_at": datetime.utcnow()}}
         )
-        
+
         return jsonify({
             "success": True,
             "is_favorite": new_favorite
@@ -981,19 +1323,19 @@ def update_bank_settings():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         user_id = session.get('user_id')
         user = db.users.find_one({"_id": ObjectId(user_id)})
-        
+
         if not user or user.get('role') != 'bank_respo':
             return jsonify({"success": False, "error": "Accès non autorisé"}), 403
-        
+
         bank_code = user.get('bank_code')
         if not bank_code:
             return jsonify({"success": False, "error": "Aucune banque associée"}), 400
-        
+
         data = request.json
-        
+
         # Champs autorisés à mettre à jour
         allowed_fields = [
             'api_key', 'api_secret', 'api_base_url', 'webhook_url', 'callback_url',
@@ -1001,16 +1343,16 @@ def update_bank_settings():
             'exchange_rate_margin', 'rate_refresh_interval',
             'ip_whitelist', 'two_factor_required', 'ssl_verification'
         ]
-        
+
         update_data = {k: v for k, v in data.items() if k in allowed_fields}
         update_data['updated_at'] = datetime.utcnow()
         update_data['updated_by'] = str(user_id)
-        
+
         db.banks.update_one(
             {"code": bank_code},
             {"$set": update_data}
         )
-        
+
         return jsonify({
             "success": True,
             "message": "Paramètres mis à jour"
@@ -1028,13 +1370,13 @@ def test_bank_connection():
         db = get_db()
         if db is None:
             return jsonify({"error": "Database unavailable"}), 500
-        
+
         user_id = session.get('user_id')
         user = db.users.find_one({"_id": ObjectId(user_id)})
-        
+
         if not user or user.get('role') != 'bank_respo':
             return jsonify({"success": False, "error": "Accès non autorisé"}), 403
-        
+
         # Simulation d'un test de connexion
         # En production, faire un vrai appel à l'API de la banque
         return jsonify({
@@ -1054,19 +1396,19 @@ def get_notifications():
     """Récupère les notifications de l'utilisateur"""
     db = get_db()
     user_id = session['user_id']
-    
+
     if db is None:
         return jsonify({"success": True, "notifications": []})
-    
+
     notifications = list(db.notifications.find(
         {"user_id": user_id}
     ).sort("created_at", -1).limit(20))
-    
+
     for n in notifications:
         n['_id'] = str(n['_id'])
         n['id'] = n['_id']
         n['time'] = n.get('created_at', datetime.utcnow()).isoformat()
-    
+
     return jsonify({
         "success": True,
         "notifications": notifications
@@ -1079,14 +1421,14 @@ def mark_notification_read(notif_id):
     """Marque une notification comme lue"""
     db = get_db()
     user_id = session['user_id']
-    
+
     if db is not None:
         from bson import ObjectId
         db.notifications.update_one(
             {"_id": ObjectId(notif_id), "user_id": user_id},
             {"$set": {"read": True}}
         )
-    
+
     return jsonify({"success": True})
 
 
@@ -1096,13 +1438,13 @@ def mark_all_notifications_read():
     """Marque toutes les notifications comme lues"""
     db = get_db()
     user_id = session['user_id']
-    
+
     if db is not None:
         db.notifications.update_many(
             {"user_id": user_id},
             {"$set": {"read": True}}
         )
-    
+
     return jsonify({"success": True})
 
 
@@ -1112,15 +1454,15 @@ def check_new_notifications():
     """Vérifie s'il y a de nouvelles notifications"""
     db = get_db()
     user_id = session['user_id']
-    
+
     if db is None:
         return jsonify({"hasNew": False})
-    
+
     unread_count = db.notifications.count_documents({
         "user_id": user_id,
         "read": False
     })
-    
+
     latest = None
     if unread_count > 0:
         latest_doc = db.notifications.find_one(
@@ -1132,7 +1474,7 @@ def check_new_notifications():
                 "title": latest_doc.get('title', ''),
                 "message": latest_doc.get('message', '')
             }
-    
+
     return jsonify({
         "hasNew": unread_count > 0,
         "unreadCount": unread_count,
@@ -1145,7 +1487,7 @@ def create_notification(user_id, notif_type, title, message):
     db = get_db()
     if db is None:
         return None
-    
+
     notification = {
         "user_id": user_id,
         "type": notif_type,
@@ -1154,7 +1496,7 @@ def create_notification(user_id, notif_type, title, message):
         "read": False,
         "created_at": datetime.utcnow()
     }
-    
+
     result = db.notifications.insert_one(notification)
     return str(result.inserted_id)
 
@@ -1165,7 +1507,7 @@ def create_notification(user_id, notif_type, title, message):
 def chatbot_message():
     """
     Envoie un message au chatbot et reçoit une réponse
-    
+
     Features:
     - RBAC: Réponses adaptées au rôle utilisateur
     - Function Calling: Exécution de tools (solde, taux, ATMs, stats...)
@@ -1177,19 +1519,19 @@ def chatbot_message():
         from app.services.chatbot_service import chatbot_service
         from bson import ObjectId
         import uuid
-        
+
         db = get_db()
         data = request.get_json()
         message = data.get('message', '')
         context_type = data.get('context', 'app')  # 'landing', 'app', 'backoffice'
-        
+
         if not message:
             return jsonify({"success": False, "error": "Message vide"}), 400
-        
+
         # Récupérer le contexte utilisateur
         user_context = {'role': 'anonymous'}
         user = None
-        
+
         if 'user_id' in session and db:
             try:
                 from app.services.db_service import safe_object_id
@@ -1205,18 +1547,18 @@ def chatbot_message():
                     }
             except Exception as e:
                 print(f"Error fetching user context: {e}")
-        
+
         # Récupérer ou créer l'ID de session pour la mémoire de conversation
         session_id = data.get('session_id') or session.get('chat_session_id')
         if not session_id:
             session_id = str(uuid.uuid4())
             session['chat_session_id'] = session_id
-        
+
         # Récupérer l'adresse IP pour rate limiting
         ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
         if ip_address and ',' in ip_address:
             ip_address = ip_address.split(',')[0].strip()
-        
+
         # Générer la réponse avec toutes les fonctionnalités
         result = chatbot_service.generate_response(
             message=message,
@@ -1225,7 +1567,7 @@ def chatbot_message():
             session_id=session_id,
             ip_address=ip_address
         )
-        
+
         # Gérer le rate limiting
         if result.get('error') == 'rate_limited':
             return jsonify({
@@ -1234,14 +1576,14 @@ def chatbot_message():
                 "response": result['response'],
                 "retry_after": result.get('retry_after', 60)
             }), 429
-        
+
         if result.get('success'):
             response_data = {
                 "success": True,
                 "response": result['response'],
                 "session_id": session_id
             }
-            
+
             # Ajouter les métadonnées optionnelles
             if result.get('tool_used'):
                 response_data['tool_used'] = result['tool_used']
@@ -1249,7 +1591,7 @@ def chatbot_message():
                 response_data['data'] = result['data']
             if result.get('remaining_requests') is not None:
                 response_data['remaining_requests'] = result['remaining_requests']
-            
+
             return jsonify(response_data)
         else:
             return jsonify({
@@ -1257,7 +1599,7 @@ def chatbot_message():
                 "error": result.get('error', 'Erreur inconnue'),
                 "response": result.get('response', "Désolé, une erreur est survenue.")
             }), 500
-            
+
     except Exception as e:
         print(f"Chatbot error: {e}")
         return jsonify({
@@ -1276,20 +1618,20 @@ def chatbot_suggestions():
     try:
         from app.services.chatbot_service import chatbot_service
         from app.services.db_service import safe_object_id
-        
+
         db = get_db()
         user = None
         context_type = request.args.get('context', 'landing')  # 'landing', 'app', 'backoffice'
-        
+
         if 'user_id' in session and db:
             try:
                 user_id = safe_object_id(session['user_id'])
                 user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
             except Exception:
                 pass
-        
+
         suggestions = chatbot_service.get_suggestions(db, user, context_type)
-        
+
         return jsonify({
             "success": True,
             "suggestions": suggestions,
@@ -1318,31 +1660,31 @@ def chatbot_history():
     """
     try:
         from app.services.chatbot_service import chatbot_service
-        
+
         db = get_db()
         session_id = request.args.get('session_id') or session.get('chat_session_id')
-        
+
         if not session_id:
             return jsonify({
                 "success": True,
                 "history": [],
                 "message": "Pas de session de conversation active"
             })
-        
+
         if request.method == 'DELETE':
             # Effacer l'historique
             success = chatbot_service.clear_conversation_history(db, session_id)
             if 'chat_session_id' in session:
                 del session['chat_session_id']
-            
+
             return jsonify({
                 "success": success,
                 "message": "Historique de conversation effacé" if success else "Erreur lors de l'effacement"
             })
-        
+
         # GET: Récupérer l'historique
         history = chatbot_service.get_conversation_history(db, session_id, limit=20)
-        
+
         # Formater pour l'affichage
         formatted_history = []
         for msg in history:
@@ -1351,14 +1693,14 @@ def chatbot_history():
                 'content': msg['content'],
                 'timestamp': msg['timestamp'].isoformat() if msg.get('timestamp') else None
             })
-        
+
         return jsonify({
             "success": True,
             "history": formatted_history,
             "session_id": session_id,
             "count": len(formatted_history)
         })
-        
+
     except Exception as e:
         print(f"History error: {e}")
         return jsonify({
@@ -1376,33 +1718,33 @@ def manage_atms():
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     if request.method == 'GET':
         # Liste des ATMs
         from bson import ObjectId
         user_id = session.get('user_id')
         user = db.users.find_one({"_id": ObjectId(user_id)})
-        
+
         # Filtrer par banque si l'utilisateur est associé à une banque
         query = {}
         if user.get('bank_code') and user.get('role') in ['admin_associate_bank', 'bank_user']:
             query['bank_code'] = user['bank_code']
-        
+
         atms = list(db.atms.find(query)) if 'atms' in db.list_collection_names() else []
         for atm in atms:
             atm['_id'] = str(atm['_id'])
-        
+
         return jsonify({"success": True, "atms": atms})
-    
+
     elif request.method == 'POST':
         # Ajouter un ATM
         from bson import ObjectId
         user_id = session.get('user_id')
         user = db.users.find_one({"_id": ObjectId(user_id)})
-        
+
         if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
             return jsonify({"success": False, "error": "Non autorisé"}), 403
-        
+
         data = request.get_json()
         atm_data = {
             'name': data.get('name'),
@@ -1414,7 +1756,7 @@ def manage_atms():
             'is_active': True,
             'created_at': datetime.utcnow()
         }
-        
+
         result = db.atms.insert_one(atm_data)
         return jsonify({"success": True, "atm_id": str(result.inserted_id)})
 
@@ -1427,17 +1769,17 @@ def manage_atm(atm_id):
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     user_id = session.get('user_id')
     user = db.users.find_one({"_id": ObjectId(user_id)})
-    
+
     if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
         return jsonify({"success": False, "error": "Non autorisé"}), 403
-    
+
     if request.method == 'DELETE':
         result = db.atms.delete_one({"_id": ObjectId(atm_id)})
         return jsonify({"success": result.deleted_count > 0})
-    
+
     elif request.method == 'PUT':
         data = request.get_json()
         update_data = {
@@ -1448,7 +1790,7 @@ def manage_atm(atm_id):
             'longitude': float(data.get('longitude')) if data.get('longitude') else None,
             'is_active': data.get('is_active', True)
         }
-        
+
         result = db.atms.update_one({"_id": ObjectId(atm_id)}, {"$set": update_data})
         return jsonify({"success": result.modified_count > 0})
 
@@ -1461,24 +1803,24 @@ def regenerate_api_keys():
     """Régénère les clés API pour une banque"""
     import secrets
     from bson import ObjectId
-    
+
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     user_id = session.get('user_id')
     user = db.users.find_one({"_id": ObjectId(user_id)})
-    
+
     if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
         return jsonify({"success": False, "error": "Non autorisé"}), 403
-    
+
     if not user.get('bank_code'):
         return jsonify({"success": False, "error": "Aucune banque associée"}), 400
-    
+
     # Générer de nouvelles clés
     api_key = 'sk_' + secrets.token_urlsafe(32)
     api_secret = secrets.token_urlsafe(48)
-    
+
     # Mettre à jour la banque
     result = db.banks.update_one(
         {'code': user['bank_code']},
@@ -1490,7 +1832,7 @@ def regenerate_api_keys():
             }
         }
     )
-    
+
     return jsonify({
         "success": result.modified_count > 0,
         "api_key": api_key,
@@ -1503,20 +1845,20 @@ def regenerate_api_keys():
 def sync_bank_data():
     """Synchronise les données bancaires"""
     from bson import ObjectId
-    
+
     db = get_db()
     if db is None:
         return jsonify({"error": "Database unavailable"}), 500
-    
+
     user_id = session.get('user_id')
     user = db.users.find_one({"_id": ObjectId(user_id)})
-    
+
     if user.get('role') not in ['admin', 'admin_sr_bank', 'admin_associate_bank']:
         return jsonify({"success": False, "error": "Non autorisé"}), 403
-    
+
     if not user.get('bank_code'):
         return jsonify({"success": False, "error": "Aucune banque associée"}), 400
-    
+
     # Mettre à jour la date de dernière synchronisation
     result = db.banks.update_one(
         {'code': user['bank_code']},
@@ -1526,9 +1868,59 @@ def sync_bank_data():
             }
         }
     )
-    
+
     return jsonify({
         "success": result.modified_count > 0,
         "message": "Synchronisation réussie",
         "timestamp": datetime.utcnow().isoformat()
     })
+
+
+# ==================== ADMIN WALLET STATS ====================
+@api_bp.route('/admin/wallet-stats', methods=['GET'])
+@login_required_api
+def admin_wallet_stats():
+    """Retourne les statistiques des portefeuilles pour l'admin"""
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+
+    # Vérifier que l'utilisateur est admin
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)})
+
+    if not user or user.get('role') != 'admin':
+        return jsonify({"error": "Non autorisé"}), 403
+
+    try:
+        # Calculer les soldes totaux par devise
+        total_balances = {}
+        total_wallets = 0
+        active_wallets = 0
+
+        wallets = list(db.wallets.find({}))
+        total_wallets = len(wallets)
+
+        for wallet in wallets:
+            if wallet.get('is_active', True):
+                active_wallets += 1
+
+            balances = wallet.get('balances', {})
+            for currency, balance in balances.items():
+                if currency not in total_balances:
+                    total_balances[currency] = 0
+                total_balances[currency] += balance
+
+        # Compter les ajustements
+        total_adjustments = db.wallet_adjustments.count_documents({}) if 'wallet_adjustments' in db.list_collection_names() else 0
+
+        return jsonify({
+            "success": True,
+            "total_wallets": total_wallets,
+            "active_wallets": active_wallets,
+            "total_adjustments": total_adjustments,
+            "total_balances": total_balances,
+            "currencies_count": len(total_balances)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

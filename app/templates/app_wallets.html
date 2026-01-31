@@ -1,614 +1,524 @@
 {% extends "app_base.html" %}
 
-{% block title %}My Wallets - SarfX{% endblock %}
+{% block title %}Mes Portefeuilles - SarfX{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --wallet-card-bg: var(--card-bg);
+        --wallet-card-border: var(--border-color);
+        --wallet-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        --wallet-card-hover-shadow: 0 8px 24px rgba(224, 90, 3, 0.15);
+    }
+
+    [data-theme="dark"] {
+        --wallet-card-bg: var(--card-bg-dark);
+        --wallet-card-border: var(--border-color-dark);
+        --wallet-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .wallet-card {
+        background-color: var(--wallet-card-bg);
+        border: 1px solid var(--wallet-card-border);
+        box-shadow: var(--wallet-card-shadow);
+        transition: all 0.2s ease-in-out;
+    }
+    .wallet-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--wallet-card-hover-shadow);
+        border-color: var(--brand-orange);
+    }
+    .wallet-flag-container {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        background: linear-gradient(135deg, rgba(224, 90, 3, 0.1), rgba(255, 140, 66, 0.1));
+        border-radius: 16px;
+    }
+    .total-balance-card {
+        background: linear-gradient(135deg, rgba(224, 90, 3, 0.2), rgba(255, 140, 66, 0.2));
+        border: 1px solid rgba(224, 90, 3, 0.3);
+    }
+    .wise-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.7);
+    }
+    .wise-modal.active {
+        display: flex !important;
+    }
+    .wise-modal-content {
+        max-width: 500px;
+        width: 90%;
+    }
+    .wise-tab-content {
+        display: none;
+    }
+    .wise-tab-content.active {
+        display: block !important;
+    }
+    .wise-modal-tab {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .wise-modal-tab.active {
+        color: var(--brand-orange) !important;
+        border-bottom-color: var(--brand-orange) !important;
+    }
+    .wise-btn-primary:hover {
+        background: rgb(200, 80, 3);
+        transform: translateY(-1px);
+    }
+    /* Empty State */
+    .wallet-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 20px;
+        border-radius: 16px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="wise-main-content">
-    <!-- Page Header -->
-    <div class="wise-page-header">
-        <div class="wise-page-header-content">
-            <h1 class="wise-page-title">My Wallets</h1>
-            <p class="wise-page-subtitle">Manage your multi-currency balances</p>
+
+<div class="space-y-8 pb-24">
+
+    <!-- Header -->
+
+    <div class="flex flex-wrap gap-4 justify-between items-center pt-2">
+
+        <div>
+
+            <h1 class="text-3xl font-bold text-default flex items-center gap-3">
+
+                <i data-lucide="wallet" class="w-8 h-8 text-amber-500"></i>
+
+                Mes Portefeuilles
+
+            </h1>
+
+            <p class="text-muted text-sm mt-1">Gérez vos soldes multi-devises et vos transactions.</p>
+
         </div>
-        <button class="wise-btn wise-btn-primary" onclick="showAddCurrencyModal()">
-            <i data-lucide="plus-circle"></i>
-            Add Currency
-        </button>
+
+        <div class="flex gap-2 flex-wrap">
+            <a href="{{ url_for('app.wallet_recharge') }}" class="btn btn-success" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                <span>Recharger</span>
+            </a>
+            <a href="{{ url_for('app.wallet_swap') }}" class="btn btn-secondary">
+                <i data-lucide="repeat" class="w-4 h-4"></i>
+                <span>Swap</span>
+            </a>
+            <button onclick="showAddCurrencyModal()" class="btn btn-primary">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Ajouter une Devise</span>
+            </button>
+        </div>
+
     </div>
+
+
+
+    <!-- Flash Messages -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+            <div class="alert alert-{{ category }} animate-fade-in-down">
+
+                <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'error' %}x-circle{% else %}info{% endif %}" class="w-5 h-5"></i>
+
+                <span>{{ message }}</span>
+
+            </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
 
     <!-- Total Balance Card -->
-    <div class="wise-total-balance-card">
-        <div class="wise-total-label">Total Balance (USD Equivalent)</div>
-        <div class="wise-total-value">${{ "%.2f"|format(total_balance.total_usd) }}</div>
+
+    <div class="card total-balance-card p-6 rounded-2xl">
+
+        <div class="flex items-center gap-6">
+
+            <div class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+
+                <i data-lucide="trending-up" class="w-8 h-8 text-white"></i>
+
+            </div>
+
+            <div>
+
+                <p class="text-sm text-muted mb-1">Solde Total (équivalent USD)</p>
+
+                <p class="text-4xl font-bold text-default">${{ "%.2f" % total_balance.total_usd }}</p>
+
+            </div>
+
+        </div>
+
     </div>
+
+
 
     <!-- Currency Wallets Grid -->
-    <div class="wise-wallets-grid">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
         {% for wallet in total_balance.wallets %}
-        <div class="wise-wallet-card" onclick="showWalletDetails('{{ wallet.currency }}')">
-            <div class="wise-wallet-flag">
-                {% if wallet.currency == 'USD' %}🇺🇸
-                {% elif wallet.currency == 'EUR' %}🇪🇺
-                {% elif wallet.currency == 'GBP' %}🇬🇧
-                {% elif wallet.currency == 'MAD' %}🇲🇦
-                {% elif wallet.currency == 'CHF' %}🇨🇭
-                {% else %}💵{% endif %}
+
+        <div class="wallet-card card rounded-2xl cursor-pointer" onclick="showWalletDetails('{{ wallet.currency }}', {{ wallet.balance }}, {{ wallet.usd_value }})">
+
+            <div class="p-6">
+
+                <div class="flex items-start justify-between mb-4">
+
+                    <div class="flex items-center gap-4">
+
+                        <div class="wallet-flag-container">
+
+                            {{ wallet.currency | get_flag }}
+
+                        </div>
+
+                                                <div>
+
+                                                    <h3 class="font-bold text-xl text-default flex items-center">
+
+                                                        {{ wallet.currency }}
+
+                                                        {% if wallet.is_primary %}
+
+                                                            <span class="ml-2 text-amber-500" title="Devise principale">
+
+                                                                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+
+                                                            </span>
+
+                                                        {% endif %}
+
+                                                    </h3>
+
+                                                    <p class="text-sm text-muted">Solde</p>
+
+                                                </div>
+
+                    </div>
+
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-muted"></i>
+
+                </div>
+
+                <div class="space-y-2 text-right">
+
+                    <p class="text-3xl font-bold text-default">{{ "%.2f" % wallet.balance }}</p>
+
+                    <p class="text-sm text-muted">≈ ${{ "%.2f" % wallet.usd_value }} USD</p>
+
+                </div>
+
             </div>
-            <div class="wise-wallet-info">
-                <div class="wise-wallet-currency">{{ wallet.currency }}</div>
-                <div class="wise-wallet-label">Balance</div>
-            </div>
-            <div class="wise-wallet-balance">
-                {% if wallet.currency == 'EUR' %}€{% elif wallet.currency == 'GBP' %}£{% elif wallet.currency == 'MAD' %}د.م.{% elif wallet.currency == 'CHF' %}CHF {% else %}${% endif %}{{ "%.2f"|format(wallet.balance) }}
-            </div>
-            <i data-lucide="chevron-right" class="wise-wallet-arrow"></i>
+
         </div>
+
         {% else %}
-        <div class="wise-empty-state">
-            <i data-lucide="wallet" class="wise-empty-icon"></i>
-            <h3>No Wallets Yet</h3>
-            <p>Add your first currency to start managing multi-currency balances</p>
-            <button class="wise-btn wise-btn-primary" onclick="showAddCurrencyModal()">
-                <i data-lucide="plus-circle"></i>
-                Add Currency
+
+        <div class="card p-8 rounded-2xl text-center col-span-full wallet-empty-state">
+
+            <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+
+                <i data-lucide="wallet" class="w-8 h-8 text-slate-500"></i>
+
+            </div>
+
+            <h2 class="text-xl font-semibold mb-2">Aucun Portefeuille</h2>
+
+            <p class="text-muted mb-4">Commencez par ajouter votre première devise.</p>
+
+            <button onclick="showAddCurrencyModal()" class="btn btn-primary">
+
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+
+                <span>Ajouter une Devise</span>
+
             </button>
+
         </div>
+
         {% endfor %}
+
     </div>
+
+
+
+    <!-- Recent Transactions -->
+
+    {% if transactions %}
+
+    <div class="space-y-4 mt-6">
+
+        <h2 class="text-xl font-bold text-default">Transactions Récentes</h2>
+
+        <div class="space-y-3">
+
+            {% for tx in transactions[:5] %}
+
+            <div class="card p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+
+                <div class="flex items-center gap-4">
+
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+
+                        <i data-lucide="{{ tx.type | get_transaction_icon }}" class="w-5 h-5"></i>
+
+                    </div>
+
+                    <div class="flex-1">
+
+                        <h3 class="font-semibold text-default">{{ tx.type|title }}</h3>
+
+                        <p class="text-sm text-muted">
+
+                            {{ tx.created_at.strftime('%d %b %Y à %H:%M') if tx.created_at else 'Date inconnue' }}
+
+                        </p>
+
+                    </div>
+
+                    <div class="text-right">
+
+                        <p class="font-bold text-lg {{ 'text-green-500' if tx.recipient_id == session.user_id else 'text-red-500' }}">
+
+                            {{ '+' if tx.recipient_id == session.user_id else '-' }}{{ "%.2f" % tx.amount }} {{ tx.currency }}
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
 </div>
+
+
 
 <!-- Wallet Details Modal -->
+
 <div class="wise-modal" id="walletDetailsModal">
-    <div class="wise-modal-backdrop" onclick="closeWalletDetails()"></div>
-    <div class="wise-modal-content wise-modal-lg">
-        <div class="wise-modal-header">
-            <div class="wise-modal-header-left">
-                <span class="wise-modal-flag" id="modalFlag">🇪🇺</span>
-                <div>
-                    <h2 class="wise-modal-title"><span id="modalCurrency">EUR</span> Wallet Details</h2>
-                    <p class="wise-modal-subtitle">Manage transactions and rate alerts</p>
+
+    <div class="wise-modal-content card" style="max-width: 600px;">
+
+        <div class="wise-modal-header p-6 border-b border-border">
+
+            <div class="flex items-center justify-between">
+
+                <div class="flex items-center gap-4">
+
+                    <div class="text-5xl" id="modalFlag"></div>
+
+                    <div>
+
+                        <h2 id="modalCurrency" class="text-2xl font-bold text-default"></h2>
+
+                        <p id="modalBalance" class="text-sm text-muted mt-1"></p>
+
+                    </div>
+
                 </div>
+
+                <button onclick="closeWalletDetails()" class="btn btn-ghost btn-icon">
+
+                    <i data-lucide="x" class="w-5 h-5"></i>
+
+                </button>
+
             </div>
-            <button class="wise-modal-close" onclick="closeWalletDetails()">
-                <i data-lucide="x"></i>
-            </button>
+
         </div>
-        
-        <div class="wise-modal-tabs">
-            <button class="wise-modal-tab active" data-tab="history">History</button>
-            <button class="wise-modal-tab" data-tab="alerts">Alerts</button>
-            <button class="wise-modal-tab" data-tab="accounts">Bank Accounts</button>
-        </div>
-        
-        <div class="wise-modal-body">
-            <!-- History Tab -->
-            <div class="wise-tab-content active" id="historyTab">
-                <div class="wise-transactions-list">
-                    {% for tx in transactions[:5] %}
-                    <div class="wise-tx-item">
-                        <div class="wise-tx-info">
-                            <div class="wise-tx-title">
-                                {% if tx.type == 'deposit' %}Received from Exchange
-                                {% elif tx.type == 'withdrawal' %}Withdrawn at ATM
-                                {% elif tx.type == 'transfer' %}Sent to {{ tx.recipient or tx.recipient_name or 'User' }}
-                                {% else %}{{ tx.type|default('transfer')|title }}{% endif %}
-                            </div>
-                            <div class="wise-tx-date">{{ tx.created_at.strftime('%Y-%m-%d at %H:%M') if tx.created_at else 'N/A' }}</div>
-                        </div>
-                        <div class="wise-tx-amount {% if tx.type == 'deposit' %}positive{% else %}negative{% endif %}">
-                            {% if tx.type == 'deposit' %}+{% else %}-{% endif %}{{ tx.from_currency or tx.currency or 'MAD' }} {{ "%.2f"|format(tx.amount or 0) }}
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="wise-empty-transactions">
-                        <i data-lucide="receipt" class="wise-empty-icon-sm"></i>
-                        <p>No transactions yet</p>
-                    </div>
-                    {% endfor %}
+
+        <div class="p-6">
+
+            <!-- Tabs can go here in the future -->
+
+            <div id="transactionsList">
+
+                <div class="text-center py-12 text-muted">
+
+                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4"></i>
+
+                    <p>Aucune transaction pour cette devise.</p>
+
                 </div>
+
             </div>
-            
-            <!-- Alerts Tab -->
-            <div class="wise-tab-content" id="alertsTab">
-                <div class="wise-alert-form">
-                    <h4>Set Rate Alert</h4>
-                    <p class="wise-text-muted">Get notified when the rate reaches your target</p>
-                    <div class="wise-form-row">
-                        <div class="wise-form-group">
-                            <label>Target Rate</label>
-                            <input type="number" class="wise-input" placeholder="e.g. 0.95" step="0.0001">
-                        </div>
-                        <div class="wise-form-group">
-                            <label>Alert Type</label>
-                            <select class="wise-select">
-                                <option>Above target</option>
-                                <option>Below target</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button class="wise-btn wise-btn-primary">
-                        <i data-lucide="bell"></i>
-                        Create Alert
+
+        </div>
+
+                <div class="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-border rounded-b-2xl space-y-2">
+
+                     <button onclick="setAsPrimaryCurrency()" class="btn btn-secondary w-full">
+
+                        <i data-lucide="star" class="w-4 h-4"></i>
+
+                        <span>Définir comme devise principale</span>
+
                     </button>
-                </div>
-            </div>
-            
-            <!-- Bank Accounts Tab -->
-            <div class="wise-tab-content" id="accountsTab">
-                <div class="wise-bank-accounts">
-                    <div class="wise-bank-account-card">
-                        <div class="wise-bank-icon">🏦</div>
-                        <div class="wise-bank-info">
-                            <div class="wise-bank-name">No linked bank accounts</div>
-                            <div class="wise-bank-details">Link a bank account to receive funds directly</div>
-                        </div>
-                    </div>
-                    <button class="wise-btn wise-btn-secondary">
-                        <i data-lucide="plus"></i>
-                        Add Bank Account
+
+                     <button onclick="confirmRemoveCurrency()" class="btn btn-danger w-full">
+
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+
+                        <span>Retirer la devise</span>
+
                     </button>
+
                 </div>
-            </div>
-        </div>
+
     </div>
+
 </div>
+
+
 
 <!-- Add Currency Modal -->
+
 <div class="wise-modal" id="addCurrencyModal">
+
     <div class="wise-modal-backdrop" onclick="closeAddCurrencyModal()"></div>
-    <div class="wise-modal-content">
-        <div class="wise-modal-header">
-            <h2 class="wise-modal-title">Add New Currency</h2>
-            <button class="wise-modal-close" onclick="closeAddCurrencyModal()">
-                <i data-lucide="x"></i>
-            </button>
-        </div>
-        <div class="wise-modal-body">
-            <div class="wise-currency-grid">
-                <div class="wise-currency-option" onclick="addCurrency('USD')">
-                    <span class="wise-currency-flag">🇺🇸</span>
-                    <span class="wise-currency-code">USD</span>
-                    <span class="wise-currency-name">US Dollar</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('EUR')">
-                    <span class="wise-currency-flag">🇪🇺</span>
-                    <span class="wise-currency-code">EUR</span>
-                    <span class="wise-currency-name">Euro</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('GBP')">
-                    <span class="wise-currency-flag">🇬🇧</span>
-                    <span class="wise-currency-code">GBP</span>
-                    <span class="wise-currency-name">British Pound</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('MAD')">
-                    <span class="wise-currency-flag">🇲🇦</span>
-                    <span class="wise-currency-code">MAD</span>
-                    <span class="wise-currency-name">Moroccan Dirham</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('CHF')">
-                    <span class="wise-currency-flag">🇨🇭</span>
-                    <span class="wise-currency-code">CHF</span>
-                    <span class="wise-currency-name">Swiss Franc</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('CAD')">
-                    <span class="wise-currency-flag">🇨🇦</span>
-                    <span class="wise-currency-code">CAD</span>
-                    <span class="wise-currency-name">Canadian Dollar</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('AUD')">
-                    <span class="wise-currency-flag">🇦🇺</span>
-                    <span class="wise-currency-code">AUD</span>
-                    <span class="wise-currency-name">Australian Dollar</span>
-                </div>
-                <div class="wise-currency-option" onclick="addCurrency('JPY')">
-                    <span class="wise-currency-flag">🇯🇵</span>
-                    <span class="wise-currency-code">JPY</span>
-                    <span class="wise-currency-name">Japanese Yen</span>
-                </div>
+
+    <div class="wise-modal-content card">
+
+        <div class="wise-modal-header p-6 border-b border-border">
+
+            <div class="flex items-center justify-between">
+
+                <h2 class="text-xl font-bold text-default">Ajouter une Devise</h2>
+
+                <button onclick="closeAddCurrencyModal()" class="btn btn-ghost btn-icon">
+
+                    <i data-lucide="x" class="w-5 h-5"></i>
+
+                </button>
+
             </div>
+
         </div>
+
+        <div class="p-6">
+
+            <p class="text-sm text-muted mb-6">
+
+                Sélectionnez une devise à ajouter à votre portefeuille.
+
+            </p>
+
+            <form method="POST" action="{{ url_for('app.add_wallet_currency') }}">
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+                    {% for currency in ['USD', 'EUR', 'GBP', 'MAD', 'CHF', 'CAD', 'AED', 'SAR'] %}
+
+                    <label class="cursor-pointer">
+
+                        <input type="radio" name="currency" value="{{ currency }}" required class="hidden peer">
+
+                        <div class="card p-4 rounded-xl text-center peer-checked:border-amber-500 peer-checked:bg-amber-500/10 border-2 border-transparent hover:border-amber-500/50 transition-all">
+
+                            <div class="text-3xl mb-2">{{ currency | get_flag }}</div>
+
+                            <p class="font-bold text-default">{{ currency }}</p>
+
+                        </div>
+
+                    </label>
+
+                    {% endfor %}
+
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full mt-6">
+
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+
+                    <span>Ajouter au Portefeuille</span>
+
+                </button>
+
+            </form>
+
+        </div>
+
     </div>
+
 </div>
 
-<style>
-/* Total Balance Card */
-.wise-total-balance-card {
-    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary, #ff8c42));
-    border-radius: 16px;
-    padding: 32px;
-    text-align: center;
-    margin-bottom: 32px;
-    color: white;
-}
+{% endblock %}
 
-.wise-total-label {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-bottom: 8px;
-}
-
-.wise-total-value {
-    font-size: 48px;
-    font-weight: 800;
-}
-
-/* Wallets Grid */
-.wise-wallets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-}
-
-.wise-wallet-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.wise-wallet-card:hover {
-    border-color: var(--brand-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.wise-wallet-flag {
-    font-size: 36px;
-}
-
-.wise-wallet-info {
-    flex: 1;
-}
-
-.wise-wallet-currency {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.wise-wallet-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.wise-wallet-balance {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.wise-wallet-arrow {
-    width: 20px;
-    height: 20px;
-    color: var(--text-muted);
-}
-
-/* Modal Styles */
-.wise-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-}
-
-.wise-modal.active {
-    display: flex;
-}
-
-.wise-modal-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-}
-
-.wise-modal-content {
-    position: relative;
-    background: var(--card-bg);
-    border-radius: 20px;
-    max-width: 480px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.wise-modal-lg {
-    max-width: 600px;
-}
-
-.wise-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.wise-modal-header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.wise-modal-flag {
-    font-size: 40px;
-}
-
-.wise-modal-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.wise-modal-subtitle {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin: 4px 0 0 0;
-}
-
-.wise-modal-close {
-    background: var(--bg-secondary);
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: all 0.2s;
-}
-
-.wise-modal-close:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-}
-
-.wise-modal-tabs {
-    display: flex;
-    padding: 0 24px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.wise-modal-tab {
-    background: none;
-    border: none;
-    padding: 16px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-}
-
-.wise-modal-tab:hover {
-    color: var(--text-primary);
-}
-
-.wise-modal-tab.active {
-    color: var(--brand-primary);
-    border-bottom-color: var(--brand-primary);
-}
-
-.wise-modal-body {
-    padding: 24px;
-}
-
-.wise-tab-content {
-    display: none;
-}
-
-.wise-tab-content.active {
-    display: block;
-}
-
-/* Transactions List */
-.wise-transactions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.wise-tx-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-}
-
-.wise-tx-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-}
-
-.wise-tx-date {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.wise-tx-amount {
-    font-weight: 700;
-    font-size: 16px;
-}
-
-.wise-tx-amount.positive {
-    color: #10b981;
-}
-
-.wise-tx-amount.negative {
-    color: #ef4444;
-}
-
-/* Empty States */
-.wise-empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    grid-column: 1 / -1;
-}
-
-.wise-empty-icon {
-    width: 64px;
-    height: 64px;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-}
-
-.wise-empty-icon-sm {
-    width: 32px;
-    height: 32px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-}
-
-.wise-empty-transactions {
-    text-align: center;
-    padding: 32px;
-    color: var(--text-secondary);
-}
-
-/* Alert Form */
-.wise-alert-form h4 {
-    margin: 0 0 4px 0;
-    color: var(--text-primary);
-}
-
-.wise-alert-form .wise-text-muted {
-    margin-bottom: 20px;
-}
-
-.wise-form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-/* Bank Accounts */
-.wise-bank-accounts {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.wise-bank-account-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-}
-
-.wise-bank-icon {
-    font-size: 32px;
-}
-
-.wise-bank-name {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.wise-bank-details {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-/* Currency Grid */
-.wise-currency-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-.wise-currency-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 20px;
-    background: var(--bg-secondary);
-    border: 2px solid transparent;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.wise-currency-option:hover {
-    border-color: var(--brand-primary);
-    background: var(--bg-tertiary);
-}
-
-.wise-currency-flag {
-    font-size: 32px;
-}
-
-.wise-currency-code {
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.wise-currency-name {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-@media (max-width: 640px) {
-    .wise-total-value {
-        font-size: 36px;
-    }
-    
-    .wise-currency-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .wise-form-row {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
-
+{% block scripts %}
 <script>
-// Initialize icons
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 });
 
+let currentCurrency = '';
+let currentBalance = 0;
+
 // Wallet Details Modal
-function showWalletDetails(currency) {
-    const modal = document.getElementById('walletDetailsModal');
+function showWalletDetails(currency, balance, usdValue) {
+    currentCurrency = currency;
+    currentBalance = balance;
+
     const flags = {
-        'USD': '🇺🇸',
-        'EUR': '🇪🇺',
-        'GBP': '🇬🇧',
-        'MAD': '🇲🇦',
-        'CHF': '🇨🇭'
+        'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧', 'MAD': '🇲🇦',
+        'CHF': '🇨🇭', 'CAD': '🇨🇦', 'AED': '🇦🇪', 'SAR': '🇸🇦'
     };
-    
+
     document.getElementById('modalFlag').textContent = flags[currency] || '💵';
     document.getElementById('modalCurrency').textContent = currency;
+    document.getElementById('modalBalance').textContent = `Solde: ${balance.toFixed(2)} ${currency}`;
+
+    const modal = document.getElementById('walletDetailsModal');
     modal.classList.add('active');
+
+    loadCurrencyTransactions(currency);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function closeWalletDetails() {
@@ -624,25 +534,110 @@ function closeAddCurrencyModal() {
     document.getElementById('addCurrencyModal').classList.remove('active');
 }
 
-function addCurrency(code) {
-    alert(`Adding ${code} wallet... This feature will be available soon!`);
-    closeAddCurrencyModal();
+// Load currency transactions via AJAX
+async function loadCurrencyTransactions(currency) {
+    const transactionsList = document.getElementById('transactionsList');
+    transactionsList.innerHTML = `
+        <div class="text-center py-12 text-muted">
+            <i data-lucide="loader" class="w-12 h-12 mx-auto mb-4 animate-spin"></i>
+            <p>Chargement des transactions...</p>
+        </div>
+    `;
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    try {
+        const response = await fetch(`/wallets/transactions/${currency}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+
+        if (data.transactions && data.transactions.length > 0) {
+            let html = '<div class="space-y-3">';
+            data.transactions.forEach(tx => {
+                const isCredit = tx.recipient_id === '{{ session.user_id }}';
+                html += `
+                    <div class="card p-4 rounded-xl">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                <i data-lucide="${tx.type === 'deposit' ? 'arrow-down-left' : (tx.type === 'withdrawal' ? 'arrow-up-right' : 'arrow-right-left')}" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-default">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</h3>
+                                <p class="text-sm text-muted">${new Date(tx.created_at).toLocaleString()}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-lg ${isCredit ? 'text-green-500' : 'text-red-500'}">
+                                    ${isCredit ? '+' : '-'}${tx.amount.toFixed(2)} ${tx.currency}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            transactionsList.innerHTML = html;
+        } else {
+            transactionsList.innerHTML = `
+                <div class="text-center py-12 text-muted">
+                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4"></i>
+                    <p>Aucune transaction pour cette devise.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        transactionsList.innerHTML = `
+            <div class="text-center py-12 text-red-500">
+                <i data-lucide="x-circle" class="w-12 h-12 mx-auto mb-4"></i>
+                <p>Erreur de chargement des transactions.</p>
+            </div>
+        `;
+    } finally {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
 }
 
-// Modal Tabs
-document.querySelectorAll('.wise-modal-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        const tabName = this.dataset.tab;
-        
-        // Update active tab
-        document.querySelectorAll('.wise-modal-tab').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        
-        // Show corresponding content
-        document.querySelectorAll('.wise-tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(tabName + 'Tab').classList.add('active');
-    });
-});
+// Confirm remove currency
+function confirmRemoveCurrency() {
+    if (currentBalance > 0) {
+        SarfXNotify.error('Impossible de retirer cette devise. Le solde doit être à zéro.');
+        return;
+    }
+
+    if (confirm(`Êtes-vous sûr de vouloir retirer ${currentCurrency} de votre portefeuille?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("app.remove_wallet_currency") }}';
+
+        const inputCurrency = document.createElement('input');
+        inputCurrency.type = 'hidden';
+        inputCurrency.name = 'currency';
+        inputCurrency.value = currentCurrency;
+
+        form.appendChild(inputCurrency);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function setAsPrimaryCurrency() {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("app.set_primary_currency") }}';
+
+    const inputCurrency = document.createElement('input');
+    inputCurrency.type = 'hidden';
+    inputCurrency.name = 'currency';
+    inputCurrency.value = currentCurrency;
+
+    form.appendChild(inputCurrency);
+    document.body.appendChild(form);
+    form.submit();
+}
 
 // Close modals on escape
 document.addEventListener('keydown', function(e) {

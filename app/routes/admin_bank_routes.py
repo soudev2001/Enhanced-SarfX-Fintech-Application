@@ -40,11 +40,16 @@ def list_banks():
     db = get_db()
     banks = list(db.banks.find().sort("name", 1))
     
-    # Convertir ObjectId en string
+    # Récupérer les utilisateurs avec le rôle 'bank_admin'
+    bank_admins = list(db.users.find({"role": "bank_admin"}).sort("email", 1))
+
+    # Convertir ObjectId en string pour la template
     for bank in banks:
         bank['_id'] = str(bank['_id'])
+    for user in bank_admins:
+        user['_id'] = str(user['_id'])
     
-    return render_template('admin_banks.html', banks=banks, active_tab='banks')
+    return render_template('admin_banks.html', banks=banks, users=bank_admins, active_tab='banks')
 
 @admin_banks_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
@@ -149,17 +154,26 @@ def edit_bank(bank_id):
 @admin_banks_bp.route('/delete/<bank_id>', methods=['POST'])
 @admin_required
 def delete_bank(bank_id):
-    """Supprimer une banque partenaire"""
+    """Supprimer une banque partenaire et retourner une réponse JSON."""
     db = get_db()
-    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
+    from app.services.db_service import safe_object_id
+    
+    bank_oid = safe_object_id(bank_id)
+    if not bank_oid:
+        return jsonify({"success": False, "message": "ID de banque invalide"}), 400
+        
+    bank = db.banks.find_one({"_id": bank_oid})
     
     if bank:
-        db.banks.delete_one({"_id": ObjectId(bank_id)})
-        flash(f'Banque "{bank.get("name")}" supprimée avec succès!', 'success')
+        db.banks.delete_one({"_id": bank_oid})
+        # Optionnel: Supprimer aussi les associations ou autres données liées
+        message = f'La banque "{bank.get("name")}" a été supprimée avec succès!'
+        flash(message, 'success')
+        return jsonify({"success": True, "message": message})
     else:
-        flash('Banque introuvable', 'error')
-    
-    return redirect(url_for('admin_banks.list_banks'))
+        message = 'Banque introuvable.'
+        flash(message, 'error')
+        return jsonify({"success": False, "message": message}), 404
 
 @admin_banks_bp.route('/toggle/<bank_id>', methods=['POST'])
 @admin_required
@@ -178,3 +192,43 @@ def toggle_active(bank_id):
         return jsonify({"success": True, "message": f"Banque {status_text}", "is_active": new_status})
     
     return jsonify({"success": False, "message": "Banque introuvable"}), 404
+
+@admin_banks_bp.route('/<bank_id>/assign-user', methods=['POST'])
+@admin_required
+def assign_user_to_bank(bank_id):
+    """Assigne un utilisateur (bank_admin) à une banque."""
+    db = get_db()
+    from app.services.db_service import safe_object_id
+
+    bank_oid = safe_object_id(bank_id)
+    if not bank_oid:
+        return jsonify({"success": False, "message": "ID de banque invalide."}), 400
+
+    data = request.get_json()
+    user_id = data.get('user_id')
+    user_oid = safe_object_id(user_id)
+    if not user_oid:
+        return jsonify({"success": False, "message": "ID d'utilisateur invalide."}), 400
+
+    # Vérifier que la banque et l'utilisateur existent
+    bank = db.banks.find_one({"_id": bank_oid})
+    if not bank:
+        return jsonify({"success": False, "message": "Banque introuvable."}), 404
+        
+    user = db.users.find_one({"_id": user_oid, "role": "bank_admin"})
+    if not user:
+        return jsonify({"success": False, "message": "Utilisateur introuvable ou rôle incorrect."}), 404
+
+    # Vérifier si l'utilisateur est déjà assigné à une autre banque
+    existing_assignment = db.banks.find_one({"assigned_user_id": user_oid})
+    if existing_assignment and existing_assignment['_id'] != bank_oid:
+        return jsonify({"success": False, "message": f"Cet utilisateur est déjà assigné à la banque {existing_assignment['name']}."}), 400
+
+    # Assigner l'utilisateur à la banque
+    db.banks.update_one(
+        {"_id": bank_oid},
+        {"$set": {"assigned_user_id": user_oid, "updated_at": datetime.utcnow()}}
+    )
+
+    flash(f"L'utilisateur {user['email']} a été assigné à la banque {bank['name']}.", 'success')
+    return jsonify({"success": True, "message": "Utilisateur assigné avec succès!"})

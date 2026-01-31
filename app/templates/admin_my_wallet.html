@@ -1,0 +1,186 @@
+{% extends "app_base.html" %}
+
+{% block title %}Mon Portefeuille - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2 hover:text-default transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour au Dashboard
+            </a>
+            <h1 class="text-2xl font-bold text-default flex items-center gap-2">
+                <i data-lucide="wallet" class="w-6 h-6 text-amber-500"></i>
+                Mon Portefeuille Admin
+            </h1>
+            <p class="text-muted text-sm">{{ admin.email if admin else 'Administrateur' }}</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ url_for('admin.wallets') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 text-muted hover:text-default hover:bg-slate-700/50 transition">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span class="text-sm font-semibold">Tous les Wallets</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Total Balance Card -->
+    <div class="card p-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+        <div class="flex items-center gap-6">
+            <div class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <i data-lucide="trending-up" class="w-8 h-8 text-white"></i>
+            </div>
+            <div>
+                <p class="text-sm text-muted mb-1">Solde Total (équivalent USD)</p>
+                <p class="text-4xl font-bold text-default">${{ "%.2f" % total_balance.total_usd if total_balance else '0.00' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Currency Balances -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {% if wallet and wallet.balances %}
+        {% for currency, balance in wallet.balances.items() %}
+        <div class="card p-4 rounded-xl hover:border-amber-500/50 transition cursor-pointer">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="text-2xl">
+                    {% if currency == 'USD' %}🇺🇸{% elif currency == 'EUR' %}🇪🇺{% elif currency == 'GBP' %}🇬🇧{% elif currency == 'MAD' %}🇲🇦{% elif currency == 'CHF' %}🇨🇭{% elif currency == 'CAD' %}🇨🇦{% elif currency == 'AED' %}🇦🇪{% elif currency == 'SAR' %}🇸🇦{% else %}💵{% endif %}
+                </div>
+                <div>
+                    <h3 class="font-bold text-default">{{ currency }}</h3>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-default">{{ "%.2f"|format(balance) }}</p>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="col-span-full card p-8 rounded-xl text-center">
+            <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                <i data-lucide="wallet" class="w-8 h-8 text-slate-500"></i>
+            </div>
+            <p class="text-muted">Aucune devise dans votre portefeuille</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <a href="{{ url_for('app.wallet_recharge') }}" class="card p-4 rounded-xl text-center hover:border-green-500/50 transition group">
+            <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-green-500/20 transition">
+                <i data-lucide="plus-circle" class="w-6 h-6 text-green-500"></i>
+            </div>
+            <span class="text-sm font-semibold text-default">Recharger</span>
+        </a>
+        <a href="{{ url_for('app.wallet_swap') }}" class="card p-4 rounded-xl text-center hover:border-blue-500/50 transition group">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-500/20 transition">
+                <i data-lucide="repeat" class="w-6 h-6 text-blue-500"></i>
+            </div>
+            <span class="text-sm font-semibold text-default">Swap</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="card p-4 rounded-xl text-center hover:border-purple-500/50 transition group">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-500/20 transition">
+                <i data-lucide="receipt" class="w-6 h-6 text-purple-500"></i>
+            </div>
+            <span class="text-sm font-semibold text-default">Transactions</span>
+        </a>
+        <a href="{{ url_for('admin.wallets') }}" class="card p-4 rounded-xl text-center hover:border-amber-500/50 transition group">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-amber-500/20 transition">
+                <i data-lucide="wallet" class="w-6 h-6 text-amber-500"></i>
+            </div>
+            <span class="text-sm font-semibold text-default">Gérer Wallets</span>
+        </a>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="space-y-4">
+        <h2 class="text-xl font-bold text-default flex items-center gap-2">
+            <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
+            Mes Transactions Récentes
+        </h2>
+
+        {% if transactions %}
+        <div class="space-y-3">
+            {% for tx in transactions[:10] %}
+            <div class="card p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center
+                        {% if tx.type == 'deposit' %}bg-green-500/10 text-green-500
+                        {% elif tx.type == 'withdrawal' %}bg-red-500/10 text-red-500
+                        {% elif tx.type == 'swap' %}bg-blue-500/10 text-blue-500
+                        {% else %}bg-amber-500/10 text-amber-500{% endif %}">
+                        <i data-lucide="{% if tx.type == 'deposit' %}arrow-down-left{% elif tx.type == 'withdrawal' %}arrow-up-right{% elif tx.type == 'swap' %}repeat{% else %}arrow-right-left{% endif %}" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-default capitalize">{{ tx.type }}</h3>
+                        <p class="text-sm text-muted">
+                            {{ tx.created_at.strftime('%d %b %Y à %H:%M') if tx.created_at else 'Date inconnue' }}
+                            {% if tx.reference %}<span class="opacity-50">• {{ tx.reference }}</span>{% endif %}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-lg
+                            {% if tx.type == 'deposit' %}text-green-500{% elif tx.type == 'withdrawal' %}text-red-500{% else %}text-default{% endif %}">
+                            {% if tx.type == 'deposit' %}+{% elif tx.type == 'withdrawal' %}-{% endif %}{{ "%.2f" % tx.amount }} {{ tx.currency }}
+                        </p>
+                        {% if tx.status %}
+                        <span class="text-xs px-2 py-1 rounded-full
+                            {% if tx.status == 'completed' %}bg-green-500/10 text-green-500
+                            {% elif tx.status == 'pending' %}bg-yellow-500/10 text-yellow-500
+                            {% else %}bg-red-500/10 text-red-500{% endif %}">
+                            {{ tx.status }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card p-8 rounded-xl text-center">
+            <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                <i data-lucide="inbox" class="w-8 h-8 text-slate-500"></i>
+            </div>
+            <p class="text-muted">Aucune transaction récente</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.admin_my_wallet') }}" class="flex flex-col items-center gap-1 text-amber-500">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+            <span class="text-xs">Mon Wallet</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Txns</span>
+        </a>
+        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-xs">App</span>
+        </a>
+    </div>
+</nav>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

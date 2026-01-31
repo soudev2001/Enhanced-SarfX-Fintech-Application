@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center pt-2">
         <div>
-            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2 hover:text-default transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 Retour
             </a>
@@ -17,24 +17,108 @@
             </h1>
             <p class="text-muted text-sm">{{ wallets | length }} portefeuilles actifs</p>
         </div>
+        <div class="flex gap-2">
+            <button onclick="exportWallets()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 text-muted hover:text-default hover:bg-slate-700/50 transition">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="text-xs font-semibold hidden sm:inline">Export</span>
+            </button>
+            <button onclick="showStatsModal()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 transition">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                <span class="text-sm font-semibold">Statistiques</span>
+            </button>
+        </div>
     </div>
 
-    <!-- Search -->
-    <div class="card p-4 rounded-xl">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="card p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <i data-lucide="wallet" class="w-5 h-5 text-amber-500"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-muted">Total Wallets</p>
+                    <p class="text-xl font-bold text-default">{{ wallets | length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-muted">Actifs</p>
+                    <p class="text-xl font-bold text-default">{{ wallets | selectattr('is_active', 'defined') | selectattr('is_active') | list | length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <i data-lucide="banknote" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-muted">Devises</p>
+                    <p class="text-xl font-bold text-default">8</p>
+                </div>
+            </div>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <i data-lucide="activity" class="w-5 h-5 text-purple-500"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-muted">Ajustements</p>
+                    <p class="text-xl font-bold text-default" id="adjustmentsCount">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card p-4 rounded-xl space-y-3">
         <div class="relative">
             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted"></i>
-            <input type="text" id="search-input" onkeyup="filterWallets()" placeholder="Rechercher par email..." 
-                   class="input w-full rounded-xl pl-10 pr-4 py-2 text-sm">
+            <input type="text" id="search-input" onkeyup="filterWallets()" placeholder="Rechercher par email..."
+                   class="input w-full rounded-xl pl-10 pr-4 py-2 text-sm bg-transparent border border-border text-default">
+        </div>
+        <div class="flex gap-2 overflow-x-auto">
+            <button class="filter-btn active" data-filter="all" onclick="filterByCurrency('all')">
+                Toutes
+            </button>
+            <button class="filter-btn" data-filter="USD" onclick="filterByCurrency('USD')">
+                🇺🇸 USD
+            </button>
+            <button class="filter-btn" data-filter="EUR" onclick="filterByCurrency('EUR')">
+                🇪🇺 EUR
+            </button>
+            <button class="filter-btn" data-filter="GBP" onclick="filterByCurrency('GBP')">
+                🇬🇧 GBP
+            </button>
+            <button class="filter-btn" data-filter="MAD" onclick="filterByCurrency('MAD')">
+                🇲🇦 MAD
+            </button>
+            <button class="filter-btn" data-filter="CHF" onclick="filterByCurrency('CHF')">
+                🇨🇭 CHF
+            </button>
+            <button class="filter-btn" data-filter="CAD" onclick="filterByCurrency('CAD')">
+                🇨🇦 CAD
+            </button>
         </div>
     </div>
 
     <!-- Wallets List -->
-    <div class="space-y-3">
+    <div class="space-y-3" id="wallets-container">
         {% for wallet in wallets %}
-        <div class="card p-4 rounded-xl space-y-4 wallet-card" data-email="{{ wallet.user_email | lower }}">
+        <div class="card p-4 rounded-xl space-y-4 wallet-card"
+             data-email="{{ wallet.user_email | lower }}"
+             data-wallet-id="{{ wallet.wallet_id }}">
+            <!-- User Info -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                    <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                         {{ wallet.user_email[0] | upper }}
                     </div>
                     <div>
@@ -42,37 +126,77 @@
                         <p class="text-xs text-muted font-mono">{{ wallet.wallet_id[:16] }}...</p>
                     </div>
                 </div>
-                <span class="text-[10px] px-2 py-0.5 rounded-full {{ 'badge badge-success' if wallet.get('is_active', True) else 'badge badge-error' }}">
-                    {{ 'Actif' if wallet.get('is_active', True) else 'Inactif' }}
-                </span>
+                <div class="flex items-center gap-2">
+                    <button onclick="showWalletHistory('{{ wallet.wallet_id }}', '{{ wallet.user_email }}')"
+                            class="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition">
+                        <i data-lucide="clock" class="w-4 h-4 text-muted"></i>
+                    </button>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full {{ 'badge badge-success' if wallet.get('is_active', True) else 'badge badge-error' }}">
+                        {{ 'Actif' if wallet.get('is_active', True) else 'Inactif' }}
+                    </span>
+                </div>
             </div>
-            
-            <!-- Balances -->
+
+            <!-- Balances Grid -->
             <div class="grid grid-cols-2 gap-2">
                 {% for currency, balance in wallet.get('balances', {}).items() %}
-                <div class="bg-slate-800/50 p-3 rounded-lg flex justify-between items-center">
-                    <span class="text-xs text-muted font-medium">{{ currency }}</span>
+                <div class="balance-card bg-slate-800/50 p-3 rounded-lg flex justify-between items-center hover:bg-slate-700/50 transition"
+                     data-currency="{{ currency }}" data-balance="{{ balance }}">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">
+                            {% if currency == 'USD' %}🇺🇸
+                            {% elif currency == 'EUR' %}🇪🇺
+                            {% elif currency == 'GBP' %}🇬🇧
+                            {% elif currency == 'MAD' %}🇲🇦
+                            {% elif currency == 'CHF' %}🇨🇭
+                            {% elif currency == 'CAD' %}🇨🇦
+                            {% else %}💵
+                            {% endif %}
+                        </span>
+                        <span class="text-xs text-muted font-medium">{{ currency }}</span>
+                    </div>
                     <span class="text-sm font-bold text-default font-mono">{{ "{:,.2f}".format(balance) }}</span>
                 </div>
                 {% endfor %}
             </div>
-            
+
             <!-- Adjust Form -->
-            <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.wallet_id) }}" method="POST" class="space-y-2">
+            <form action="{{ url_for('admin.adjust_wallet', wallet_id=wallet.wallet_id) }}" method="POST" class="space-y-2 adjust-form"
+                  data-balances='{{ wallet.get("balances", {}) | tojson }}'>
                 <div class="flex gap-2">
-                    <select name="currency" class="input rounded-lg px-3 py-2 text-xs flex-1 bg-transparent">
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="MAD">MAD</option>
-                        <option value="GBP">GBP</option>
+                    <select name="currency" class="currency-select input rounded-lg px-3 py-2 text-xs flex-1 bg-slate-800/50 border-slate-700 text-default">
+                        <option value="USD" data-balance="{{ wallet.get('balances', {}).get('USD', 0) }}">🇺🇸 USD</option>
+                        <option value="EUR" data-balance="{{ wallet.get('balances', {}).get('EUR', 0) }}">🇪🇺 EUR</option>
+                        <option value="MAD" data-balance="{{ wallet.get('balances', {}).get('MAD', 0) }}">🇲🇦 MAD</option>
+                        <option value="GBP" data-balance="{{ wallet.get('balances', {}).get('GBP', 0) }}">🇬🇧 GBP</option>
+                        <option value="CHF" data-balance="{{ wallet.get('balances', {}).get('CHF', 0) }}">🇨🇭 CHF</option>
+                        <option value="CAD" data-balance="{{ wallet.get('balances', {}).get('CAD', 0) }}">🇨🇦 CAD</option>
                     </select>
-                    <input type="number" name="amount" step="0.01" placeholder="+/- Montant" class="input rounded-lg px-3 py-2 text-xs flex-1" required>
+                    <input type="number" name="amount" step="0.01" placeholder="+/- Montant"
+                           class="amount-input input rounded-lg px-3 py-2 text-xs flex-1 bg-slate-800/50 border-slate-700 text-default" required>
                 </div>
-                <input type="text" name="reason" placeholder="Raison de l'ajustement" class="w-full input rounded-lg px-3 py-2 text-xs">
-                <button type="submit" class="w-full bg-amber-500/20 text-amber-500 font-bold py-2 rounded-lg text-xs hover:bg-amber-500/30 transition">
-                    <i data-lucide="plus-minus" class="w-4 h-4 inline mr-1"></i>
-                    Ajuster le solde
-                </button>
+                <!-- Balance indicator -->
+                <div class="balance-indicator text-xs px-2 py-1 rounded bg-slate-700/50">
+                    <span class="text-muted">Solde actuel:</span>
+                    <span class="current-balance text-emerald-400 font-mono font-bold">0.00</span>
+                    <span class="balance-currency text-muted">USD</span>
+                </div>
+                <!-- Warning for negative amounts -->
+                <div class="balance-warning text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 hidden">
+                    ⚠️ Montant supérieur au solde disponible!
+                </div>
+                <input type="text" name="reason" placeholder="Raison de l'ajustement (obligatoire pour débit)"
+                       class="reason-input w-full input rounded-lg px-3 py-2 text-xs bg-slate-800/50 border-slate-700 text-default">
+                <div class="flex gap-2">
+                    <button type="submit" name="action" value="credit" class="flex-1 bg-emerald-500/20 text-emerald-500 font-bold py-2 rounded-lg text-xs hover:bg-emerald-500/30 transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        Créditer
+                    </button>
+                    <button type="submit" name="action" value="debit" class="debit-btn flex-1 bg-red-500/20 text-red-500 font-bold py-2 rounded-lg text-xs hover:bg-red-500/30 transition flex items-center justify-center gap-2">
+                        <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                        Débiter
+                    </button>
+                </div>
             </form>
         </div>
         {% else %}
@@ -83,6 +207,97 @@
             <p class="text-muted">Aucun portefeuille</p>
         </div>
         {% endfor %}
+    </div>
+</div>
+
+<!-- Wallet History Modal -->
+<div class="wise-modal" id="historyModal">
+    <div class="wise-modal-backdrop" onclick="closeHistoryModal()"></div>
+    <div class="wise-modal-content glass-panel" style="max-width: 700px;">
+        <div class="wise-modal-header">
+            <div>
+                <h2 id="historyModalTitle" style="margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                    Historique des Ajustements
+                </h2>
+                <p id="historyModalSubtitle" style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 13px;">
+                    user@example.com
+                </p>
+            </div>
+            <button class="wise-modal-close" onclick="closeHistoryModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="wise-modal-body">
+            <div id="historyContent">
+                <div style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                    <i data-lucide="loader" style="width: 32px; height: 32px; margin-bottom: 12px; animation: spin 1s linear infinite;"></i>
+                    <p style="margin: 0;">Chargement de l'historique...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Modal -->
+<div class="wise-modal" id="statsModal">
+    <div class="wise-modal-backdrop" onclick="closeStatsModal()"></div>
+    <div class="wise-modal-content glass-panel" style="max-width: 600px;">
+        <div class="wise-modal-header">
+            <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                Statistiques Globales
+            </h2>
+            <button class="wise-modal-close" onclick="closeStatsModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="wise-modal-body">
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div class="stat-card glass-panel" style="padding: 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="wallet" style="width: 20px; height: 20px; color: var(--brand-orange);"></i>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Portefeuilles</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);">{{ wallets | length }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card glass-panel" style="padding: 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px; color: #10b981;"></i>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Actifs</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);">
+                                {{ wallets | selectattr('is_active', 'equalto', True) | list | length }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card glass-panel" style="padding: 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); grid-column: 1 / -1;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="coins" style="width: 20px; height: 20px; color: #f59e0b;"></i>
+                        <div style="flex: 1;">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Devises Populaires</div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <span style="padding: 4px 12px; background: rgba(224, 90, 3, 0.1); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--brand-orange);">
+                                    🇺🇸 USD
+                                </span>
+                                <span style="padding: 4px 12px; background: rgba(59, 130, 246, 0.1); border-radius: 20px; font-size: 12px; font-weight: 600; color: #60a5fa;">
+                                    🇪🇺 EUR
+                                </span>
+                                <span style="padding: 4px 12px; background: rgba(16, 185, 129, 0.1); border-radius: 20px; font-size: 12px; font-weight: 600; color: #34d399;">
+                                    🇲🇦 MAD
+                                </span>
+                                <span style="padding: 4px 12px; background: rgba(139, 92, 246, 0.1); border-radius: 20px; font-size: 12px; font-weight: 600; color: #a78bfa;">
+                                    🇬🇧 GBP
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -97,13 +312,13 @@
             <i data-lucide="users" class="w-5 h-5"></i>
             <span class="text-xs">Users</span>
         </a>
+        <a href="{{ url_for('admin.admin_my_wallet') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+            <span class="text-xs">Mon Wallet</span>
+        </a>
         <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Txns</span>
-        </a>
-        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
-            <i data-lucide="building-2" class="w-5 h-5"></i>
-            <span class="text-xs">Banques</span>
         </a>
         <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="home" class="w-5 h-5"></i>
@@ -112,15 +327,501 @@
     </div>
 </nav>
 
+<style>
+/* Filter Buttons */
+.filter-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-default);
+}
+
+.filter-btn.active {
+    background: rgba(224, 90, 3, 0.2);
+    border-color: rgba(224, 90, 3, 0.3);
+    color: var(--brand-orange);
+}
+
+/* Modal Styles */
+.wise-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-modal.active {
+    display: flex;
+}
+
+.wise-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.wise-modal-content {
+    position: relative;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 20px;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.wise-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.wise-modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.wise-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.wise-modal-body {
+    padding: 24px;
+}
+
+/* History Items */
+.history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.history-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.history-badge.positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+.history-badge.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+}
+</style>
+
 <script>
+// Initialize icons and load stats
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    loadAdjustmentsCount();
+});
+
+// Load adjustments count
+async function loadAdjustmentsCount() {
+    try {
+        const response = await fetch('/api/admin/wallet-stats');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('adjustmentsCount').textContent = data.total_adjustments || 0;
+        }
+    } catch (error) {
+        console.log('Could not load adjustments count');
+        document.getElementById('adjustmentsCount').textContent = '-';
+    }
+}
+
+// Filter wallets by search
 function filterWallets() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const cards = document.querySelectorAll('.wallet-card');
-    
+
     cards.forEach(card => {
         const email = card.dataset.email || '';
         card.style.display = email.includes(search) ? 'block' : 'none';
     });
 }
+
+// Filter by currency
+function filterByCurrency(currency) {
+    // Update active button
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    const cards = document.querySelectorAll('.wallet-card');
+
+    cards.forEach(card => {
+        if (currency === 'all') {
+            card.style.display = 'block';
+        } else {
+            const balanceCards = card.querySelectorAll('.balance-card');
+            let hasCurrency = false;
+
+            balanceCards.forEach(bc => {
+                if (bc.dataset.currency === currency) {
+                    hasCurrency = true;
+                }
+            });
+
+            card.style.display = hasCurrency ? 'block' : 'none';
+        }
+    });
+}
+
+// Export wallets to CSV
+function exportWallets() {
+    const wallets = [];
+    document.querySelectorAll('.wallet-card').forEach(card => {
+        const email = card.dataset.email;
+        const walletId = card.dataset.walletId;
+        const balanceCards = card.querySelectorAll('.balance-card');
+
+        balanceCards.forEach(bc => {
+            const currency = bc.dataset.currency;
+            const balance = bc.querySelector('.font-mono')?.textContent?.replace(/,/g, '') || '0';
+            wallets.push({ email, walletId, currency, balance });
+        });
+    });
+
+    // Generate CSV
+    let csv = 'Email,Wallet ID,Currency,Balance\n';
+    wallets.forEach(w => {
+        csv += `"${w.email}","${w.walletId}","${w.currency}",${w.balance}\n`;
+    });
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `wallets_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    showToast('Export CSV téléchargé', 'success');
+}
+
+// Toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-3 rounded-xl text-sm font-medium z-50 ${
+        type === 'success' ? 'bg-green-500/90 text-white' :
+        type === 'error' ? 'bg-red-500/90 text-white' :
+        'bg-slate-800/90 text-white'
+    }`;
+    toast.style.backdropFilter = 'blur(10px)';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Show wallet history
+function showWalletHistory(walletId, email) {
+    document.getElementById('historyModalTitle').textContent = 'Historique des Ajustements';
+    document.getElementById('historyModalSubtitle').textContent = email;
+
+    const modal = document.getElementById('historyModal');
+    modal.classList.add('active');
+
+    // Show loading
+    document.getElementById('historyContent').innerHTML = `
+        <div style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+            <i data-lucide="loader" style="width: 32px; height: 32px; margin-bottom: 12px; animation: spin 1s linear infinite;"></i>
+            <p style="margin: 0;">Chargement de l'historique...</p>
+        </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Load history via API
+    fetch(`/admin/wallets/${walletId}/history`)
+        .then(response => response.json())
+        .then(data => {
+            displayHistory(data.history);
+        })
+        .catch(error => {
+            console.error('Error loading history:', error);
+            document.getElementById('historyContent').innerHTML = `
+                <div style="text-align: center; padding: 48px 20px; color: #ef4444;">
+                    <i data-lucide="alert-circle" style="width: 32px; height: 32px; margin-bottom: 12px;"></i>
+                    <p style="margin: 0;">Erreur de chargement</p>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+}
+
+function displayHistory(history) {
+    const content = document.getElementById('historyContent');
+
+    if (!history || history.length === 0) {
+        content.innerHTML = `
+            <div style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 16px;"></i>
+                <p style="margin: 0;">Aucun ajustement enregistré</p>
+            </div>
+        `;
+    } else {
+        content.innerHTML = history.map(item => {
+            const diff = item.difference;
+            const isPositive = diff >= 0;
+            const date = new Date(item.created_at);
+
+            return `
+                <div class="history-item">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
+                            ${item.currency}: ${item.old_balance.toFixed(2)} → ${item.new_balance.toFixed(2)}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            ${item.admin_email} • ${date.toLocaleDateString('fr-FR')} à ${date.toLocaleTimeString('fr-FR')}
+                        </div>
+                        ${item.reason ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic;">"${item.reason}"</div>` : ''}
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="history-badge ${isPositive ? 'positive' : 'negative'}">
+                            ${isPositive ? '+' : ''}${diff.toFixed(2)}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeHistoryModal() {
+    document.getElementById('historyModal').classList.remove('active');
+}
+
+// Stats modal with dynamic data
+async function showStatsModal() {
+    document.getElementById('statsModal').classList.add('active');
+
+    // Load dynamic stats
+    try {
+        const response = await fetch('/api/admin/wallet-stats');
+        if (response.ok) {
+            const stats = await response.json();
+            updateStatsDisplay(stats);
+        }
+    } catch (error) {
+        console.log('Could not load stats');
+    }
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function updateStatsDisplay(stats) {
+    // Update modal with dynamic stats if we have the data
+    if (stats.total_balances) {
+        const balancesHtml = Object.entries(stats.total_balances).map(([currency, balance]) => {
+            const flag = { USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', MAD: '🇲🇦', CHF: '🇨🇭', CAD: '🇨🇦', AED: '🇦🇪', SAR: '🇸🇦' }[currency] || '💵';
+            return `<span style="padding: 4px 12px; background: rgba(224, 90, 3, 0.1); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--brand-orange);">
+                ${flag} ${balance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${currency}
+            </span>`;
+        }).join('');
+
+        const balancesContainer = document.querySelector('.stats-grid');
+        if (balancesContainer) {
+            // Add total balances card
+            const existingTotalCard = document.getElementById('totalBalancesCard');
+            if (!existingTotalCard) {
+                const totalCard = document.createElement('div');
+                totalCard.id = 'totalBalancesCard';
+                totalCard.className = 'stat-card glass-panel';
+                totalCard.style.cssText = 'padding: 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); grid-column: 1 / -1;';
+                totalCard.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="banknote" style="width: 20px; height: 20px; color: #10b981;"></i>
+                        <div style="flex: 1;">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Soldes Totaux Plateforme</div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${balancesHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                balancesContainer.insertBefore(totalCard, balancesContainer.children[2]);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+    }
+}
+
+function closeStatsModal() {
+    document.getElementById('statsModal').classList.remove('active');
+}
+
+// Close modals on escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeHistoryModal();
+        closeStatsModal();
+    }
+});
+
+// ============================================
+// Wallet Adjustment Form Validation
+// ============================================
+document.querySelectorAll('.adjust-form').forEach(form => {
+    const currencySelect = form.querySelector('.currency-select');
+    const amountInput = form.querySelector('.amount-input');
+    const balanceIndicator = form.querySelector('.balance-indicator');
+    const currentBalanceEl = form.querySelector('.current-balance');
+    const balanceCurrencyEl = form.querySelector('.balance-currency');
+    const balanceWarning = form.querySelector('.balance-warning');
+    const debitBtn = form.querySelector('.debit-btn');
+    const reasonInput = form.querySelector('.reason-input');
+
+    // Get balances from data attribute
+    let balances = {};
+    try {
+        balances = JSON.parse(form.dataset.balances || '{}');
+    } catch(e) {
+        console.log('Could not parse balances');
+    }
+
+    // Update balance display when currency changes
+    function updateBalanceDisplay() {
+        const currency = currencySelect.value;
+        const balance = balances[currency] || 0;
+        currentBalanceEl.textContent = balance.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        balanceCurrencyEl.textContent = currency;
+        validateAmount();
+    }
+
+    // Validate amount against balance
+    function validateAmount() {
+        const currency = currencySelect.value;
+        const balance = balances[currency] || 0;
+        const amount = Math.abs(parseFloat(amountInput.value) || 0);
+
+        // Check if debit would exceed balance
+        if (amount > balance) {
+            balanceWarning.classList.remove('hidden');
+            debitBtn.disabled = true;
+            debitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            balanceWarning.classList.add('hidden');
+            debitBtn.disabled = false;
+            debitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    currencySelect.addEventListener('change', updateBalanceDisplay);
+    amountInput.addEventListener('input', validateAmount);
+
+    // Initialize
+    updateBalanceDisplay();
+
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        const action = e.submitter?.value;
+        const amount = Math.abs(parseFloat(amountInput.value) || 0);
+        const currency = currencySelect.value;
+        const balance = balances[currency] || 0;
+        const reason = reasonInput.value.trim();
+
+        // Prevent zero amounts
+        if (amount <= 0) {
+            e.preventDefault();
+            showToast('Le montant doit être supérieur à 0', 'error');
+            return;
+        }
+
+        // For debit, check balance and require reason
+        if (action === 'debit') {
+            if (amount > balance) {
+                e.preventDefault();
+                showToast(`Solde insuffisant! Maximum: ${balance.toFixed(2)} ${currency}`, 'error');
+                return;
+            }
+            if (!reason) {
+                e.preventDefault();
+                showToast('Raison obligatoire pour un débit', 'error');
+                reasonInput.focus();
+                reasonInput.classList.add('border-red-500');
+                return;
+            }
+            // Make amount negative for debit
+            amountInput.value = -Math.abs(amount);
+        } else {
+            // Make amount positive for credit
+            amountInput.value = Math.abs(amount);
+        }
+    });
+
+    // Remove red border on reason input when typing
+    reasonInput.addEventListener('input', function() {
+        this.classList.remove('border-red-500');
+    });
+});
 </script>
 {% endblock %}

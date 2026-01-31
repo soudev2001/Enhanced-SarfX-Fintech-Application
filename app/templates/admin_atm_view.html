@@ -15,7 +15,7 @@
             <p class="text-muted text-sm font-mono">{{ atm.atm_id }}</p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="text-[10px] px-3 py-1 rounded-full 
+            <span class="text-[10px] px-3 py-1 rounded-full
                 {{ 'badge badge-success' if atm.status == 'active' else 'badge badge-error' if atm.status == 'inactive' else 'badge badge-warning' }}">
                 {{ atm.status | upper }}
             </span>
@@ -66,7 +66,7 @@
                     <p class="text-sm font-mono text-muted">
                         {{ "%.6f" | format(atm.location.coordinates[1]) }}, {{ "%.6f" | format(atm.location.coordinates[0]) }}
                     </p>
-                    <a href="https://www.google.com/maps?q={{ atm.location.coordinates[1] }},{{ atm.location.coordinates[0] }}" 
+                    <a href="https://www.google.com/maps?q={{ atm.location.coordinates[1] }},{{ atm.location.coordinates[0] }}"
                        target="_blank" class="text-xs text-primary hover:underline">
                         Voir sur Google Maps
                     </a>
@@ -80,14 +80,14 @@
             </div>
             {% endif %}
         </div>
-        
+
         <!-- Map -->
         {% if atm.location and atm.location.coordinates %}
         <div class="h-48 rounded-xl mt-4 overflow-hidden bg-slate-800">
-            <iframe 
-                width="100%" 
-                height="100%" 
-                frameborder="0" 
+            <iframe
+                width="100%"
+                height="100%"
+                frameborder="0"
                 style="border:0"
                 src="https://www.openstreetmap.org/export/embed.html?bbox={{ atm.location.coordinates[0] - 0.01 }}%2C{{ atm.location.coordinates[1] - 0.01 }}%2C{{ atm.location.coordinates[0] + 0.01 }}%2C{{ atm.location.coordinates[1] + 0.01 }}&layer=mapnik&marker={{ atm.location.coordinates[1] }}%2C{{ atm.location.coordinates[0] }}"
                 allowfullscreen>
@@ -268,7 +268,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Transactions</span>
         </a>
-        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>

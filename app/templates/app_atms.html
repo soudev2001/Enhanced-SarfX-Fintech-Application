@@ -88,7 +88,7 @@
                             <p class="wise-bank-address">{{ bank.address }}</p>
                         </div>
                     </div>
-                    
+
                     <div class="wise-bank-info-row">
                         <div class="wise-bank-info-item">
                             <i data-lucide="clock" class="wise-info-icon"></i>
@@ -99,12 +99,12 @@
                             <span>{{ bank.phone or 'N/A' }}</span>
                         </div>
                     </div>
-                    
+
                     <div class="wise-bank-footer">
                         <span class="wise-atm-count">{{ bank.atm_count or 0 }} ATMs Available</span>
                         <span class="wise-city-badge">{{ bank.city }}</span>
                     </div>
-                    
+
                     <a href="https://www.google.com/maps/search/{{ bank.name }} {{ bank.address }}?hl=en" target="_blank" class="wise-directions-btn">
                         <i data-lucide="navigation"></i>
                         Get Directions
@@ -509,14 +509,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
-    
+
     // Initialize map centered on Morocco
     const map = L.map('atmMap').setView([31.7917, -7.0926], 6);
-    
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
-    
+
     // ATM locations from banks
     const atmLocations = [
         {% for bank in banks %}
@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
-    
+
     // Add markers for each bank
     const markers = [];
     atmLocations.forEach(loc => {
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
             markers.push({ marker, city: loc.city, name: loc.name.toLowerCase() });
         }
     });
-    
+
     // If no locations, add default Morocco cities
     if (atmLocations.length === 0) {
         const defaultCities = [
@@ -551,45 +551,45 @@ document.addEventListener('DOMContentLoaded', function() {
             { name: 'Fès', lat: 34.0331, lng: -5.0003 },
             { name: 'Agadir', lat: 30.4278, lng: -9.5981 }
         ];
-        
+
         defaultCities.forEach(city => {
             L.marker([city.lat, city.lng])
                 .addTo(map)
                 .bindPopup(`<strong>${city.name}</strong><br>ATMs available`);
         });
     }
-    
+
     // City filter buttons
     document.querySelectorAll('.wise-city-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const city = this.dataset.city;
-            
+
             // Update active button
             document.querySelectorAll('.wise-city-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
+
             // Filter bank cards
             filterBanks(city, document.getElementById('atmSearch').value);
         });
     });
-    
+
     // Search functionality
     document.getElementById('atmSearch').addEventListener('input', function() {
         const activeCity = document.querySelector('.wise-city-btn.active').dataset.city;
         filterBanks(activeCity, this.value);
     });
-    
+
     function filterBanks(city, search) {
         const cards = document.querySelectorAll('.wise-bank-card');
         const searchLower = search.toLowerCase();
-        
+
         cards.forEach(card => {
             const cardCity = card.dataset.city;
             const cardName = card.dataset.name;
-            
+
             const cityMatch = city === 'all' || cardCity === city;
             const searchMatch = !search || cardName.includes(searchLower) || cardCity.toLowerCase().includes(searchLower);
-            
+
             card.style.display = (cityMatch && searchMatch) ? 'block' : 'none';
         });
     }

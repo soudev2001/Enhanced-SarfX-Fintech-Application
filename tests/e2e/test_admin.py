@@ -346,7 +346,70 @@ class TestBankManagement:
         expect(page).to_have_url(re.compile(r".*/admin/banks.*"))
         
         helpers.take_screenshot(page, "admin_banks_list")
-    
+
+    def test_assign_user_to_bank(self, logged_in_admin: Page, helpers):
+        """
+        ✅ TEST: Assign user to bank
+        
+        Vérifie que l'assignation d'un utilisateur à une banque fonctionne.
+        """
+        page = logged_in_admin
+        
+        page.goto(f"{BASE_URL}/admin/banks")
+        page.wait_for_load_state("networkidle")
+
+        # Find the first bank card
+        first_bank_card = page.locator('.bank-card').first
+        expect(first_bank_card).to_be_visible()
+
+        # Find the user select dropdown and assign button
+        user_select = first_bank_card.locator('select[id^="user-select-"]')
+        assign_button = first_bank_card.locator('button:has-text("Assigner")')
+
+        if user_select.count() > 0 and assign_button.count() > 0:
+            # Select the first user in the dropdown (if any)
+            options = user_select.locator('option')
+            if options.count() > 1:
+                user_to_assign = options.nth(1).get_attribute('value')
+                user_select.select_option(user_to_assign)
+                
+                assign_button.click()
+                
+                # Wait for the success message
+                expect(page.locator('.alert-success, .toast-success')).to_be_visible()
+                
+                helpers.take_screenshot(page, "assign_user_success")
+
+    def test_bank_card_style(self, logged_in_admin: Page, helpers):
+        """
+        🎨 TEST: Bank card new style
+        
+        Vérifie que le nouveau style des cartes de banque est appliqué.
+        """
+        page = logged_in_admin
+        
+        page.goto(f"{BASE_URL}/admin/banks")
+        page.wait_for_load_state("networkidle")
+
+        # Find the first bank card
+        first_bank_card = page.locator('.bank-card').first
+        expect(first_bank_card).to_be_visible()
+
+        # Check for logo classes
+        logo_container = first_bank_card.locator('.bank-logo-container')
+        logo_img = first_bank_card.locator('.bank-logo-img')
+        expect(logo_container).to_have_class(re.compile(r'bank-logo-container'))
+        expect(logo_img).to_have_class(re.compile(r'bank-logo-img'))
+
+        # Check for button classes
+        edit_button = first_bank_card.locator('a:has-text("Modifier")')
+        delete_button = first_bank_card.locator('button[aria-label="Supprimer"]')
+        
+        expect(edit_button).to_have_class(re.compile(r'btn-secondary'))
+        expect(delete_button).to_have_class(re.compile(r'btn-danger-outline'))
+
+        helpers.take_screenshot(page, "bank_card_new_style")
+
     def test_add_bank_form(self, logged_in_admin: Page, helpers):
         """
         ➕ TEST: Add bank form accessible
@@ -355,7 +418,7 @@ class TestBankManagement:
         """
         page = logged_in_admin
         
-        page.goto(f"{BASE_URL}/admin/banks/new")
+        page.goto(f"{BASE_URL}/admin/banks/add")
         page.wait_for_load_state("networkidle")
         
         # Check form elements

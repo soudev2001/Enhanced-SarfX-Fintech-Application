@@ -95,9 +95,9 @@ def pytest_runtest_makereport(item, call):
             screenshot_path = SCREENSHOTS_DIR / f"{item.name}_{timestamp}.png"
             try:
                 page.screenshot(path=str(screenshot_path), full_page=True)
-                print(f"\n📸 Screenshot saved: {screenshot_path}")
+                print(f"\nScreenshot saved: {screenshot_path}")
             except Exception as e:
-                print(f"\n⚠️ Could not save screenshot: {e}")
+                print(f"\n\u26a0\ufe0f Could not save screenshot: {e}")
 
 
 # ============================================
@@ -355,9 +355,9 @@ def cleanup_test_artifacts():
     
     # After tests: generate summary
     print("\n" + "="*50)
-    print("📊 TEST RESULTS SUMMARY")
+    print("TEST RESULTS SUMMARY")
     print("="*50)
-    print(f"📁 Screenshots: {SCREENSHOTS_DIR}")
-    print(f"🎬 Videos: {VIDEOS_DIR}")
-    print(f"📝 Traces: {TRACES_DIR}")
+    print(f"Screenshots: {SCREENSHOTS_DIR}")
+    print(f"Videos: {VIDEOS_DIR}")
+    print(f"Traces: {TRACES_DIR}")
     print("="*50)

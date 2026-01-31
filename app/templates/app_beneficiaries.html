@@ -608,7 +608,7 @@ function submitBeneficiary(e) {
     e.preventDefault();
     const form = e.target;
     const formData = new FormData(form);
-    
+
     fetch('/api/beneficiaries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -634,7 +634,7 @@ function submitBeneficiary(e) {
 }
 
 function sendToBeneficiary(id) {
-    window.location.href = `/app/converter?beneficiary=${id}`;
+    window.location.href = `/app/beneficiaries/${id}/send`;
 }
 
 function editBeneficiary(id) {

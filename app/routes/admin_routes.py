@@ -194,6 +194,38 @@ def wallets():
 
     return render_template('admin_wallets.html', wallets=all_wallets)
 
+
+@admin_bp.route('/wallets/<wallet_id>/history')
+@admin_required
+def wallet_history(wallet_id):
+    """Récupère l'historique d'un portefeuille (API)"""
+    from app.services.wallet_service import get_wallet_history
+
+    history = get_wallet_history(wallet_id, limit=100)
+
+    # Enrichir avec les infos admin
+    db = get_db()
+    for item in history:
+        admin_id = item.get('admin_id')
+        if admin_id:
+            try:
+                if isinstance(admin_id, str) and len(admin_id) == 24:
+                    admin = db.users.find_one({"_id": ObjectId(admin_id)})
+                else:
+                    admin = db.users.find_one({"_id": admin_id})
+                item['admin_email'] = admin.get('email', 'Unknown') if admin else 'System'
+            except:
+                item['admin_email'] = 'System'
+        else:
+            item['admin_email'] = 'System'
+
+        # Formater les dates
+        if 'created_at' in item:
+            item['created_at'] = item['created_at'].isoformat()
+
+    return {'history': history}
+
+
 @admin_bp.route('/wallets/<wallet_id>/adjust', methods=['POST'])
 @admin_required
 def adjust_wallet(wallet_id):
@@ -203,34 +235,79 @@ def adjust_wallet(wallet_id):
     reason = request.form.get('reason', '')
 
     wallet = db.wallets.find_one({"wallet_id": wallet_id})
-    if wallet:
-        old_balance = wallet.get('balances', {}).get(currency, 0)
-        new_balance = old_balance + amount
+    if not wallet:
+        flash("Portefeuille non trouvé", "error")
+        return redirect(url_for('admin.wallets'))
 
-        # Record adjustment
-        db.wallet_adjustments.insert_one({
-            "wallet_id": wallet_id,
-            "user_id": wallet['user_id'],
-            "currency": currency,
-            "old_balance": old_balance,
-            "new_balance": new_balance,
-            "difference": amount,
-            "admin_id": session['user_id'],
-            "reason": reason,
-            "created_at": datetime.utcnow()
-        })
+    old_balance = wallet.get('balances', {}).get(currency, 0)
+    new_balance = old_balance + amount
 
-        # Update balance
-        db.wallets.update_one(
-            {"wallet_id": wallet_id},
-            {"$set": {f"balances.{currency}": new_balance, "updated_at": datetime.utcnow()}}
-        )
+    # Vérifier si le solde est suffisant pour une soustraction
+    if amount < 0 and new_balance < 0:
+        flash(f"Solde insuffisant! Le solde actuel en {currency} est {old_balance:.2f}. Vous ne pouvez pas retirer plus de {old_balance:.2f} {currency}.", "error")
+        return redirect(url_for('admin.wallets'))
 
-        log_history("WALLET_ADJUST", f"Ajustement {amount} {currency} sur wallet {wallet_id[:8]}...",
-                   user=session.get('email'))
-        flash(f"Solde ajusté: {amount:+.2f} {currency}", "success")
+    # Vérifier que la devise existe dans le wallet pour une soustraction
+    if amount < 0 and old_balance <= 0:
+        flash(f"Impossible de soustraire: aucun solde en {currency} disponible.", "error")
+        return redirect(url_for('admin.wallets'))
+
+    # Record adjustment
+    adjustment_type = "crédit" if amount > 0 else "débit"
+    db.wallet_adjustments.insert_one({
+        "wallet_id": wallet_id,
+        "user_id": wallet['user_id'],
+        "currency": currency,
+        "old_balance": old_balance,
+        "new_balance": new_balance,
+        "difference": amount,
+        "type": adjustment_type,
+        "admin_id": session['user_id'],
+        "reason": reason,
+        "created_at": datetime.utcnow()
+    })
+
+    # Update balance
+    db.wallets.update_one(
+        {"wallet_id": wallet_id},
+        {"$set": {f"balances.{currency}": new_balance, "updated_at": datetime.utcnow()}}
+    )
+
+    log_history("WALLET_ADJUST", f"Ajustement {amount:+.2f} {currency} sur wallet {wallet_id[:8]}... ({adjustment_type})",
+               user=session.get('email'))
+    flash(f"Solde ajusté: {amount:+.2f} {currency} (Nouveau solde: {new_balance:.2f} {currency})", "success")
 
     return redirect(url_for('admin.wallets'))
+
+
+@admin_bp.route('/my-wallet')
+@admin_required
+def admin_my_wallet():
+    """Vue du portefeuille de l'administrateur connecté."""
+    from app.services.wallet_service import get_total_balance_in_usd, get_user_transactions, get_wallet_by_user_id
+
+    db = get_db()
+    admin_id = session.get('user_id')
+
+    # Récupérer l'admin
+    admin = None
+    try:
+        admin = db.users.find_one({"_id": ObjectId(admin_id)})
+    except Exception:
+        admin = db.users.find_one({"email": session.get('email')})
+
+    # Récupérer ou créer le wallet
+    wallet, error = get_wallet_by_user_id(admin_id)
+
+    total_balance, _ = get_total_balance_in_usd(admin_id)
+    transactions, _ = get_user_transactions(admin_id, limit=20)
+
+    return render_template('admin_my_wallet.html',
+        admin=admin,
+        wallet=wallet,
+        total_balance=total_balance,
+        transactions=transactions
+    )
 
 
 # ==================== TRANSACTIONS MANAGEMENT ====================
@@ -515,154 +592,6 @@ MOROCCAN_CITIES = [
     "Ksar El Kébir", "Guelmim", "Ouarzazate", "Al Hoceima", "Berkane", "Taourirt",
     "Dakhla", "Laayoune", "Tan-Tan", "Tiznit", "Taroudant", "Chefchaouen", "Ifrane", "Azrou"
 ]
-
-
-# ==================== BANK MANAGEMENT ====================
-
-@admin_bp.route('/banks')
-@admin_required
-def banks():
-    """Liste toutes les banques partenaires"""
-    db = get_db()
-    banks_list = list(db.banks.find().sort("name", 1))
-
-    # Convertir ObjectId en string
-    for bank in banks_list:
-        bank['_id'] = str(bank['_id'])
-
-    return render_template('admin_banks.html', banks=banks_list, active_tab='banks')
-
-
-@admin_bp.route('/banks/add', methods=['GET', 'POST'])
-@admin_required
-def add_bank():
-    """Ajouter une nouvelle banque partenaire"""
-    if request.method == 'POST':
-        db = get_db()
-
-        name = request.form.get('name')
-        code = request.form.get('code')
-        website = request.form.get('website', '')
-        description = request.form.get('description', '')
-        is_active = request.form.get('is_active') == 'on'
-
-        # Upload du logo
-        logo_path = None
-        if 'logo' in request.files:
-            file = request.files['logo']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(f"{code.lower()}.{file.filename.rsplit('.', 1)[1].lower()}")
-                filepath = os.path.join('app/static/images/banks', filename)
-                os.makedirs('app/static/images/banks', exist_ok=True)
-                file.save(filepath)
-                logo_path = f"/static/images/banks/{filename}"
-
-        bank_data = {
-            "name": name,
-            "code": code.upper(),
-            "website": website,
-            "description": description,
-            "logo": logo_path,
-            "is_active": is_active,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-
-        db.banks.insert_one(bank_data)
-        flash(f'Banque "{name}" créée avec succès!', 'success')
-        return redirect(url_for('admin.banks'))
-
-    return render_template('admin_bank_form.html', bank=None, action='create')
-
-
-@admin_bp.route('/banks/<bank_id>/edit', methods=['GET', 'POST'])
-@admin_required
-def edit_bank(bank_id):
-    """Éditer une banque partenaire"""
-    db = get_db()
-    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
-
-    if not bank:
-        flash('Banque introuvable', 'error')
-        return redirect(url_for('admin.banks'))
-
-    if request.method == 'POST':
-        name = request.form.get('name')
-        code = request.form.get('code')
-        website = request.form.get('website', '')
-        description = request.form.get('description', '')
-        is_active = request.form.get('is_active') == 'on'
-
-        update_data = {
-            "name": name,
-            "code": code.upper(),
-            "website": website,
-            "description": description,
-            "is_active": is_active,
-            "updated_at": datetime.utcnow()
-        }
-
-        # Upload nouveau logo si fourni
-        if 'logo' in request.files:
-            file = request.files['logo']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(f"{code.lower()}.{file.filename.rsplit('.', 1)[1].lower()}")
-                filepath = os.path.join('app/static/images/banks', filename)
-                os.makedirs('app/static/images/banks', exist_ok=True)
-                file.save(filepath)
-                update_data["logo"] = f"/static/images/banks/{filename}"
-
-        db.banks.update_one({"_id": ObjectId(bank_id)}, {"$set": update_data})
-        flash(f'Banque "{name}" modifiée avec succès!', 'success')
-        return redirect(url_for('admin.banks'))
-
-    bank['_id'] = str(bank['_id'])
-    return render_template('admin_bank_form.html', bank=bank, action='edit')
-
-
-@admin_bp.route('/banks/<bank_id>/delete', methods=['POST'])
-@admin_required
-def delete_bank(bank_id):
-    """Supprimer une banque partenaire"""
-    db = get_db()
-    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
-
-    if not bank:
-        flash('Banque introuvable', 'error')
-        return redirect(url_for('admin.banks'))
-
-    # Vérifier s'il y a des ATMs liés
-    atm_count = db.atm_locations.count_documents({"bank_code": bank.get('code')})
-    if atm_count > 0:
-        flash(f'Impossible de supprimer: {atm_count} ATMs sont liés à cette banque.', 'error')
-        return redirect(url_for('admin.banks'))
-
-    db.banks.delete_one({"_id": ObjectId(bank_id)})
-    flash(f'Banque "{bank.get("name")}" supprimée avec succès!', 'success')
-    return redirect(url_for('admin.banks'))
-
-
-@admin_bp.route('/banks/<bank_id>/toggle', methods=['POST'])
-@admin_required
-def toggle_bank(bank_id):
-    """Activer/Désactiver une banque"""
-    db = get_db()
-    bank = db.banks.find_one({"_id": ObjectId(bank_id)})
-
-    if not bank:
-        return jsonify({"success": False, "message": "Banque introuvable"})
-
-    new_status = not bank.get('is_active', True)
-    db.banks.update_one(
-        {"_id": ObjectId(bank_id)},
-        {"$set": {"is_active": new_status, "updated_at": datetime.utcnow()}}
-    )
-
-    return jsonify({
-        "success": True,
-        "message": f"Banque {'activée' if new_status else 'désactivée'}",
-        "is_active": new_status
-    })
 
 
 # ==================== ATM MANAGEMENT ====================

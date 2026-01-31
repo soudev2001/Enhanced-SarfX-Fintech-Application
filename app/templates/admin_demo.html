@@ -49,7 +49,7 @@
             <strong>Serveur headless</strong> = Robot invisible sur le serveur. <strong>Serveur visible</strong> = Navigateur affiché sur le serveur. <strong>Local</strong> = Télécharger et exécuter sur votre machine.
         </p>
     </div>
-    
+
     <!-- Local Execution Instructions (shown when local mode selected) -->
     <div id="local-instructions" class="card p-4 border-l-4 border-warning" style="display: none;">
         <h4 class="font-bold text-default mb-2 flex items-center gap-2">
@@ -260,7 +260,7 @@
             <i data-lucide="play-circle" class="w-5 h-5"></i>
             <span class="text-xs font-bold">Démo</span>
         </a>
-        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>
@@ -305,7 +305,7 @@ let statusPollingInterval = null;
 document.addEventListener('DOMContentLoaded', () => {
     const modeRadios = document.querySelectorAll('input[name="execMode"]');
     const localInstructions = document.getElementById('local-instructions');
-    
+
     modeRadios.forEach(radio => {
         radio.addEventListener('change', () => {
             if (radio.value === 'local' && radio.checked) {
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    
+
     checkPlaywright();
     loadVideos();
 });
@@ -332,11 +332,11 @@ function copyLocalCommand(role) {
 async function checkPlaywright() {
     const checkDiv = document.getElementById('playwright-check');
     checkDiv.style.display = 'block';
-    
+
     try {
         const response = await fetch('/admin/demo/playwright/check');
         const data = await response.json();
-        
+
         if (data.installed && data.browsers_installed) {
             checkDiv.innerHTML = `
                 <div class="flex items-center gap-3">
@@ -375,7 +375,7 @@ function getExecutionMode() {
     const serverHeadless = document.getElementById('mode-headless');
     const serverVisible = document.getElementById('mode-visible');
     const local = document.getElementById('mode-local');
-    
+
     if (local && local.checked) return 'local';
     if (serverVisible && serverVisible.checked) return 'server-visible';
     return 'server-headless';
@@ -384,19 +384,19 @@ function getExecutionMode() {
 // Start Playwright demo for a specific role
 async function startPlaywrightDemo(role) {
     const mode = getExecutionMode();
-    
+
     // Si mode local, ouvrir le téléchargement et afficher instructions
     if (mode === 'local') {
         showNotification(`💻 Téléchargez le script et exécutez: python sarfx_demo.py --role ${role} --visible`, 'info');
         window.open('/admin/demo/download-script', '_blank');
         return;
     }
-    
+
     const btn = document.getElementById(`btn-${role}`);
     const card = document.getElementById(`demo-card-${role}`);
     const statusDiv = document.getElementById(`status-${role}`);
     const headless = mode === 'server-headless';
-    
+
     // Update UI
     btn.disabled = true;
     const modeText = headless ? '(serveur headless)' : '(serveur visible)';
@@ -409,16 +409,16 @@ async function startPlaywrightDemo(role) {
         </span>
     `;
     lucide.createIcons();
-    
+
     try {
         const response = await fetch(`/admin/demo/playwright/run/${role}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ headless: headless })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification(`🎬 Démo ${role} lancée !`, 'success');
             startStatusPolling();
@@ -454,7 +454,7 @@ async function refreshAllStatuses() {
     try {
         const response = await fetch('/admin/demo/playwright/status');
         const statuses = await response.json();
-        
+
         for (const [role, status] of Object.entries(statuses)) {
             updateRoleStatus(role, status);
         }
@@ -469,9 +469,9 @@ function updateRoleStatus(role, status) {
     const card = document.getElementById(`demo-card-${role}`);
     const statusDiv = document.getElementById(`status-${role}`);
     const videoDiv = document.getElementById(`video-${role}`);
-    
+
     card.classList.remove('running', 'success', 'error');
-    
+
     if (status.running) {
         card.classList.add('running');
         btn.disabled = true;
@@ -490,7 +490,7 @@ function updateRoleStatus(role, status) {
                 <i data-lucide="check-circle" class="w-2 h-2"></i> Terminé (${Math.round(status.duration)}s)
             </span>
         `;
-        
+
         // Show video if available
         if (status.video_path) {
             const filename = status.video_path.split('/').pop();
@@ -516,22 +516,22 @@ function updateRoleStatus(role, status) {
             </span>
         `;
     }
-    
+
     lucide.createIcons();
 }
 
 // Start polling for status updates
 function startStatusPolling() {
     if (statusPollingInterval) return;
-    
+
     statusPollingInterval = setInterval(async () => {
         await refreshAllStatuses();
-        
+
         // Check if any demo is still running
         const response = await fetch('/admin/demo/playwright/status');
         const statuses = await response.json();
         const anyRunning = Object.values(statuses).some(s => s.running);
-        
+
         if (!anyRunning && statusPollingInterval) {
             clearInterval(statusPollingInterval);
             statusPollingInterval = null;
@@ -544,11 +544,11 @@ function startStatusPolling() {
 // Load videos gallery
 async function loadVideos() {
     const gallery = document.getElementById('videos-gallery');
-    
+
     try {
         const response = await fetch('/admin/demo/playwright/videos');
         const videos = await response.json();
-        
+
         if (videos.length === 0) {
             gallery.innerHTML = `
                 <div class="col-span-full text-center py-8 text-muted">
@@ -579,7 +579,7 @@ async function loadVideos() {
                 `;
             }).join('');
         }
-        
+
         lucide.createIcons();
     } catch (error) {
         gallery.innerHTML = '<div class="col-span-full text-center py-4 text-error">Erreur de chargement</div>';
@@ -599,12 +599,12 @@ function loadAllVideos() {
 async function loadScreenshots() {
     const gallery = document.getElementById('screenshots-gallery');
     const roleFilter = document.getElementById('screenshot-filter').value;
-    
+
     try {
         const url = roleFilter ? `/admin/demo/playwright/screenshots?role=${roleFilter}` : '/admin/demo/playwright/screenshots';
         const response = await fetch(url);
         const screenshots = await response.json();
-        
+
         if (screenshots.length === 0) {
             gallery.innerHTML = `
                 <div class="col-span-full text-center py-8 text-muted">
@@ -622,7 +622,7 @@ async function loadScreenshots() {
                 </div>
             `).join('');
         }
-        
+
         lucide.createIcons();
     } catch (error) {
         gallery.innerHTML = '<div class="col-span-full text-center py-4 text-error">Erreur de chargement</div>';
@@ -647,14 +647,14 @@ async function startRobotDemo() {
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Lancement...';
     lucide.createIcons();
-    
+
     try {
         const response = await fetch('/admin/demo/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('Robot Framework démo lancée', 'success');
         } else {
@@ -663,7 +663,7 @@ async function startRobotDemo() {
     } catch (error) {
         showNotification('Erreur de lancement', 'error');
     }
-    
+
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Lancer Robot Demo';
     lucide.createIcons();

@@ -31,7 +31,7 @@
             <p class="text-2xl font-bold text-default">{{ total_atms | number_format }}</p>
             <p class="text-xs text-muted">Total ATM</p>
         </div>
-        
+
         <div class="card p-4 rounded-xl">
             <div class="flex items-center justify-between mb-2">
                 <div class="bg-secondary/10 p-2 rounded-lg">
@@ -41,7 +41,7 @@
             <p class="text-2xl font-bold text-default">{{ banks | length }}</p>
             <p class="text-xs text-muted">Banques partenaires</p>
         </div>
-        
+
         <div class="card p-4 rounded-xl">
             <div class="flex items-center justify-between mb-2">
                 <div class="bg-accent/10 p-2 rounded-lg">
@@ -51,7 +51,7 @@
             <p class="text-2xl font-bold text-default">{{ cities | length }}</p>
             <p class="text-xs text-muted">Villes couvertes</p>
         </div>
-        
+
         <div class="card p-4 rounded-xl">
             <div class="flex items-center justify-between mb-2">
                 <div class="bg-success/10 p-2 rounded-lg">
@@ -230,7 +230,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Transactions</span>
         </a>
-        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>

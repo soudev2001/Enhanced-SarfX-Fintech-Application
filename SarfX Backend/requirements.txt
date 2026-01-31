@@ -12,3 +12,6 @@ statsmodels
 prophet
 scikit-learn
 tensorflow
+redis
+# Optional: Uncomment if using Redis for distributed caching
+# redis-py-cluster

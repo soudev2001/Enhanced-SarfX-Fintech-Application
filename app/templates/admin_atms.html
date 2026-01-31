@@ -30,7 +30,7 @@
     <div class="grid grid-cols-5 gap-3">
         {% for bank in banks %}
         <div class="card p-3 rounded-xl text-center cursor-pointer bank-filter {{ 'ring-2 ring-primary' if selected_bank == bank.code else '' }}"
-             onclick="filterByBank('{{ bank.code }}')" 
+             onclick="filterByBank('{{ bank.code }}')"
              style="border-left: 3px solid {{ bank.color }}">
             <p class="text-lg font-bold text-default">{{ bank.atm_count | number_format }}</p>
             <p class="text-[10px] text-muted truncate">{{ bank.name.split()[0] }}</p>
@@ -45,13 +45,13 @@
                 <!-- Search -->
                 <div class="relative">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
-                    <input type="text" name="q" value="{{ request.args.get('q', '') }}" 
-                           placeholder="Rechercher..." 
+                    <input type="text" name="q" value="{{ request.args.get('q', '') }}"
+                           placeholder="Rechercher..."
                            class="w-full pl-10 pr-4 py-2 input rounded-lg text-sm">
                 </div>
-                
+
                 <!-- Bank Filter -->
-                <select name="bank" onchange="document.getElementById('filter-form').submit()" 
+                <select name="bank" onchange="document.getElementById('filter-form').submit()"
                         class="input px-3 py-2 rounded-lg text-sm bg-transparent">
                     <option value="">Toutes les banques</option>
                     {% for bank in banks %}
@@ -60,7 +60,7 @@
                     </option>
                     {% endfor %}
                 </select>
-                
+
                 <!-- City Filter -->
                 <select name="city" onchange="document.getElementById('filter-form').submit()"
                         class="input px-3 py-2 rounded-lg text-sm bg-transparent">
@@ -71,7 +71,7 @@
                     </option>
                     {% endfor %}
                 </select>
-                
+
                 <!-- Status Filter -->
                 <select name="status" onchange="document.getElementById('filter-form').submit()"
                         class="input px-3 py-2 rounded-lg text-sm bg-transparent">
@@ -119,18 +119,18 @@
             <div class="flex items-center gap-4">
                 <!-- Checkbox -->
                 <input type="checkbox" class="atm-checkbox w-4 h-4 rounded" value="{{ atm.atm_id }}" onchange="updateSelection()">
-                
+
                 <!-- Bank Logo / Color -->
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold"
                      style="background: {{ banks_dict.get(atm.bank_code, {}).get('color', '#666') }}">
                     {{ atm.bank_code[:3] | upper }}
                 </div>
-                
+
                 <!-- Info -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                         <p class="font-bold text-default truncate">{{ atm.name }}</p>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full 
+                        <span class="text-[10px] px-2 py-0.5 rounded-full
                             {{ 'badge badge-success' if atm.status == 'active' else 'badge badge-error' if atm.status == 'inactive' else 'badge badge-warning' }}">
                             {{ atm.status | upper }}
                         </span>
@@ -166,7 +166,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <!-- ATM ID -->
                 <div class="text-right hidden md:block">
                     <p class="text-xs font-mono text-muted">{{ atm.atm_id }}</p>
@@ -176,18 +176,18 @@
                     </p>
                     {% endif %}
                 </div>
-                
+
                 <!-- Actions -->
                 <div class="flex items-center gap-1">
-                    <a href="{{ url_for('admin.view_atm', atm_id=atm.atm_id) }}" 
+                    <a href="{{ url_for('admin.view_atm', atm_id=atm.atm_id) }}"
                        class="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition" title="Voir">
                         <i data-lucide="eye" class="w-4 h-4"></i>
                     </a>
-                    <a href="{{ url_for('admin.edit_atm', atm_id=atm.atm_id) }}" 
+                    <a href="{{ url_for('admin.edit_atm', atm_id=atm.atm_id) }}"
                        class="p-2 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition" title="Modifier">
                         <i data-lucide="edit" class="w-4 h-4"></i>
                     </a>
-                    <button onclick="toggleAtmStatus('{{ atm.atm_id }}')" 
+                    <button onclick="toggleAtmStatus('{{ atm.atm_id }}')"
                             class="p-2 rounded-lg {{ 'bg-green-500/10 text-green-500' if atm.status == 'active' else 'bg-red-500/10 text-red-500' }} hover:opacity-80 transition"
                             title="{{ 'Désactiver' if atm.status == 'active' else 'Activer' }}">
                         <i data-lucide="{{ 'toggle-right' if atm.status == 'active' else 'toggle-left' }}" class="w-4 h-4"></i>
@@ -221,7 +221,7 @@
             <i data-lucide="chevron-left" class="w-4 h-4"></i>
         </a>
         {% endif %}
-        
+
         {% for p in range(1, total_pages + 1) %}
             {% if p == page %}
             <span class="card px-3 py-2 rounded-lg bg-primary text-white font-bold">{{ p }}</span>
@@ -231,7 +231,7 @@
             <span class="text-muted">...</span>
             {% endif %}
         {% endfor %}
-        
+
         {% if page < total_pages %}
         <a href="{{ url_for('admin.atms', page=page+1, **request.args) }}" class="card px-3 py-2 rounded-lg text-muted hover:text-primary">
             <i data-lucide="chevron-right" class="w-4 h-4"></i>
@@ -260,7 +260,7 @@
             <i data-lucide="receipt" class="w-5 h-5"></i>
             <span class="text-xs">Transactions</span>
         </a>
-        <a href="{{ url_for('admin.banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
             <i data-lucide="building-2" class="w-5 h-5"></i>
             <span class="text-xs">Banques</span>
         </a>
@@ -292,7 +292,7 @@ function updateSelection() {
     const count = checked.length;
     const countSpan = document.getElementById('selected-count');
     const bulkActions = document.getElementById('bulk-actions');
-    
+
     if (count > 0) {
         countSpan.textContent = count + ' sélectionnés';
         countSpan.classList.remove('hidden');
@@ -306,9 +306,9 @@ function updateSelection() {
 function bulkAction(action) {
     const selected = Array.from(document.querySelectorAll('.atm-checkbox:checked')).map(cb => cb.value);
     if (selected.length === 0) return;
-    
+
     if (action === 'delete' && !confirm(`Supprimer ${selected.length} ATM ?`)) return;
-    
+
     fetch('/admin/atms/bulk', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
