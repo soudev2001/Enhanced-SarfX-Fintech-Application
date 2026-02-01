@@ -1,0 +1,1376 @@
+{% extends "common/app_base.html" %}
+
+{% block content %}
+<div class="wise-ai">
+    <!-- Page Header -->
+    <div class="wise-page-header">
+        <div class="wise-ai-header">
+            <div class="wise-ai-icon">
+                <i data-lucide="brain-circuit" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div>
+                <h1 class="wise-page-title">SarfX IA</h1>
+                <p class="wise-page-subtitle">Taux en direct & Prévisions intelligentes</p>
+            </div>
+        </div>
+        <button onclick="toggleSettings()" class="wise-settings-btn">
+            <i data-lucide="sliders" style="width: 20px; height: 20px;"></i>
+        </button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="wise-tabs">
+        <button onclick="switchTab('converter')" id="tab-converter" class="wise-tab active">
+            <i data-lucide="repeat" style="width: 16px; height: 16px;"></i>
+            <span>Convertir</span>
+        </button>
+        <button onclick="switchTab('chart')" id="tab-chart" class="wise-tab">
+            <i data-lucide="line-chart" style="width: 16px; height: 16px;"></i>
+            <span>Graphique</span>
+        </button>
+        <button onclick="switchTab('forecast')" id="tab-forecast" class="wise-tab">
+            <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+            <span>IA</span>
+        </button>
+    </div>
+
+    <!-- Settings Panel (Hidden by default) -->
+    <div id="settings-panel" class="hidden wise-section wise-settings-panel">
+        <h3 class="wise-section-title">
+            <i data-lucide="settings" class="wise-section-icon" style="color: #a855f7;"></i>
+            Paramètres
+        </h3>
+        <div class="wise-settings-grid">
+            <div class="wise-form-group">
+                <label class="wise-form-label">Source des taux</label>
+                <select id="rate-source" class="wise-form-select" onchange="saveSettings()">
+                    <option value="auto">Auto (Fallback)</option>
+                    <option value="frankfurter">Frankfurter (BCE)</option>
+                    <option value="exchangerate">ExchangeRate-API</option>
+                </select>
+            </div>
+            <div class="wise-form-group">
+                <label class="wise-form-label">Rafraîchissement cache</label>
+                <select id="cache-duration" class="wise-form-select" onchange="saveSettings()">
+                    <option value="1">1 minute</option>
+                    <option value="5">5 minutes</option>
+                    <option value="15">15 minutes</option>
+                </select>
+            </div>
+            <div class="wise-form-group wise-form-full">
+                <label class="wise-form-label">URL Backend IA</label>
+                <input type="text" id="ai-backend-url" value="{{ ai_backend_url | default('http://localhost:8087') }}" 
+                       class="wise-form-input" style="font-family: monospace; font-size: 12px;">
+            </div>
+        </div>
+        <div class="wise-info-note">
+            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+            <span>Sources: Frankfurter (BCE - illimité), ExchangeRate-API (1500/mois)</span>
+        </div>
+    </div>
+
+    <!-- ==================== CONVERTER TAB ==================== -->
+    <div id="content-converter" class="wise-tab-content">
+        <!-- Live Rate Display -->
+        <div class="wise-section wise-rate-display">
+            <div class="wise-rate-header">
+                <span class="wise-rate-label">Taux en direct</span>
+                <div class="wise-rate-meta">
+                    <span id="rate-source-badge" class="wise-source-badge">BCE</span>
+                    <span id="rate-timestamp" class="wise-timestamp">--:--</span>
+                </div>
+            </div>
+            <div class="wise-rate-content">
+                <div class="wise-rate-flags">
+                    <span id="live-from-flag" class="wise-flag">🇪🇺</span>
+                    <i data-lucide="arrow-right" style="width: 20px; height: 20px; color: var(--text-tertiary);"></i>
+                    <span id="live-to-flag" class="wise-flag">🇺🇸</span>
+                </div>
+                <h1 id="live-rate" class="wise-live-rate">--</h1>
+                <p class="wise-rate-text">
+                    1 <span id="live-base">EUR</span> = <span id="live-rate-text">--</span> <span id="live-quote">USD</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Wise-Style Converter -->
+        <div class="wise-section">
+            <h3 class="wise-section-title">
+                <i data-lucide="calculator" class="wise-section-icon"></i>
+                Convertisseur
+            </h3>
+            
+            <!-- FROM -->
+            <div class="wise-conv-field">
+                <label class="wise-conv-label">De</label>
+                <div class="wise-conv-input-group">
+                    <select id="convert-from" class="wise-conv-select" onchange="updateConversion()">
+                        <!-- Populated by JS -->
+                    </select>
+                    <input type="number" id="convert-amount" value="1000" step="0.01" 
+                           class="wise-conv-amount"
+                           oninput="updateConversion()">
+                </div>
+            </div>
+            
+            <!-- Swap Button -->
+            <div class="wise-swap-container">
+                <button onclick="swapCurrencies()" class="wise-swap-btn">
+                    <i data-lucide="arrow-up-down" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+            
+            <!-- TO -->
+            <div class="wise-conv-field">
+                <label class="wise-conv-label">Vers</label>
+                <div class="wise-conv-input-group">
+                    <select id="convert-to" class="wise-conv-select" onchange="updateConversion()">
+                        <!-- Populated by JS -->
+                    </select>
+                    <div class="wise-conv-result">
+                        <span id="convert-result" class="wise-result-value">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rate Info -->
+            <div class="wise-conv-footer">
+                <span>Taux: <span id="convert-rate" class="wise-rate-mono">--</span></span>
+                <span id="convert-source" class="wise-source-text">--</span>
+            </div>
+        </div>
+
+        <!-- Popular Pairs Quick Access -->
+        <div class="wise-section">
+            <h3 class="wise-section-title" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Paires populaires
+            </h3>
+            <div class="wise-pairs-grid" id="popular-pairs">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CHART TAB ==================== -->
+    <div id="content-chart" class="hidden wise-tab-content">
+        <!-- Timeframe Selector -->
+        <div class="wise-timeframe-row">
+            <button onclick="setTimeframe(7)" class="wise-timeframe-btn active" data-days="7">7J</button>
+            <button onclick="setTimeframe(30)" class="wise-timeframe-btn" data-days="30">1M</button>
+            <button onclick="setTimeframe(90)" class="wise-timeframe-btn" data-days="90">3M</button>
+            <button onclick="setTimeframe(365)" class="wise-timeframe-btn" data-days="365">1A</button>
+        </div>
+
+        <!-- Pair Selector -->
+        <div class="wise-pair-selector">
+            <select id="chart-from" class="wise-form-select" onchange="loadChartData()">
+                <!-- Populated by JS -->
+            </select>
+            <i data-lucide="arrow-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            <select id="chart-to" class="wise-form-select" onchange="loadChartData()">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="wise-stats-grid">
+            <div class="wise-stat-card">
+                <span class="wise-stat-label">Min</span>
+                <span id="stat-min" class="wise-stat-value wise-status-error">--</span>
+            </div>
+            <div class="wise-stat-card">
+                <span class="wise-stat-label">Max</span>
+                <span id="stat-max" class="wise-stat-value wise-status-success">--</span>
+            </div>
+            <div class="wise-stat-card">
+                <span class="wise-stat-label">Moy</span>
+                <span id="stat-avg" class="wise-stat-value" style="color: rgb(255 214 187);">--</span>
+            </div>
+            <div class="wise-stat-card">
+                <span class="wise-stat-label">Δ%</span>
+                <span id="stat-change" class="wise-stat-value">--</span>
+            </div>
+        </div>
+
+        <!-- Interactive Chart -->
+        <div class="wise-section wise-chart-section">
+            <div id="history-chart" class="wise-chart-container"></div>
+        </div>
+
+        <!-- Chart Info -->
+        <div class="wise-chart-footer">
+            <span><i data-lucide="database" style="width: 14px; height: 14px;"></i> <span id="chart-points">0</span> points</span>
+            <span id="chart-source">Source: --</span>
+        </div>
+    </div>
+
+    <!-- ==================== FORECAST TAB ==================== -->
+    <div id="content-forecast" class="hidden wise-tab-content">
+        <!-- Pair Selector for Forecast -->
+        <div class="wise-section">
+            <div class="wise-forecast-select-row">
+                <select id="ai-pair" class="wise-form-select" onchange="fetchForecast()">
+                    <option value="EURUSD=X">EUR/USD</option>
+                    <option value="USDMAD=X">USD/MAD</option>
+                    <option value="EURMAD=X">EUR/MAD</option>
+                    <option value="GBPUSD=X">GBP/USD</option>
+                    <option value="GBPMAD=X">GBP/MAD</option>
+                </select>
+                <button onclick="fetchForecast()" class="wise-btn wise-btn-primary">
+                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                    Analyser
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="forecast-loading" class="hidden wise-loading">
+            <div class="wise-loading-bar"></div>
+            <div class="wise-loading-bar"></div>
+        </div>
+
+        <!-- Error State -->
+        <div id="forecast-error" class="hidden wise-error-box"></div>
+
+        <!-- Forecast Dashboard -->
+        <div id="forecast-dashboard" class="hidden">
+            <!-- Main Prediction -->
+            <div class="wise-section wise-prediction-card">
+                <h3 id="forecast-pair-display" class="wise-prediction-label">EUR / USD</h3>
+                <div class="wise-prediction-value-container">
+                    <h1 id="forecast-prediction" class="wise-prediction-value">--</h1>
+                    <span id="forecast-trend-badge" class="wise-trend-badge">--</span>
+                </div>
+                <p class="wise-prediction-info">Prévision Ensemble à J+7</p>
+            </div>
+
+            <!-- Forecast Chart -->
+            <div class="wise-section">
+                <div id="forecast-chart" class="wise-chart-container" style="height: 220px;"></div>
+            </div>
+
+            <!-- Model Results Grid -->
+            <div class="wise-models-grid">
+                <div class="wise-model-card" style="border-top-color: rgb(255 214 187);">
+                    <span class="wise-model-label" style="color: rgb(255 214 187);">ENSEMBLE</span>
+                    <span id="model-ensemble" class="wise-model-value">--</span>
+                </div>
+                <div class="wise-model-card" style="border-top-color: var(--success);">
+                    <span class="wise-model-label" style="color: var(--success);">ARIMA</span>
+                    <span id="model-arima" class="wise-model-value">--</span>
+                </div>
+                <div class="wise-model-card" style="border-top-color: var(--warning);">
+                    <span class="wise-model-label" style="color: var(--warning);">PROPHET</span>
+                    <span id="model-prophet" class="wise-model-value">--</span>
+                </div>
+                <div class="wise-model-card" style="border-top-color: #ec4899;">
+                    <span class="wise-model-label" style="color: #ec4899;">LSTM</span>
+                    <span id="model-lstm" class="wise-model-value">--</span>
+                </div>
+            </div>
+
+            <!-- AI Converter -->
+            <div class="wise-section">
+                <label class="wise-section-title" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i data-lucide="calculator" style="width: 14px; height: 14px; color: rgb(255 214 187);"></i>
+                    Simulateur J+7
+                </label>
+                <div class="wise-sim-row">
+                    <input type="number" id="ai-sim-amount" value="1000" 
+                           class="wise-sim-input"
+                           oninput="updateAiSimulation()">
+                    <div class="wise-sim-result">
+                        <p id="ai-sim-result" class="wise-sim-value">--</p>
+                        <span id="ai-sim-target" class="wise-sim-currency">USD</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insight -->
+            <div class="wise-section wise-insight-card">
+                <h3 class="wise-section-title">
+                    <i data-lucide="lightbulb" style="width: 18px; height: 18px; color: var(--warning);"></i>
+                    Analyse IA
+                </h3>
+                <p id="ai-insight" class="wise-insight-text">
+                    Sélectionnez une paire et lancez l'analyse pour obtenir des insights.
+                </p>
+            </div>
+        </div>
+
+        <!-- Initial State -->
+        <div id="forecast-initial" class="wise-empty-state">
+            <div class="wise-empty-icon" style="background: rgba(168, 85, 247, 0.15);">
+                <i data-lucide="sparkles" style="width: 32px; height: 32px; color: #a855f7;"></i>
+            </div>
+            <h3 class="wise-empty-title">Prévisions IA</h3>
+            <p class="wise-empty-text">Analysez les tendances avec ARIMA, Prophet et LSTM</p>
+            <button onclick="fetchForecast()" class="wise-btn wise-btn-primary">
+                <i data-lucide="play" style="width: 18px; height: 18px;"></i>
+                Lancer l'analyse
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.wise-ai {
+    max-width: 100%;
+}
+
+/* Header */
+.wise-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.wise-ai-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.wise-ai-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #a855f7 0%, rgb(255 214 187) 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-settings-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-settings-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* Tabs */
+.wise-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-secondary);
+    padding: 6px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+}
+
+.wise-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-tab.active {
+    background: rgb(255 214 187);
+    color: var(--wise-navy);
+}
+
+.wise-tab:not(.active):hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.wise-tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Settings Panel */
+.wise-settings-panel {
+    border-left: 3px solid #a855f7;
+}
+
+.wise-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.wise-form-full {
+    grid-column: 1 / -1;
+}
+
+.wise-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wise-form-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-form-select, .wise-form-input {
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.wise-form-select:focus, .wise-form-input:focus {
+    outline: none;
+    border-color: rgb(255 214 187);
+}
+
+.wise-info-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 12px;
+}
+
+/* Rate Display */
+.wise-rate-display {
+    text-align: center;
+}
+
+.wise-rate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.wise-rate-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+}
+
+.wise-rate-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wise-source-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border-radius: 100px;
+    font-weight: 600;
+}
+
+.wise-timestamp {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-rate-content {
+    padding: 8px 0;
+}
+
+.wise-rate-flags {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.wise-flag {
+    font-size: 32px;
+}
+
+.wise-live-rate {
+    font-size: 48px;
+    font-weight: 800;
+    background: linear-gradient(135deg, rgb(255 214 187) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.wise-rate-text {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+}
+
+/* Converter */
+.wise-conv-field {
+    margin-bottom: 12px;
+}
+
+.wise-conv-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+    display: block;
+}
+
+.wise-conv-input-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 4px;
+    transition: border-color 0.2s;
+}
+
+.wise-conv-input-group:focus-within {
+    border-color: rgb(255 214 187);
+}
+
+.wise-conv-select {
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 100px;
+    cursor: pointer;
+}
+
+.wise-conv-select:focus {
+    outline: none;
+}
+
+.wise-conv-amount {
+    flex: 1;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.wise-conv-amount:focus {
+    outline: none;
+}
+
+.wise-conv-result {
+    flex: 1;
+    padding: 10px 12px;
+    text-align: right;
+}
+
+.wise-result-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgb(255 214 187);
+}
+
+.wise-swap-container {
+    display: flex;
+    justify-content: center;
+    margin: 12px 0;
+}
+
+.wise-swap-btn {
+    width: 44px;
+    height: 44px;
+    background: rgb(255 214 187);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wise-navy);
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
+}
+
+.wise-swap-btn:hover {
+    transform: rotate(180deg);
+    background: #8de05f;
+}
+
+.wise-conv-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.wise-rate-mono {
+    font-family: monospace;
+    color: var(--text-primary);
+}
+
+.wise-source-text {
+    color: var(--success);
+}
+
+/* Popular Pairs */
+.wise-pairs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.wise-pair-btn {
+    padding: 10px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.wise-pair-btn:hover {
+    background: rgb(255 214 187);
+    color: var(--wise-navy);
+    border-color: rgb(255 214 187);
+}
+
+/* Chart Tab */
+.wise-timeframe-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.wise-timeframe-btn {
+    padding: 10px 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-timeframe-btn.active {
+    background: rgb(255 214 187);
+    color: var(--wise-navy);
+    border-color: rgb(255 214 187);
+}
+
+.wise-timeframe-btn:not(.active):hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.wise-pair-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.wise-pair-selector .wise-form-select {
+    min-width: 100px;
+}
+
+.wise-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.wise-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+}
+
+.wise-stat-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.wise-stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.wise-chart-section {
+    padding: 12px;
+}
+
+.wise-chart-container {
+    width: 100%;
+    height: 260px;
+}
+
+.wise-chart-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    padding: 8px 0;
+}
+
+/* Forecast Tab */
+.wise-forecast-select-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.wise-forecast-select-row .wise-form-select {
+    flex: 1;
+}
+
+.wise-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wise-loading-bar {
+    height: 100px;
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.wise-error-box {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--error);
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.wise-prediction-card {
+    text-align: center;
+    padding: 24px;
+}
+
+.wise-prediction-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+}
+
+.wise-prediction-value-container {
+    position: relative;
+    display: inline-block;
+}
+
+.wise-prediction-value {
+    font-size: 52px;
+    font-weight: 800;
+    background: linear-gradient(135deg, rgb(255 214 187) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.wise-trend-badge {
+    position: absolute;
+    right: -50px;
+    top: 8px;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+}
+
+.wise-prediction-info {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+}
+
+.wise-models-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.wise-model-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-top: 3px solid;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+}
+
+.wise-model-label {
+    font-size: 11px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.wise-model-value {
+    font-size: 15px;
+    font-weight: 700;
+    font-family: monospace;
+    color: var(--text-primary);
+}
+
+.wise-sim-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.wise-sim-input {
+    flex: 1;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-sim-input:focus {
+    outline: none;
+    border-color: rgb(255 214 187);
+}
+
+.wise-sim-result {
+    text-align: right;
+}
+
+.wise-sim-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #a855f7;
+    font-family: monospace;
+    margin: 0;
+}
+
+.wise-sim-currency {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-insight-card {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.wise-insight-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-top: 12px;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .wise-live-rate {
+        font-size: 36px;
+    }
+    
+    .wise-prediction-value {
+        font-size: 40px;
+    }
+    
+    .wise-trend-badge {
+        position: static;
+        display: block;
+        margin-top: 8px;
+    }
+    
+    .wise-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .wise-pairs-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .wise-settings-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .wise-forecast-select-row {
+        flex-direction: column;
+    }
+    
+    .wise-forecast-select-row .wise-form-select,
+    .wise-forecast-select-row .wise-btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ==================== STATE ====================
+let currencies = [];
+let currentRate = null;
+let historyChart = null;
+let forecastChart = null;
+let currentForecast = null;
+let currentTimeframe = 30;
+
+const FLAGS = {
+    'EUR': '🇪🇺', 'USD': '🇺🇸', 'MAD': '🇲🇦', 'GBP': '🇬🇧', 'CHF': '🇨🇭',
+    'CAD': '🇨🇦', 'AUD': '🇦🇺', 'JPY': '🇯🇵', 'CNY': '🇨🇳', 'INR': '🇮🇳',
+    'SAR': '🇸🇦', 'AED': '🇦🇪', 'TRY': '🇹🇷', 'EGP': '🇪🇬', 'TND': '🇹🇳', 'DZD': '🇩🇿'
+};
+
+// ==================== TAB MANAGEMENT ====================
+function switchTab(tab) {
+    ['converter', 'chart', 'forecast'].forEach(t => {
+        document.getElementById(`content-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('active');
+    });
+    document.getElementById(`content-${tab}`).classList.remove('hidden');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    
+    if (tab === 'chart' && !historyChart) loadChartData();
+}
+
+function toggleSettings() {
+    document.getElementById('settings-panel').classList.toggle('hidden');
+}
+
+function saveSettings() {
+    localStorage.setItem('sarfx-rate-source', document.getElementById('rate-source').value);
+    localStorage.setItem('sarfx-cache-duration', document.getElementById('cache-duration').value);
+}
+
+// ==================== INIT ====================
+async function init() {
+    // Load currencies
+    try {
+        const res = await fetch('/api/currencies');
+        const data = await res.json();
+        if (data.success) {
+            currencies = data.currencies;
+            populateCurrencySelects();
+            renderPopularPairs(data.popular_pairs);
+        }
+    } catch (e) {
+        console.error('Error loading currencies:', e);
+        // Fallback
+        currencies = [
+            {code: 'EUR', name: 'Euro', flag: '🇪🇺'},
+            {code: 'USD', name: 'US Dollar', flag: '🇺🇸'},
+            {code: 'MAD', name: 'Dirham Marocain', flag: '🇲🇦'},
+            {code: 'GBP', name: 'British Pound', flag: '🇬🇧'}
+        ];
+        populateCurrencySelects();
+    }
+    
+    // Load settings
+    const savedSource = localStorage.getItem('sarfx-rate-source');
+    if (savedSource) document.getElementById('rate-source').value = savedSource;
+    const savedCache = localStorage.getItem('sarfx-cache-duration');
+    if (savedCache) document.getElementById('cache-duration').value = savedCache;
+    
+    // Initial conversion
+    updateConversion();
+}
+
+function populateCurrencySelects() {
+    const selects = ['convert-from', 'convert-to', 'chart-from', 'chart-to'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = currencies.map(c => 
+            `<option value="${c.code}" ${id.includes('from') && c.code === 'EUR' ? 'selected' : ''} ${id.includes('to') && c.code === 'USD' ? 'selected' : ''}>
+                ${FLAGS[c.code] || '🏳️'} ${c.code}
+            </option>`
+        ).join('');
+    });
+}
+
+function renderPopularPairs(pairs) {
+    const container = document.getElementById('popular-pairs');
+    if (!container || !pairs) return;
+    
+    const defaultPairs = [
+        {from: 'EUR', to: 'USD'}, {from: 'USD', to: 'MAD'}, {from: 'EUR', to: 'MAD'},
+        {from: 'GBP', to: 'USD'}, {from: 'EUR', to: 'GBP'}, {from: 'USD', to: 'JPY'}
+    ];
+    const displayPairs = pairs || defaultPairs;
+    
+    container.innerHTML = displayPairs.slice(0, 6).map(p => `
+        <button onclick="quickConvert('${p.from}', '${p.to}')" 
+                class="wise-pair-btn">
+            ${FLAGS[p.from] || '🏳️'}→${FLAGS[p.to] || '🏳️'} ${p.from}/${p.to}
+        </button>
+    `).join('');
+}
+
+function quickConvert(from, to) {
+    document.getElementById('convert-from').value = from;
+    document.getElementById('convert-to').value = to;
+    updateConversion();
+}
+
+// ==================== CONVERTER ====================
+async function updateConversion() {
+    const from = document.getElementById('convert-from').value;
+    const to = document.getElementById('convert-to').value;
+    const amount = parseFloat(document.getElementById('convert-amount').value) || 0;
+    
+    // Update flags
+    document.getElementById('live-from-flag').textContent = FLAGS[from] || '🏳️';
+    document.getElementById('live-to-flag').textContent = FLAGS[to] || '🏳️';
+    document.getElementById('live-base').textContent = from;
+    document.getElementById('live-quote').textContent = to;
+    
+    try {
+        const res = await fetch(`/api/convert?amount=${amount}&from=${from}&to=${to}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            currentRate = data.rate;
+            
+            // Update live rate display (4 decimals)
+            document.getElementById('live-rate').textContent = data.rate_formatted;
+            document.getElementById('live-rate-text').textContent = data.rate_formatted;
+            
+            // Update conversion result (4 decimals)
+            document.getElementById('convert-result').textContent = data.result_formatted;
+            document.getElementById('convert-rate').textContent = data.rate_formatted;
+            document.getElementById('convert-source').textContent = data.source;
+            
+            // Update source badge
+            const badge = document.getElementById('rate-source-badge');
+            badge.textContent = data.source.includes('BCE') ? 'BCE' : data.source.split(' ')[0];
+            badge.className = `text-[10px] px-2 py-0.5 rounded-full ${data.cached ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'}`;
+            
+            // Timestamp
+            const now = new Date();
+            document.getElementById('rate-timestamp').textContent = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+        } else {
+            document.getElementById('convert-result').textContent = 'Erreur';
+            document.getElementById('convert-rate').textContent = data.error || 'N/A';
+        }
+    } catch (e) {
+        console.error('Conversion error:', e);
+        document.getElementById('convert-result').textContent = 'Erreur';
+    }
+}
+
+function swapCurrencies() {
+    const fromSelect = document.getElementById('convert-from');
+    const toSelect = document.getElementById('convert-to');
+    const temp = fromSelect.value;
+    fromSelect.value = toSelect.value;
+    toSelect.value = temp;
+    updateConversion();
+}
+
+// ==================== CHART ====================
+function setTimeframe(days) {
+    currentTimeframe = days;
+    document.querySelectorAll('.wise-timeframe-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.days) === days);
+    });
+    loadChartData();
+}
+
+async function loadChartData() {
+    const from = document.getElementById('chart-from').value;
+    const to = document.getElementById('chart-to').value;
+    
+    try {
+        const res = await fetch(`/api/rates/history/${from}/${to}?days=${currentTimeframe}`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+            // Update stats (4 decimals)
+            document.getElementById('stat-min').textContent = data.stats.min.toFixed(4);
+            document.getElementById('stat-max').textContent = data.stats.max.toFixed(4);
+            document.getElementById('stat-avg').textContent = data.stats.avg.toFixed(4);
+            
+            const changeEl = document.getElementById('stat-change');
+            const change = data.stats.change;
+            changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+            changeEl.className = `text-xs font-bold font-mono ${change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            
+            document.getElementById('chart-points').textContent = data.count;
+            document.getElementById('chart-source').textContent = `Source: ${data.source}`;
+            
+            // Render chart
+            renderHistoryChart(data.data, from, to);
+        }
+    } catch (e) {
+        console.error('Chart data error:', e);
+    }
+}
+
+function renderHistoryChart(data, from, to) {
+    if (historyChart) historyChart.destroy();
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    const options = {
+        series: [{
+            name: `${from}/${to}`,
+            data: data.map(d => ({
+                x: new Date(d.date).getTime(),
+                y: parseFloat(d.rate.toFixed(4))
+            }))
+        }],
+        chart: {
+            type: 'area',
+            height: 280,
+            background: 'transparent',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: false,
+                    selection: true,
+                    zoom: true,
+                    zoomin: true,
+                    zoomout: true,
+                    pan: true,
+                    reset: true
+                }
+            },
+            zoom: { enabled: true },
+            animations: { enabled: true, easing: 'easeinout', speed: 800 }
+        },
+        theme: { mode: isDark ? 'dark' : 'light' },
+        stroke: { curve: 'smooth', width: 2 },
+        colors: ['#3b82f6'],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.5,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                datetimeUTC: false,
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '10px' }
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                formatter: val => val.toFixed(4),
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '10px' }
+            },
+            decimalsInFloat: 4
+        },
+        grid: {
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            strokeDashArray: 4
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            x: { format: 'dd MMM yyyy' },
+            y: { formatter: val => val.toFixed(4) }
+        },
+        markers: {
+            size: 0,
+            hover: { size: 6 }
+        },
+        dataLabels: { enabled: false }
+    };
+    
+    historyChart = new ApexCharts(document.getElementById('history-chart'), options);
+    historyChart.render();
+}
+
+// ==================== FORECAST ====================
+async function fetchForecast() {
+    const pair = document.getElementById('ai-pair').value;
+    
+    document.getElementById('forecast-initial').classList.add('hidden');
+    document.getElementById('forecast-dashboard').classList.add('hidden');
+    document.getElementById('forecast-error').classList.add('hidden');
+    document.getElementById('forecast-loading').classList.remove('hidden');
+    
+    try {
+        const res = await fetch(`/api/forecast/${pair}`);
+        const response = await res.json();
+        
+        if (!response.success) throw new Error(response.error || 'Erreur inconnue');
+        
+        const data = response.data;
+        document.getElementById('forecast-loading').classList.add('hidden');
+        document.getElementById('forecast-dashboard').classList.remove('hidden');
+        
+        // Update display
+        const pairName = pair.replace('=X', '').replace(/(.{3})(.{3})/, '$1 / $2');
+        document.getElementById('forecast-pair-display').textContent = pairName;
+        document.getElementById('ai-sim-target').textContent = pair.substring(3, 6);
+        
+        // Calculate prediction (4 decimals)
+        const last = data.history[data.history.length - 1].Close;
+        const pred = data.predictions.Ensemble_Mean[6];
+        const pct = ((pred - last) / last) * 100;
+        
+        document.getElementById('forecast-prediction').textContent = pred.toFixed(4);
+        
+        const badge = document.getElementById('forecast-trend-badge');
+        badge.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+        badge.className = `absolute -right-16 top-2 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${
+            pct >= 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+        }`;
+        
+        // Store forecast data
+        currentForecast = {
+            ensemble: pred,
+            arima: data.predictions.ARIMA[6],
+            prophet: data.predictions.Prophet[6],
+            lstm: data.predictions.LSTM[6]
+        };
+        
+        // Update model results (4 decimals)
+        document.getElementById('model-ensemble').textContent = currentForecast.ensemble.toFixed(4);
+        document.getElementById('model-arima').textContent = currentForecast.arima.toFixed(4);
+        document.getElementById('model-prophet').textContent = currentForecast.prophet.toFixed(4);
+        document.getElementById('model-lstm').textContent = currentForecast.lstm.toFixed(4);
+        
+        // Update insight
+        const insight = pct >= 0
+            ? `📈 Tendance haussière prévue (+${pct.toFixed(2)}%). Le modèle Ensemble suggère un taux de ${pred.toFixed(4)} dans 7 jours. Confiance: ${Math.abs(100 - Math.abs(pct) * 5).toFixed(0)}%`
+            : `📉 Tendance baissière prévue (${pct.toFixed(2)}%). Le modèle Ensemble suggère un taux de ${pred.toFixed(4)} dans 7 jours. Vigilance recommandée.`;
+        document.getElementById('ai-insight').textContent = insight;
+        
+        updateAiSimulation();
+        renderForecastChart(data);
+        
+    } catch (e) {
+        console.error('Forecast error:', e);
+        document.getElementById('forecast-loading').classList.add('hidden');
+        document.getElementById('forecast-error').textContent = `Erreur: ${e.message}`;
+        document.getElementById('forecast-error').classList.remove('hidden');
+        document.getElementById('forecast-initial').classList.remove('hidden');
+    }
+}
+
+function renderForecastChart(data) {
+    if (forecastChart) forecastChart.destroy();
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    const options = {
+        series: [
+            { name: 'Ensemble', data: data.predictions.Ensemble_Mean },
+            { name: 'ARIMA', data: data.predictions.ARIMA },
+            { name: 'Prophet', data: data.predictions.Prophet },
+            { name: 'LSTM', data: data.predictions.LSTM }
+        ],
+        chart: {
+            type: 'line',
+            height: 250,
+            background: 'transparent',
+            toolbar: { show: true, tools: { download: false, zoom: true, pan: true, reset: true } },
+            zoom: { enabled: true },
+            animations: { enabled: true }
+        },
+        theme: { mode: isDark ? 'dark' : 'light' },
+        stroke: { curve: 'smooth', width: [3, 2, 2, 2] },
+        colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899'],
+        xaxis: {
+            categories: data.dates,
+            labels: {
+                rotate: -45,
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '9px' }
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: val => val.toFixed(4),
+                style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '10px' }
+            },
+            decimalsInFloat: 4
+        },
+        grid: { borderColor: isDark ? '#334155' : '#e2e8f0', strokeDashArray: 4 },
+        legend: {
+            show: true,
+            position: 'top',
+            labels: { colors: isDark ? '#94a3b8' : '#64748b' }
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            y: { formatter: val => val.toFixed(4) }
+        },
+        markers: { size: 0, hover: { size: 5 } }
+    };
+    
+    forecastChart = new ApexCharts(document.getElementById('forecast-chart'), options);
+    forecastChart.render();
+}
+
+function updateAiSimulation() {
+    if (!currentForecast) return;
+    const amount = parseFloat(document.getElementById('ai-sim-amount').value) || 0;
+    document.getElementById('ai-sim-result').textContent = (amount * currentForecast.ensemble).toFixed(4);
+}
+
+// ==================== START ====================
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

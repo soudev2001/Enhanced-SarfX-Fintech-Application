@@ -1,0 +1,202 @@
+{% extends "common/app_base.html" %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour
+            </a>
+            <h1 class="text-2xl font-bold text-default">Fournisseurs</h1>
+            <p class="text-muted text-sm">{{ suppliers | length }} fournisseurs de taux</p>
+        </div>
+        <button onclick="openAddModal()" class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Ajouter
+        </button>
+    </div>
+
+    <!-- Suppliers Grid -->
+    <div class="space-y-3">
+        {% for supplier in suppliers %}
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                        {{ supplier.name[0] | upper if supplier.name else 'S' }}
+                    </div>
+                    <div>
+                        <p class="font-bold text-default">{{ supplier.name }}</p>
+                        <p class="text-xs text-muted font-mono">{{ supplier.api_url | truncate(40) }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% if supplier.is_active %}
+                    <span class="badge badge-success">Online</span>
+                    {% else %}
+                    <span class="badge badge-error">Offline</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Supplier Details -->
+            <div class="mt-4 grid grid-cols-3 gap-3">
+                {% if supplier.rate %}
+                <div class="text-center">
+                    <p class="text-lg font-bold text-default">{{ supplier.rate | round(4) }}</p>
+                    <p class="text-xs text-muted">Taux EUR/MAD</p>
+                </div>
+                {% endif %}
+                {% if supplier.fee is defined %}
+                <div class="text-center">
+                    <p class="text-lg font-bold text-default">{{ supplier.fee }}%</p>
+                    <p class="text-xs text-muted">Commission</p>
+                </div>
+                {% endif %}
+                {% if supplier.last_sync %}
+                <div class="text-center">
+                    <p class="text-lg font-bold text-green-500">✓</p>
+                    <p class="text-xs text-muted">{{ supplier.last_sync.strftime('%H:%M') if supplier.last_sync else 'N/A' }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-4 pt-4 border-t border-border flex justify-between">
+                <button onclick="editSupplier('{{ supplier._id }}', '{{ supplier.name }}', '{{ supplier.api_url }}')"
+                        class="text-blue-500 hover:text-blue-400 text-sm font-bold flex items-center gap-1 transition">
+                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                    Modifier
+                </button>
+                <button onclick="toggleSupplier('{{ supplier._id }}')"
+                        class="text-yellow-500 hover:text-yellow-400 text-sm font-bold flex items-center gap-1 transition">
+                    <i data-lucide="power" class="w-4 h-4"></i>
+                    {% if supplier.is_active %}Désactiver{% else %}Activer{% endif %}
+                </button>
+                <a href="{{ url_for('suppliers.delete_supplier', id=supplier._id) }}"
+                   onclick="return confirm('Supprimer ce fournisseur?')"
+                   class="text-red-500 hover:text-red-400 text-sm font-bold flex items-center gap-1 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    Supprimer
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not suppliers %}
+        <div class="card p-12 rounded-xl text-center">
+            <i data-lucide="store" class="w-16 h-16 text-muted mx-auto mb-4"></i>
+            <p class="text-muted text-lg">Aucun fournisseur</p>
+            <p class="text-muted text-sm mb-4">Ajoutez des fournisseurs pour obtenir les meilleurs taux</p>
+            <button onclick="openAddModal()" class="bg-primary text-white px-6 py-2 rounded-lg font-bold">
+                Ajouter un fournisseur
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="supplierModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-filter: blur(20px);" onclick="closeModal()"></div>
+    <div class="absolute bottom-0 left-0 right-0 card rounded-t-3xl p-6 transform transition-transform">
+        <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
+        <h2 id="modal-title" class="text-xl font-bold text-default mb-6">Ajouter un fournisseur</h2>
+        <form id="supplier-form" action="{{ url_for('suppliers.add_supplier') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="supplier-id" name="supplier_id">
+            <div>
+                <label class="block text-sm font-bold text-default mb-2">Nom du fournisseur</label>
+                <input type="text" id="supplier-name" name="name" required
+                       class="w-full px-4 py-3 input rounded-xl"
+                       placeholder="Ex: XE.com, Wise, etc.">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-default mb-2">URL de l'API</label>
+                <input type="url" id="supplier-url" name="api_url" required
+                       class="w-full px-4 py-3 input rounded-xl"
+                       placeholder="https://api.example.com/rates">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-default mb-2">Taux par défaut</label>
+                    <input type="number" step="0.0001" name="rate"
+                           class="w-full px-4 py-3 input rounded-xl"
+                           placeholder="10.5000">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-default mb-2">Commission (%)</label>
+                    <input type="number" step="0.1" name="fee"
+                           class="w-full px-4 py-3 input rounded-xl"
+                           placeholder="1.5">
+                </div>
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold transition hover:opacity-90">
+                    Enregistrer
+                </button>
+                <button type="button" onclick="closeModal()" class="flex-1 card py-3 rounded-xl font-bold text-default transition hover:bg-white/10">
+                    Annuler
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Txns</span>
+        </a>
+        <a href="{{ url_for('suppliers.list_suppliers') }}" class="flex flex-col items-center gap-1 text-primary">
+            <i data-lucide="store" class="w-5 h-5"></i>
+            <span class="text-xs font-bold">Suppliers</span>
+        </a>
+        <a href="{{ url_for('app.home') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-xs">App</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Ajouter un fournisseur';
+    document.getElementById('supplier-form').action = '{{ url_for("suppliers.add_supplier") }}';
+    document.getElementById('supplier-id').value = '';
+    document.getElementById('supplier-name').value = '';
+    document.getElementById('supplier-url').value = '';
+    document.getElementById('supplierModal').classList.remove('hidden');
+}
+
+function editSupplier(id, name, url) {
+    document.getElementById('modal-title').textContent = 'Modifier le fournisseur';
+    document.getElementById('supplier-form').action = '/suppliers/' + id + '/edit';
+    document.getElementById('supplier-id').value = id;
+    document.getElementById('supplier-name').value = name;
+    document.getElementById('supplier-url').value = url;
+    document.getElementById('supplierModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('supplierModal').classList.add('hidden');
+}
+
+function toggleSupplier(id) {
+    fetch('/suppliers/' + id + '/toggle', { method: 'POST' })
+        .then(() => location.reload());
+}
+</script>
+{% endblock %}

@@ -1,0 +1,361 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Dashboard ATM - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.atms') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour
+            </a>
+            <h1 class="text-2xl font-bold text-default">Dashboard ATM</h1>
+            <p class="text-muted text-sm">Analyse des {{ total_atms | number_format }} guichets automatiques</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="badge badge-success text-xs">{{ active_atms | number_format }} actifs</span>
+            <span class="badge badge-error text-xs">{{ inactive_atms | number_format }} inactifs</span>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+                <div class="bg-primary/10 p-2 rounded-lg">
+                    <i data-lucide="landmark" class="w-5 h-5 text-primary"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-default">{{ total_atms | number_format }}</p>
+            <p class="text-xs text-muted">Total ATM</p>
+        </div>
+
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+                <div class="bg-secondary/10 p-2 rounded-lg">
+                    <i data-lucide="building-2" class="w-5 h-5 text-secondary"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-default">{{ banks | length }}</p>
+            <p class="text-xs text-muted">Banques partenaires</p>
+        </div>
+
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+                <div class="bg-accent/10 p-2 rounded-lg">
+                    <i data-lucide="map" class="w-5 h-5 text-accent"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-default">{{ cities | length }}</p>
+            <p class="text-xs text-muted">Villes couvertes</p>
+        </div>
+
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+                <div class="bg-success/10 p-2 rounded-lg">
+                    <i data-lucide="clock" class="w-5 h-5 text-success"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-default">{{ atm_24h_percent }}%</p>
+            <p class="text-xs text-muted">Disponibles 24h</p>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- ATM par Banque (Donut) -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4">Répartition par Banque</h3>
+            <div class="h-64">
+                <canvas id="bankChart"></canvas>
+            </div>
+            <div class="mt-4 space-y-2">
+                {% for bank in banks_stats %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full" style="background: {{ bank.color }}"></div>
+                        <span class="text-sm text-muted">{{ bank.name }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-default">{{ bank.count | number_format }}</span>
+                        <span class="text-xs text-muted">({{ bank.percent }}%)</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ATM par Ville (Bar) -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4">Top 10 Villes</h3>
+            <div class="h-64">
+                <canvas id="cityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Section -->
+    <div class="card p-4 rounded-xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-default">Carte des ATM</h3>
+            <div class="flex items-center gap-2">
+                <select id="map-bank-filter" onchange="filterMapByBank()" class="input px-3 py-1 rounded-lg text-xs bg-transparent">
+                    <option value="">Toutes les banques</option>
+                    {% for bank in banks %}
+                    <option value="{{ bank.code }}" data-color="{{ bank.color }}">{{ bank.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div id="atm-map" class="h-96 rounded-xl bg-slate-800">
+            <!-- Leaflet map will be rendered here -->
+            <div class="flex items-center justify-center h-full">
+                <p class="text-muted">Chargement de la carte...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Analysis -->
+    <div class="card p-4 rounded-xl">
+        <h3 class="font-bold text-default mb-4">Analyse des Services</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {% for service, stats in services_stats.items() %}
+            <div class="text-center">
+                <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2"
+                     style="background: linear-gradient(135deg, {{ stats.color }}20, {{ stats.color }}40)">
+                    <i data-lucide="{{ stats.icon }}" class="w-7 h-7" style="color: {{ stats.color }}"></i>
+                </div>
+                <p class="text-lg font-bold text-default">{{ stats.count | number_format }}</p>
+                <p class="text-xs text-muted">{{ service | title }}</p>
+                <p class="text-[10px] text-muted">({{ stats.percent }}%)</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Location Types -->
+    <div class="card p-4 rounded-xl">
+        <h3 class="font-bold text-default mb-4">Types d'emplacements</h3>
+        <div class="h-64">
+            <canvas id="locationTypeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Activity / Sources -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Sources -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4">Sources de données</h3>
+            <div class="space-y-3">
+                {% for source in sources %}
+                <div class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+                    <div>
+                        <p class="font-bold text-default text-sm">{{ source.name }}</p>
+                        <p class="text-xs text-muted">{{ source.imported_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-primary">{{ source.total_atms | number_format }}</p>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full badge badge-success">{{ source.status }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-sm text-center py-4">Aucune source de données</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Accessibility Stats -->
+        <div class="card p-4 rounded-xl">
+            <h3 class="font-bold text-default mb-4">Accessibilité</h3>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-muted">Accès fauteuil roulant</span>
+                        <span class="font-bold text-default">{{ wheelchair_percent }}%</span>
+                    </div>
+                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-500 rounded-full" style="width: {{ wheelchair_percent }}%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-muted">Paiement NFC</span>
+                        <span class="font-bold text-default">{{ nfc_percent }}%</span>
+                    </div>
+                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 rounded-full" style="width: {{ nfc_percent }}%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-muted">Dépôt d'espèces</span>
+                        <span class="font-bold text-default">{{ deposit_percent }}%</span>
+                    </div>
+                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-purple-500 rounded-full" style="width: {{ deposit_percent }}%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-muted">Disponible 24h</span>
+                        <span class="font-bold text-default">{{ atm_24h_percent }}%</span>
+                    </div>
+                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-500 rounded-full" style="width: {{ atm_24h_percent }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.atms') }}" class="flex flex-col items-center gap-1 text-primary">
+            <i data-lucide="landmark" class="w-5 h-5"></i>
+            <span class="text-xs font-bold">ATMs</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Transactions</span>
+        </a>
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+            <span class="text-xs">Banques</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Chart data from backend
+const bankData = {{ banks_chart_data | safe }};
+const cityData = {{ cities_chart_data | safe }};
+const locationTypeData = {{ location_type_data | safe }};
+
+// Bank Distribution Chart (Donut)
+const bankCtx = document.getElementById('bankChart').getContext('2d');
+new Chart(bankCtx, {
+    type: 'doughnut',
+    data: {
+        labels: bankData.labels,
+        datasets: [{
+            data: bankData.values,
+            backgroundColor: bankData.colors,
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        cutout: '70%'
+    }
+});
+
+// City Distribution Chart (Bar)
+const cityCtx = document.getElementById('cityChart').getContext('2d');
+new Chart(cityCtx, {
+    type: 'bar',
+    data: {
+        labels: cityData.labels,
+        datasets: [{
+            label: 'ATMs',
+            data: cityData.values,
+            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.05)'
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            },
+            y: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            }
+        }
+    }
+});
+
+// Location Type Chart (Polar Area)
+const locationCtx = document.getElementById('locationTypeChart').getContext('2d');
+new Chart(locationCtx, {
+    type: 'polarArea',
+    data: {
+        labels: locationTypeData.labels,
+        datasets: [{
+            data: locationTypeData.values,
+            backgroundColor: [
+                'rgba(239, 68, 68, 0.5)',
+                'rgba(249, 115, 22, 0.5)',
+                'rgba(234, 179, 8, 0.5)',
+                'rgba(34, 197, 94, 0.5)',
+                'rgba(59, 130, 246, 0.5)',
+                'rgba(139, 92, 246, 0.5)',
+                'rgba(236, 72, 153, 0.5)',
+                'rgba(107, 114, 128, 0.5)'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    color: '#94a3b8',
+                    padding: 10
+                }
+            }
+        }
+    }
+});
+
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

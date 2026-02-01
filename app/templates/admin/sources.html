@@ -1,0 +1,132 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Sources de données - Admin SarfX{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+    <!-- Header -->
+    <div class="flex justify-between items-center pt-2">
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="text-muted text-sm flex items-center gap-1 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour
+            </a>
+            <h1 class="text-2xl font-bold text-default">Sources de données</h1>
+            <p class="text-muted text-sm">{{ sources | length }} sources enregistrées</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin.import_atms') }}" class="card px-3 py-2 rounded-lg bg-primary text-white font-bold text-sm flex items-center gap-1">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                Nouvelle import
+            </a>
+        </div>
+    </div>
+
+    <!-- Sources List -->
+    <div class="space-y-4">
+        {% for source in sources %}
+        <div class="card p-4 rounded-xl">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center 
+                                {{ 'bg-green-500/10' if source.type == 'initial_seed' else 'bg-blue-500/10' if source.type == 'csv_import' else 'bg-purple-500/10' }}">
+                        <i data-lucide="{{ 'database' if source.type == 'initial_seed' else 'file-text' if source.type == 'csv_import' else 'cloud' }}" 
+                           class="w-6 h-6 {{ 'text-green-500' if source.type == 'initial_seed' else 'text-blue-500' if source.type == 'csv_import' else 'text-purple-500' }}"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-default">{{ source.name }}</h3>
+                        <p class="text-xs font-mono text-muted">{{ source.source_id }}</p>
+                        {% if source.description %}
+                        <p class="text-sm text-muted mt-1">{{ source.description }}</p>
+                        {% endif %}
+                        <div class="flex items-center gap-4 mt-2">
+                            <span class="text-xs text-muted flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3"></i>
+                                {{ source.imported_at.strftime('%d/%m/%Y %H:%M') }}
+                            </span>
+                            {% if source.imported_by %}
+                            <span class="text-xs text-muted flex items-center gap-1">
+                                <i data-lucide="user" class="w-3 h-3"></i>
+                                {{ source.imported_by }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-primary">{{ source.total_atms | number_format }}</p>
+                    <p class="text-xs text-muted">ATMs</p>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full 
+                                {{ 'badge badge-success' if source.status == 'completed' else 'badge badge-warning' }}">
+                        {{ source.status }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if source.banks %}
+            <div class="mt-4 pt-4 border-t border-border">
+                <p class="text-xs text-muted mb-2">Banques concernées:</p>
+                <div class="flex gap-2 flex-wrap">
+                    {% for bank in source.banks %}
+                    <span class="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300">{{ bank }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if source.errors %}
+            <div class="mt-4 pt-4 border-t border-border">
+                <p class="text-xs text-amber-500">
+                    <i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>
+                    {{ source.errors }} erreurs lors de l'import
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="card p-8 rounded-xl text-center">
+            <i data-lucide="database" class="w-16 h-16 mx-auto text-muted mb-4"></i>
+            <p class="text-muted mb-4">Aucune source de données enregistrée</p>
+            <a href="{{ url_for('admin.import_atms') }}" class="btn btn-primary">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                Importer des données
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Admin Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-border px-6 py-3 z-40" style="background: var(--bg-secondary); backdrop-filter: blur(20px);">
+    <div class="flex justify-around items-center max-w-lg mx-auto">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-xs">Users</span>
+        </a>
+        <a href="{{ url_for('admin.atms') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="landmark" class="w-5 h-5"></i>
+            <span class="text-xs">ATMs</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <span class="text-xs">Transactions</span>
+        </a>
+        <a href="{{ url_for('admin.sources') }}" class="flex flex-col items-center gap-1 text-primary">
+            <i data-lucide="database" class="w-5 h-5"></i>
+            <span class="text-xs font-bold">Sources</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

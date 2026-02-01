@@ -1,0 +1,236 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Gestion ATMs - SarfX{% endblock %}
+
+{% block content %}
+<div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
+                Gestion des ATMs
+            </h1>
+            <p style="color: var(--text-secondary);">{{ atms|length }} ATM(s) enregistré(s)</p>
+        </div>
+        <button onclick="openAddATMModal()" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.2rem;">+</span> Ajouter un ATM
+        </button>
+    </div>
+
+    <!-- Liste des ATMs -->
+    {% if atms %}
+    <div style="display: grid; gap: 1rem;">
+        {% for atm in atms %}
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            🏧
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1.2rem; font-weight: 600; margin: 0; color: var(--text-primary);">
+                                {{ atm.name or 'ATM #' + atm._id[-6:] }}
+                            </h3>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                                ID: {{ atm._id }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div>
+                            <span style="display: block; font-size: 0.85rem; color: var(--text-secondary);">Adresse</span>
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ atm.address or 'N/A' }}</span>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.85rem; color: var(--text-secondary);">Ville</span>
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ atm.city or 'N/A' }}</span>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.85rem; color: var(--text-secondary);">Statut</span>
+                            <span style="font-weight: 600; color: {% if atm.is_active %}#10b981{% else %}#ef4444{% endif %};">
+                                {% if atm.is_active %}✅ Actif{% else %}❌ Inactif{% endif %}
+                            </span>
+                        </div>
+                        {% if atm.latitude and atm.longitude %}
+                        <div>
+                            <span style="display: block; font-size: 0.85rem; color: var(--text-secondary);">Coordonnées</span>
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ "%.4f"|format(atm.latitude) }}, {{ "%.4f"|format(atm.longitude) }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="editATM('{{ atm._id }}')" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        ✏️ Modifier
+                    </button>
+                    <button onclick="deleteATM('{{ atm._id }}')" style="padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background: var(--card-bg); padding: 3rem; border-radius: 12px; text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🏧</div>
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+            Aucun ATM enregistré
+        </h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+            Commencez par ajouter votre premier distributeur automatique
+        </p>
+        <button onclick="openAddATMModal()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            + Ajouter un ATM
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal d'ajout/modification -->
+<div id="atm-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">
+            Ajouter un ATM
+        </h2>
+        <form id="atm-form">
+            <div style="display: grid; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Nom / Identifiant</label>
+                    <input type="text" name="name" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Adresse</label>
+                    <input type="text" name="address" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Ville</label>
+                    <input type="text" name="city" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Latitude</label>
+                        <input type="number" name="latitude" step="any" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Longitude</label>
+                        <input type="number" name="longitude" step="any" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        💾 Enregistrer
+                    </button>
+                    <button type="button" onclick="closeATMModal()" style="flex: 1; padding: 0.75rem; background: var(--bg-secondary); color: var(--text-primary); border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        ❌ Annuler
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let editingATMId = null;
+
+function openAddATMModal() {
+    editingATMId = null;
+    document.querySelector('#atm-modal h2').textContent = 'Ajouter un ATM';
+    document.getElementById('atm-form').reset();
+    document.getElementById('atm-modal').style.display = 'flex';
+}
+
+function closeATMModal() {
+    document.getElementById('atm-modal').style.display = 'none';
+    document.getElementById('atm-form').reset();
+    editingATMId = null;
+}
+
+function editATM(atmId) {
+    editingATMId = atmId;
+    document.querySelector('#atm-modal h2').textContent = 'Modifier l\'ATM';
+
+    // Récupérer les données de l'ATM
+    fetch('/api/atms/' + atmId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.atm) {
+                const atm = data.atm;
+                const form = document.getElementById('atm-form');
+                form.querySelector('[name="name"]').value = atm.name || '';
+                form.querySelector('[name="address"]').value = atm.address || '';
+                form.querySelector('[name="city"]').value = atm.city || '';
+                form.querySelector('[name="latitude"]').value = atm.latitude || '';
+                form.querySelector('[name="longitude"]').value = atm.longitude || '';
+                document.getElementById('atm-modal').style.display = 'flex';
+            } else {
+                showNotification('Erreur lors de la récupération des données', 'error');
+            }
+        })
+        .catch(() => {
+            showNotification('Erreur de connexion', 'error');
+        });
+}
+
+function deleteATM(atmId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet ATM ?')) {
+        fetch('/api/atms/' + atmId, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('ATM supprimé avec succès', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        });
+    }
+}
+
+document.getElementById('atm-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+
+    const url = editingATMId ? '/api/atms/' + editingATMId : '/api/atms';
+    const method = editingATMId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(editingATMId ? 'ATM modifié avec succès' : 'ATM ajouté avec succès', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Erreur lors de l\'opération', 'error');
+        }
+    })
+    .catch(() => {
+        showNotification('Erreur de connexion', 'error');
+    });
+});
+
+function showNotification(message, type) {
+    if (typeof window.showNotification === 'function') {
+        window.showNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}

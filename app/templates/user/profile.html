@@ -1,0 +1,838 @@
+{% extends "common/app_base.html" %}
+
+{% block content %}
+<div class="wise-profile">
+    <!-- Page Header -->
+    <div class="wise-page-header">
+        <nav class="wise-breadcrumb">
+            <a href="{{ url_for('app.home') }}">
+                <i data-lucide="home" style="width: 14px; height: 14px;"></i>
+                Accueil
+            </a>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span>Profil</span>
+        </nav>
+        <h1 class="wise-page-title">Mon Profil</h1>
+    </div>
+
+    <!-- User Profile Card -->
+    <div class="wise-profile-card">
+        <div class="wise-profile-avatar">
+            {% if user %}
+                {% if user.first_name and user.last_name %}
+                    {{ user.first_name[0] | upper }}{{ user.last_name[0] | upper }}
+                {% elif user.full_name %}
+                    {% set name_parts = user.full_name.split(' ') %}
+                    {% if name_parts | length >= 2 %}
+                        {{ name_parts[0][0] | upper }}{{ name_parts[1][0] | upper }}
+                    {% else %}
+                        {{ user.full_name[:2] | upper }}
+                    {% endif %}
+                {% else %}
+                    {% set email_name = user.email.split('@')[0] %}
+                    {% if '.' in email_name %}
+                        {% set email_parts = email_name.split('.') %}
+                        {{ email_parts[0][0] | upper }}{{ email_parts[1][0] | upper }}
+                    {% else %}
+                        {{ email_name[:2] | upper }}
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                US
+            {% endif %}
+        </div>
+        <h2 class="wise-profile-name">
+            {% if user.full_name %}
+                {{ user.full_name }}
+            {% elif user.first_name and user.last_name %}
+                {{ user.first_name }} {{ user.last_name }}
+            {% else %}
+                {{ user.email if user else 'Utilisateur' }}
+            {% endif %}
+        </h2>
+        <p class="wise-profile-role">{{ user.role | default('user') | capitalize }}</p>
+
+        {% if user.verified %}
+        <span class="wise-profile-badge wise-bg-success wise-status-success">
+            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+            Compte Vérifié
+        </span>
+        {% else %}
+        <span class="wise-profile-badge wise-bg-warning wise-status-warning">
+            <i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i>
+            Non vérifié
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Wallet Section -->
+    {% if wallet %}
+    <div class="wise-wallet-card">
+        <div class="wise-wallet-header">
+            <div>
+                <p class="wise-wallet-label">
+                    <i data-lucide="wallet" style="width: 14px; height: 14px; display: inline;"></i>
+                    Portefeuille Principal
+                </p>
+                <h2 class="wise-wallet-balance">
+                    {{ "{:,.2f}".format(wallet.balances.get('USD', 0)) }}
+                    <span class="wise-wallet-currency">🇺🇸 USD</span>
+                </h2>
+            </div>
+            <span class="wise-wallet-id">
+                <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i>
+                {{ wallet.wallet_id[:8] }}...
+            </span>
+        </div>
+
+        <!-- Currency Grid -->
+        {% if wallet.balances %}
+        <div class="wise-currency-grid">
+            {% for currency, balance in wallet.balances.items() if currency != 'USD' and balance > 0 %}
+            <div class="wise-currency-item">
+                <span class="wise-currency-flag">
+                    {% if currency == 'EUR' %}🇪🇺{% elif currency == 'GBP' %}🇬🇧{% elif currency == 'MAD' %}🇲🇦{% elif currency == 'CHF' %}🇨🇭{% elif currency == 'CAD' %}🇨🇦{% else %}💰{% endif %}
+                </span>
+                <div>
+                    <p class="wise-currency-amount">{{ "{:,.2f}".format(balance) }}</p>
+                    <p class="wise-currency-code">{{ currency }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="wise-section" style="text-align: center; padding: 40px 24px;">
+        <div class="wise-empty-icon">
+            <i data-lucide="wallet" style="width: 32px; height: 32px; color: var(--text-tertiary);"></i>
+        </div>
+        <h3 class="wise-empty-title">Aucun Portefeuille</h3>
+        <p class="wise-empty-text">Créez votre premier portefeuille pour commencer</p>
+        <form action="{{ url_for('api.create_wallet') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="wise-btn wise-btn-primary">
+                <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                Créer un portefeuille
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Transaction History -->
+    <div class="wise-section">
+        <div class="wise-section-header">
+            <h3 class="wise-section-title">
+                <i data-lucide="history" class="wise-section-icon"></i>
+                Historique Récent
+            </h3>
+            {% if transactions %}
+            <a href="{{ url_for('app.transactions') }}" class="wise-link">
+                Voir tout <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+            </a>
+            {% endif %}
+        </div>
+
+        {% if transactions %}
+        <div class="wise-tx-list">
+            {% for tx in transactions[:5] %}
+            <div class="wise-list-item">
+                <div class="wise-list-icon {% if tx.type == 'send' %}wise-bg-error{% else %}wise-bg-success{% endif %}">
+                    <i data-lucide="{{ 'arrow-up-right' if tx.type == 'send' else 'arrow-down-left' }}"
+                       class="{% if tx.type == 'send' %}wise-status-error{% else %}wise-status-success{% endif %}"
+                       style="width: 18px; height: 18px;"></i>
+                </div>
+                <div class="wise-list-content">
+                    <p class="wise-list-title">{{ tx.recipient_name | default('Transaction') }}</p>
+                    <p class="wise-list-subtitle">{{ tx.created_at.strftime('%d/%m/%Y %H:%M') if tx.created_at else 'Récent' }}</p>
+                </div>
+                <div class="wise-list-value">
+                    <span class="wise-list-amount {% if tx.type == 'send' %}wise-status-error{% else %}wise-status-success{% endif %}">
+                        {{ '-' if tx.type == 'send' else '+' }}{{ "{:,.2f}".format(tx.amount) }}
+                        {% if tx.from_currency == 'USD' %}🇺🇸{% elif tx.from_currency == 'EUR' %}🇪🇺{% elif tx.from_currency == 'GBP' %}🇬🇧{% elif tx.from_currency == 'MAD' %}🇲🇦{% elif tx.from_currency == 'CHF' %}🇨🇭{% endif %}
+                        {{ tx.from_currency }}
+                    </span>
+                    {% if tx.final_amount %}
+                    <p class="wise-list-meta">
+                        → {{ "{:,.2f}".format(tx.final_amount) }}
+                        {% if tx.to_currency == 'MAD' %}🇲🇦{% elif tx.to_currency == 'EUR' %}🇪🇺{% elif tx.to_currency == 'USD' %}🇺🇸{% endif %}
+                        {{ tx.to_currency }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="wise-empty-state" style="padding: 32px 16px;">
+            <div class="wise-empty-icon" style="width: 56px; height: 56px; margin-bottom: 12px;">
+                <i data-lucide="inbox" style="width: 28px; height: 28px; color: var(--text-tertiary);"></i>
+            </div>
+            <p style="color: var(--text-tertiary); font-size: 14px;">Aucune transaction récente</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Cartes Bancaires Section -->
+    <div class="wise-section">
+        <div class="wise-section-header">
+            <h3 class="wise-section-title">
+                <i data-lucide="credit-card" class="wise-section-icon"></i>
+                Cartes Bancaires
+            </h3>
+            <button onclick="openAddCardModal()" class="wise-link" style="background: none; border: none; cursor: pointer;">
+                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Ajouter
+            </button>
+        </div>
+
+        <div id="cardsList" class="cards-list">
+            {% if cards and cards|length > 0 %}
+                {% for card in cards %}
+                <div class="card-item" id="card-{{ card._id }}">
+                    <div class="card-icon">
+                        <i data-lucide="credit-card" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <div class="card-info">
+                        <p class="card-number">•••• •••• •••• {{ card.last_four }}</p>
+                        <p class="card-details">{{ card.holder_name }} • Exp: {{ card.expiry }}</p>
+                    </div>
+                    <button class="card-delete-btn" onclick="deleteCard('{{ card._id }}')" title="Supprimer">
+                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="no-cards">
+                <div class="no-cards-icon">
+                    <i data-lucide="credit-card" style="width: 32px; height: 32px;"></i>
+                </div>
+                <p>Aucune carte enregistrée</p>
+                <button onclick="openAddCardModal()" class="add-card-btn">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Ajouter une carte
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div id="addCardModal" class="card-modal" style="display: none;">
+        <div class="card-modal-backdrop" onclick="closeAddCardModal()"></div>
+        <div class="card-modal-content">
+            <div class="card-modal-header">
+                <h3>Ajouter une carte</h3>
+                <button class="card-modal-close" onclick="closeAddCardModal()">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+            <form id="addCardForm" onsubmit="submitCard(event)">
+                <div class="card-preview">
+                    <div class="card-preview-chip">
+                        <i data-lucide="cpu" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <div class="card-preview-number" id="previewNumber">•••• •••• •••• ••••</div>
+                    <div class="card-preview-bottom">
+                        <div>
+                            <span class="card-preview-label">Titulaire</span>
+                            <span class="card-preview-value" id="previewName">NOM PRENOM</span>
+                        </div>
+                        <div>
+                            <span class="card-preview-label">Expire</span>
+                            <span class="card-preview-value" id="previewExpiry">MM/AA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-form-group">
+                    <label>Numéro de carte</label>
+                    <input type="text" name="card_number" id="cardNumber" placeholder="4242 4242 4242 4242"
+                           maxlength="19" required oninput="formatCardNumber(this); updatePreview()">
+                </div>
+
+                <div class="card-form-row">
+                    <div class="card-form-group" style="flex: 1;">
+                        <label>Expiration</label>
+                        <input type="text" name="expiry" id="cardExpiry" placeholder="12/28"
+                               maxlength="5" required oninput="formatExpiry(this); updatePreview()">
+                    </div>
+                    <div class="card-form-group" style="flex: 1;">
+                        <label>CVV</label>
+                        <input type="text" name="cvv" id="cardCvv" placeholder="123"
+                               maxlength="3" required pattern="[0-9]{3}">
+                    </div>
+                </div>
+
+                <div class="card-form-group">
+                    <label>Nom du titulaire</label>
+                    <input type="text" name="holder_name" id="cardHolder" placeholder="JEAN DUPONT"
+                           required oninput="this.value = this.value.toUpperCase(); updatePreview()">
+                </div>
+
+                <div class="card-form-actions">
+                    <button type="button" class="btn-card-cancel" onclick="closeAddCardModal()">Annuler</button>
+                    <button type="submit" class="btn-card-save">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        Enregistrer
+                    </button>
+                </div>
+
+                <p class="card-security-note">
+                    <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                    Seuls les 4 derniers chiffres seront stockés. CVV non conservé.
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="wise-actions-grid">
+        <a href="{{ url_for('app.converter') }}" class="wise-action-card">
+            <div class="wise-action-icon wise-bg-success">
+                <i data-lucide="send" style="width: 24px; height: 24px;" class="wise-status-success"></i>
+            </div>
+            <span class="wise-action-title">Envoyer</span>
+            <span class="wise-action-subtitle">Transfert rapide</span>
+        </a>
+        <a href="{{ url_for('app.settings') }}" class="wise-action-card">
+            <div class="wise-action-icon" style="background: var(--bg-tertiary);">
+                <i data-lucide="settings" style="width: 24px; height: 24px; color: var(--text-tertiary);"></i>
+            </div>
+            <span class="wise-action-title">Paramètres</span>
+            <span class="wise-action-subtitle">Configuration</span>
+        </a>
+    </div>
+
+    <!-- Logout Button -->
+    <a href="{{ url_for('auth.logout') }}" class="wise-logout-btn">
+        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+        Déconnexion
+    </a>
+</div>
+
+<style>
+.wise-profile {
+    max-width: 100%;
+}
+
+.wise-wallet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgb(255 214 187);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+}
+
+.wise-link:hover {
+    color: #8de05f;
+}
+
+.wise-tx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wise-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.wise-action-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wise-action-card:hover {
+    border-color: rgb(255 214 187);
+    transform: translateY(-2px);
+}
+
+.wise-action-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.wise-action-title {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.wise-action-subtitle {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    margin-top: 16px;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    color: var(--error);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wise-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+@media (max-width: 480px) {
+    .wise-wallet-balance {
+        font-size: 28px;
+    }
+
+    .wise-currency-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Cards Section Styles */
+.cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.card-item:hover {
+    border-color: var(--brand-primary);
+}
+
+.card-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #1a1f36, #2d3250);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffd6bb;
+}
+
+.card-info {
+    flex: 1;
+}
+
+.card-number {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.card-details {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.card-delete-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(239, 68, 68, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.card-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.no-cards {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+}
+
+.no-cards-icon {
+    width: 64px;
+    height: 64px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    color: var(--text-tertiary);
+}
+
+.no-cards p {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+.add-card-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #e05a03, #ff8c42);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-card-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.3);
+}
+
+/* Card Modal */
+.card-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.card-modal-content {
+    position: relative;
+    background: var(--surface);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.card-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.card-modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.card-modal-close {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-secondary);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-modal-close:hover {
+    background: var(--border-light);
+}
+
+#addCardForm {
+    padding: 20px;
+}
+
+.card-preview {
+    background: linear-gradient(135deg, #1a1f36, #2d3250);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+    aspect-ratio: 1.586/1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-preview-chip {
+    color: #ffd700;
+}
+
+.card-preview-number {
+    font-size: 20px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.card-preview-bottom {
+    display: flex;
+    justify-content: space-between;
+}
+
+.card-preview-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+}
+
+.card-preview-value {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.card-form-group {
+    margin-bottom: 16px;
+}
+
+.card-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.card-form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    font-size: 15px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.card-form-group input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(224, 90, 3, 0.1);
+}
+
+.card-form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.card-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-card-cancel {
+    flex: 1;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-card-cancel:hover {
+    background: var(--border-light);
+}
+
+.btn-card-save {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: linear-gradient(135deg, #e05a03, #ff8c42);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-card-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.3);
+}
+
+.card-security-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 10px;
+    color: #10b981;
+    font-size: 12px;
+}
+</style>
+
+<script>
+// Card Modal Functions
+function openAddCardModal() {
+    document.getElementById('addCardModal').style.display = 'flex';
+    // Pre-fill with test card data
+    document.getElementById('cardNumber').value = '4242 4242 4242 4242';
+    document.getElementById('cardExpiry').value = '12/28';
+    document.getElementById('cardCvv').value = '123';
+    document.getElementById('cardHolder').value = 'JEAN DUPONT';
+    updatePreview();
+    lucide.createIcons();
+}
+
+function closeAddCardModal() {
+    document.getElementById('addCardModal').style.display = 'none';
+}
+
+function formatCardNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    value = value.substring(0, 16);
+    let formatted = value.match(/.{1,4}/g);
+    input.value = formatted ? formatted.join(' ') : '';
+}
+
+function formatExpiry(input) {
+    let value = input.value.replace(/\D/g, '');
+    value = value.substring(0, 4);
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    input.value = value;
+}
+
+function updatePreview() {
+    const number = document.getElementById('cardNumber').value || '•••• •••• •••• ••••';
+    const name = document.getElementById('cardHolder').value || 'NOM PRENOM';
+    const expiry = document.getElementById('cardExpiry').value || 'MM/AA';
+
+    document.getElementById('previewNumber').textContent = number || '•••• •••• •••• ••••';
+    document.getElementById('previewName').textContent = name || 'NOM PRENOM';
+    document.getElementById('previewExpiry').textContent = expiry || 'MM/AA';
+}
+
+function submitCard(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const cardNumber = formData.get('card_number').replace(/\s/g, '');
+    const lastFour = cardNumber.slice(-4);
+
+    fetch('/api/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            last_four: lastFour,
+            expiry: formData.get('expiry'),
+            holder_name: formData.get('holder_name')
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Carte ajoutée avec succès', 'success');
+            closeAddCardModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Erreur lors de l\'ajout', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+function deleteCard(cardId) {
+    if (!confirm('Supprimer cette carte ?')) return;
+
+    fetch('/api/cards/' + cardId, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Carte supprimée', 'success');
+            document.getElementById('card-' + cardId).remove();
+            // If no more cards, show empty state
+            const cardsList = document.getElementById('cardsList');
+            if (cardsList.children.length === 0) {
+                location.reload();
+            }
+        } else {
+            showNotification(data.error || 'Erreur lors de la suppression', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+</script>
+{% endblock %}

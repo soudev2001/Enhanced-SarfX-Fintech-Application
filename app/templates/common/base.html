@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
+    <title>Admin SarfX</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Theme detection */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) { --is-dark: 1; }
+        }
+    </style>
+</head>
+<body style="background: var(--bg-primary); color: var(--text-primary); min-height: 100vh;">
+
+    <!-- Messages Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="toast-container">
+            {% for category, message in messages %}
+            <div class="toast toast-{{ category }}" style="background-color: {{ 'var(--semantic-success)' if category=='success' else 'var(--semantic-error)' }};">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Contenu Principal -->
+    <div class="fade-in">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Navigation (Seulement si connecté) -->
+    {% if session.get('user_id') %}
+    <nav class="fixed bottom-0 left-0 right-0 px-6 py-3 z-50" style="background: var(--bg-secondary); backdrop-filter: blur(20px); border-top: 1px solid var(--border-primary);">
+        <div class="flex justify-around items-center max-w-lg mx-auto">
+            <a href="{{ url_for('admin.dashboard') }}" class="flex flex-col items-center gap-1 {{ 'text-primary' if 'dashboard' in request.endpoint else 'text-muted hover:text-default' }} transition">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span class="text-xs">Dashboard</span>
+            </a>
+            <a href="{{ url_for('suppliers.list_suppliers') }}" class="flex flex-col items-center gap-1 {{ 'text-primary' if 'suppliers' in request.endpoint else 'text-muted hover:text-default' }} transition">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span class="text-xs">Fournisseurs</span>
+            </a>
+            <a href="#" class="flex flex-col items-center gap-1 text-muted hover:text-default transition">
+                <i data-lucide="file-check" class="w-5 h-5"></i>
+                <span class="text-xs">KYC</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="flex flex-col items-center gap-1 text-muted hover:text-error transition">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span class="text-xs">Sortie</span>
+            </a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <script>
+        // Theme detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

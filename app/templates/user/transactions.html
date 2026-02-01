@@ -1,0 +1,531 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Historique - SarfX{% endblock %}
+
+{% block content %}
+<div class="wise-transactions">
+    <!-- Page Header -->
+    <div class="wise-page-header">
+        <nav class="wise-breadcrumb">
+            <a href="{{ url_for('app.home') }}">
+                <i data-lucide="home" style="width: 14px; height: 14px;"></i>
+                Accueil
+            </a>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span>Historique</span>
+        </nav>
+        <h1 class="wise-page-title">Historique des transactions</h1>
+        <p class="wise-page-subtitle">Consultez toutes vos opérations de change</p>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="tx-stats-grid">
+        <div class="tx-stat-card">
+            <div class="tx-stat-icon tx-stat-total">
+                <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="tx-stat-info">
+                <span class="tx-stat-value">{{ pagination.total if pagination else (transactions|length if transactions else 0) }}</span>
+                <span class="tx-stat-label">Total</span>
+            </div>
+        </div>
+        <div class="tx-stat-card">
+            <div class="tx-stat-icon tx-stat-success">
+                <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="tx-stat-info">
+                <span class="tx-stat-value">{{ stats.completed if stats else 0 }}</span>
+                <span class="tx-stat-label">Complétées</span>
+            </div>
+        </div>
+        <div class="tx-stat-card">
+            <div class="tx-stat-icon tx-stat-pending">
+                <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div class="tx-stat-info">
+                <span class="tx-stat-value">{{ stats.pending if stats else 0 }}</span>
+                <span class="tx-stat-label">En attente</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="wise-filter-group">
+        <button onclick="filterTransactions('all')" class="wise-filter-btn active" data-filter="all">
+            <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+            Toutes
+        </button>
+        <button onclick="filterTransactions('completed')" class="wise-filter-btn" data-filter="completed">
+            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+            Complétées
+        </button>
+        <button onclick="filterTransactions('pending')" class="wise-filter-btn" data-filter="pending">
+            <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+            En attente
+        </button>
+        <button onclick="filterTransactions('failed')" class="wise-filter-btn" data-filter="failed">
+            <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+            Échouées
+        </button>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="wise-section" id="transactions-list">
+        {% if transactions %}
+            {% for tx in transactions %}
+            {% set status = tx.status or 'pending' %}
+            {% set is_debit = tx.type in ['send', 'withdrawal', 'transfer', 'swap'] %}
+            {% set amount = tx.amount or tx.amount_sent or 0 %}
+            <div class="wise-tx-item" data-status="{{ status }}" onclick="toggleTxDetails(this)">
+                <div class="wise-tx-main">
+                    <div class="wise-tx-icon {% if status == 'completed' %}wise-bg-success{% elif status == 'pending' %}wise-bg-warning{% else %}wise-bg-error{% endif %}">
+                        <i data-lucide="{% if status == 'completed' %}check{% elif status == 'pending' %}clock{% else %}x{% endif %}"
+                           class="{% if status == 'completed' %}wise-status-success{% elif status == 'pending' %}wise-status-warning{% else %}wise-status-error{% endif %}"
+                           style="width: 20px; height: 20px;"></i>
+                    </div>
+                    <div class="wise-tx-content">
+                        <div class="wise-tx-header">
+                            <div class="wise-tx-title-row">
+                                <span class="wise-tx-title">
+                                    {% if tx.beneficiary_name %}
+                                        {{ tx.beneficiary_name }}
+                                    {% elif tx.recipient_name %}
+                                        {{ tx.recipient_name }}
+                                    {% elif tx.type == 'deposit' %}
+                                        Rechargement
+                                    {% elif tx.type == 'withdrawal' %}
+                                        Retrait
+                                    {% elif tx.type == 'swap' %}
+                                        Échange {{ tx.from_currency }} → {{ tx.to_currency }}
+                                    {% else %}
+                                        Transfert
+                                    {% endif %}
+                                </span>
+                                {% if tx.beneficiary_bank %}
+                                <span class="wise-tx-bank">
+                                    <i data-lucide="landmark" style="width: 12px; height: 12px;"></i>
+                                    {{ tx.beneficiary_bank }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <span class="wise-tx-amount {% if is_debit %}wise-amount-debit{% else %}wise-amount-credit{% endif %}">
+                                {{ '-' if is_debit else '+' }}{{ "{:,.2f}".format(amount) }} {{ tx.from_currency or tx.currency or 'MAD' }}
+                            </span>
+                        </div>
+                        <div class="wise-tx-footer">
+                            <span class="wise-tx-pair">
+                                {% if tx.from_currency %}
+                                    {% if tx.from_currency == 'USD' %}🇺🇸{% elif tx.from_currency == 'EUR' %}🇪🇺{% elif tx.from_currency == 'GBP' %}🇬🇧{% elif tx.from_currency == 'MAD' %}🇲🇦{% elif tx.from_currency == 'CHF' %}🇨🇭{% elif tx.from_currency == 'CAD' %}🇨🇦{% endif %}
+                                    {{ tx.from_currency }}
+                                    {% if tx.to_currency and tx.to_currency != tx.from_currency %}
+                                        →
+                                        {% if tx.to_currency == 'USD' %}🇺🇸{% elif tx.to_currency == 'EUR' %}🇪🇺{% elif tx.to_currency == 'GBP' %}🇬🇧{% elif tx.to_currency == 'MAD' %}🇲🇦{% elif tx.to_currency == 'CHF' %}🇨🇭{% elif tx.to_currency == 'CAD' %}🇨🇦{% endif %}
+                                        {{ tx.to_currency }}
+                                    {% endif %}
+                                {% elif tx.currency %}
+                                    {% if tx.currency == 'USD' %}🇺🇸{% elif tx.currency == 'EUR' %}🇪🇺{% elif tx.currency == 'GBP' %}🇬🇧{% elif tx.currency == 'MAD' %}🇲🇦{% elif tx.currency == 'CHF' %}🇨🇭{% endif %}
+                                    {{ tx.currency }}
+                                {% endif %}
+                            </span>
+                            <span class="wise-tx-date">
+                                <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                                {{ tx.created_at.strftime('%d/%m/%Y %H:%M') if tx.created_at else 'Récent' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="wise-tx-expand">
+                        <i data-lucide="chevron-down" style="width: 18px; height: 18px;"></i>
+                    </div>
+                </div>
+
+                <!-- Transaction Details (Expandable) -->
+                <div class="wise-tx-details">
+                    <div class="wise-tx-details-grid">
+                        <!-- Left Column -->
+                        <div class="wise-tx-detail-section">
+                            <h4 class="wise-tx-detail-title">
+                                <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+                                Destinataire
+                            </h4>
+                            <div class="wise-tx-detail-row">
+                                <span>Nom</span>
+                                <span class="wise-tx-detail-value">{{ tx.beneficiary_name or tx.recipient_name or 'N/A' }}</span>
+                            </div>
+                            {% if tx.beneficiary_bank or tx.recipient_bank %}
+                            <div class="wise-tx-detail-row">
+                                <span>Banque</span>
+                                <span class="wise-tx-detail-value">{{ tx.beneficiary_bank or tx.recipient_bank }}</span>
+                            </div>
+                            {% endif %}
+                            {% if tx.beneficiary_iban or tx.recipient_iban or tx.recipient_account %}
+                            <div class="wise-tx-detail-row">
+                                <span>Compte/IBAN</span>
+                                <span class="wise-tx-detail-value wise-tx-iban">{{ tx.beneficiary_iban or tx.recipient_iban or tx.recipient_account }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="wise-tx-detail-section">
+                            <h4 class="wise-tx-detail-title">
+                                <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
+                                Détails
+                            </h4>
+                            <div class="wise-tx-detail-row">
+                                <span>Montant envoyé</span>
+                                <span class="wise-tx-detail-value wise-amount-debit">-{{ "{:,.2f}".format(amount) }} {{ tx.from_currency or tx.currency or 'MAD' }}</span>
+                            </div>
+                            {% if tx.final_amount or tx.amount_received %}
+                            <div class="wise-tx-detail-row">
+                                <span>Montant reçu</span>
+                                <span class="wise-tx-detail-value wise-amount-credit">+{{ "{:,.2f}".format(tx.final_amount or tx.amount_received) }} {{ tx.to_currency or 'MAD' }}</span>
+                            </div>
+                            {% endif %}
+                            {% if tx.rate %}
+                            <div class="wise-tx-detail-row">
+                                <span>Taux appliqué</span>
+                                <span class="wise-tx-detail-value">1 {{ tx.from_currency or 'USD' }} = {{ tx.rate }} {{ tx.to_currency or 'MAD' }}</span>
+                            </div>
+                            {% endif %}
+                            {% if tx.fee %}
+                            <div class="wise-tx-detail-row">
+                                <span>Frais</span>
+                                <span class="wise-tx-detail-value">{{ "{:,.2f}".format(tx.fee) }} {{ tx.from_currency or 'MAD' }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Footer Info -->
+                    <div class="wise-tx-detail-footer">
+                        <div class="wise-tx-meta">
+                            <span class="wise-tx-status-badge {{ status }}">
+                                <i data-lucide="{% if status == 'completed' %}check-circle{% elif status == 'pending' %}clock{% else %}x-circle{% endif %}" style="width: 12px; height: 12px;"></i>
+                                {{ 'Complété' if status == 'completed' else ('En attente' if status == 'pending' else 'Échoué') }}
+                            </span>
+                            <span class="wise-tx-provider">
+                                <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
+                                {{ tx.supplier_name or 'SarfX' }}
+                            </span>
+                        </div>
+                        <span class="wise-tx-id-full">
+                            <i data-lucide="hash" style="width: 12px; height: 12px;"></i>
+                            {{ tx.transaction_id or (tx._id | string) }}
+                        </span>
+                    </div>
+
+                    {% if tx.note %}
+                    <div class="wise-tx-note">
+                        <i data-lucide="message-square" style="width: 14px; height: 14px;"></i>
+                        {{ tx.note }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="wise-empty-state">
+                <div class="wise-empty-icon">
+                    <i data-lucide="receipt" style="width: 32px; height: 32px; color: var(--text-tertiary);"></i>
+                </div>
+                <h3 class="wise-empty-title">Aucune transaction</h3>
+                <p class="wise-empty-text">Effectuez votre première conversion pour voir l'historique</p>
+                <a href="{{ url_for('app.converter') }}" class="wise-btn wise-btn-primary">
+                    <i data-lucide="repeat" style="width: 18px; height: 18px;"></i>
+                    Convertir maintenant
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="tx-pagination">
+        <div class="tx-pagination-info">
+            Affichage {{ ((pagination.page - 1) * pagination.per_page) + 1 }} - {{ [pagination.page * pagination.per_page, pagination.total]|min }} sur {{ pagination.total }}
+        </div>
+        <div class="tx-pagination-buttons">
+            {% if pagination.page > 1 %}
+            <a href="{{ url_for('app.transactions', page=pagination.page - 1) }}" class="tx-pagination-btn">
+                <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                Précédent
+            </a>
+            {% endif %}
+
+            {% for p in range(1, pagination.pages + 1) %}
+                {% if p == pagination.page %}
+                <span class="tx-pagination-btn active">{{ p }}</span>
+                {% elif p == 1 or p == pagination.pages or (p >= pagination.page - 2 and p <= pagination.page + 2) %}
+                <a href="{{ url_for('app.transactions', page=p) }}" class="tx-pagination-btn">{{ p }}</a>
+                {% elif p == pagination.page - 3 or p == pagination.page + 3 %}
+                <span class="tx-pagination-ellipsis">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.page < pagination.pages %}
+            <a href="{{ url_for('app.transactions', page=pagination.page + 1) }}" class="tx-pagination-btn">
+                Suivant
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Stats Grid */
+.tx-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+    .tx-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
+
+.tx-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tx-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tx-stat-total { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.tx-stat-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.tx-stat-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+.tx-stat-info { display: flex; flex-direction: column; }
+.tx-stat-value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.tx-stat-label { font-size: 12px; color: var(--text-secondary); }
+
+/* Transaction Item Enhanced */
+.wise-tx-item {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.wise-tx-item:hover { border-color: var(--brand-primary); }
+
+.wise-tx-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+}
+
+.wise-tx-content { flex: 1; min-width: 0; }
+
+.wise-tx-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.wise-tx-title-row { display: flex; flex-direction: column; gap: 2px; }
+.wise-tx-title { font-weight: 600; font-size: 15px; color: var(--text-primary); }
+.wise-tx-bank { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+
+.wise-tx-amount {
+    font-weight: 700;
+    font-size: 15px;
+    font-family: 'SF Mono', Monaco, monospace;
+    white-space: nowrap;
+}
+
+.wise-amount-debit { color: #ef4444; }
+.wise-amount-credit { color: #10b981; }
+
+.wise-tx-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.wise-tx-pair { font-size: 13px; color: var(--text-secondary); }
+.wise-tx-date { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-tertiary); }
+
+.wise-tx-expand { color: var(--text-tertiary); transition: transform 0.2s; }
+.wise-tx-item.expanded .wise-tx-expand { transform: rotate(180deg); }
+
+/* Transaction Details */
+.wise-tx-details {
+    display: none;
+    padding: 0 16px 16px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+.wise-tx-item.expanded .wise-tx-details { display: block; }
+
+.wise-tx-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding-top: 16px;
+}
+
+@media (max-width: 600px) {
+    .wise-tx-details-grid { grid-template-columns: 1fr; }
+}
+
+.wise-tx-detail-section {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.wise-tx-detail-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.wise-tx-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 6px 0;
+}
+
+.wise-tx-detail-row span:first-child { color: var(--text-secondary); }
+.wise-tx-detail-value { font-weight: 600; color: var(--text-primary); text-align: right; }
+.wise-tx-iban { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; word-break: break-all; }
+
+.wise-tx-detail-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.wise-tx-meta { display: flex; align-items: center; gap: 12px; }
+
+.wise-tx-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.wise-tx-status-badge.completed { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.wise-tx-status-badge.pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.wise-tx-status-badge.failed { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.wise-tx-provider { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.wise-tx-id-full { display: flex; align-items: center; gap: 4px; font-size: 11px; font-family: 'SF Mono', Monaco, monospace; color: var(--text-tertiary); }
+
+.wise-tx-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Pagination */
+.tx-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tx-pagination-info { font-size: 13px; color: var(--text-secondary); }
+.tx-pagination-buttons { display: flex; align-items: center; gap: 6px; }
+
+.tx-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.tx-pagination-btn:hover { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
+.tx-pagination-btn.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
+.tx-pagination-ellipsis { padding: 0 8px; color: var(--text-tertiary); }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleTxDetails(item) {
+        item.classList.toggle('expanded');
+        lucide.createIcons();
+    }
+
+    function filterTransactions(status) {
+        document.querySelectorAll('.wise-filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.filter === status) btn.classList.add('active');
+        });
+
+        document.querySelectorAll('.wise-tx-item').forEach(item => {
+            if (status === 'all' || item.dataset.status === status) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

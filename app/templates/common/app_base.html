@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
+    <title>{% block title %}SarfX - Le Futur du Change{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+
+    <!-- Design System CSS (Local - No CDN) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+    <!-- Icons (Lucide) & Charts -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <!-- PWA Meta -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    {% block head %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
+
+    <!-- Notifications System -->
+    <div id="notification-container" class="toast-container"></div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    {% for category, message in messages %}
+                        showNotification('{{ message }}', '{{ category }}');
+                    {% endfor %}
+                });
+            </script>
+        {% endif %}
+    {% endwith %}
+
+    <!-- MOBILE SIDEBAR TOGGLE BUTTON -->
+    <button class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Ouvrir le menu">
+        <i data-lucide="menu" class="toggle-icon-open"></i>
+        <i data-lucide="x" class="toggle-icon-close"></i>
+    </button>
+
+    <!-- SIDEBAR OVERLAY (for closing on mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- SIDEBAR NAVIGATION (slide-in on mobile, fixed on desktop) -->
+    <aside class="wise-sidebar" id="desktop-nav">
+        <a href="/" class="wise-sidebar-logo" style="text-decoration: none;">
+            <span class="wise-logo-text">Sarf<span class="wise-logo-accent">X</span></span>
+        </a>
+
+        <nav class="wise-sidebar-nav">
+            <!-- Navigation pour tous les utilisateurs -->
+            <a href="{{ url_for('app.home') }}" class="wise-nav-item {{ 'active' if active_tab == 'home' else '' }}">
+                <i data-lucide="home" class="wise-nav-icon"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="{{ url_for('app.wallets') }}" class="wise-nav-item {{ 'active' if active_tab == 'wallets' else '' }}">
+                <i data-lucide="wallet" class="wise-nav-icon"></i>
+                <span>Wallets</span>
+            </a>
+            <a href="{{ url_for('app.converter') }}" class="wise-nav-item {{ 'active' if active_tab == 'converter' else '' }}">
+                <i data-lucide="repeat" class="wise-nav-icon"></i>
+                <span>Exchange</span>
+            </a>
+            <a href="{{ url_for('app.atms') }}" class="wise-nav-item {{ 'active' if active_tab == 'atms' else '' }}">
+                <i data-lucide="map-pin" class="wise-nav-icon"></i>
+                <span>Find ATMs</span>
+            </a>
+            {% if not user or user.role not in ['admin', 'bank_superadmin', 'bank_associate'] %}
+            <a href="{{ url_for('app.beneficiaries') }}" class="wise-nav-item {{ 'active' if active_tab == 'beneficiaries' else '' }}">
+                <i data-lucide="users" class="wise-nav-icon"></i>
+                <span>Bénéficiaires</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('app.transactions') }}" class="wise-nav-item {{ 'active' if active_tab == 'transactions' else '' }}">
+                <i data-lucide="receipt" class="wise-nav-icon"></i>
+                <span>Historique</span>
+            </a>
+            <a href="{{ url_for('app.faq') }}" class="wise-nav-item {{ 'active' if active_tab == 'faq' else '' }}">
+                <i data-lucide="help-circle" class="wise-nav-icon"></i>
+                <span>FAQ</span>
+            </a>
+            <a href="{{ url_for('app.rate_history') }}" class="wise-nav-item {{ 'active' if active_tab == 'rate_history' else '' }}">
+                <i data-lucide="trending-up" class="wise-nav-icon"></i>
+                <span>Historique Taux</span>
+            </a>
+            <a href="{{ url_for('app.ai_forecast') }}" class="wise-nav-item {{ 'active' if active_tab == 'ai' else '' }}">
+                <i data-lucide="brain-circuit" class="wise-nav-icon"></i>
+                <span>IA Prédictions</span>
+            </a>
+            <a href="{{ url_for('app.profile') }}" class="wise-nav-item {{ 'active' if active_tab == 'profile' else '' }}">
+                <i data-lucide="user" class="wise-nav-icon"></i>
+                <span>Profil</span>
+            </a>
+
+            <!-- Section ADMIN (admin, super admin banque) -->
+            {% if user and (user.role == 'admin' or user.role == 'bank_superadmin') %}
+            <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Administration</div>
+            <a href="{{ url_for('admin.dashboard') }}" class="wise-nav-item">
+                <i data-lucide="shield" class="wise-nav-icon"></i>
+                <span>Admin Dashboard</span>
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="wise-nav-item">
+                <i data-lucide="users" class="wise-nav-icon"></i>
+                <span>Utilisateurs</span>
+            </a>
+            <a href="{{ url_for('admin_banks.list_banks') }}" class="wise-nav-item">
+                <i data-lucide="landmark" class="wise-nav-icon"></i>
+                <span>Banques</span>
+            </a>
+            <a href="{{ url_for('admin.atms') }}" class="wise-nav-item">
+                <i data-lucide="map-pin" class="wise-nav-icon"></i>
+                <span>ATMs</span>
+            </a>
+            {% endif %}
+
+            <!-- Section ADMIN ASSOCIE (admin associé banque) -->
+            {% if user and user.role == 'bank_respo' %}
+            <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Gestion Banque</div>
+            <a href="{{ url_for('app.admin_associate_bank') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_dashboard' else '' }}">
+                <i data-lucide="layout-dashboard" class="wise-nav-icon"></i>
+                <span>Dashboard Banque</span>
+            </a>
+            <a href="{{ url_for('app.admin_atm_management') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_atms' else '' }}">
+                <i data-lucide="map-pin" class="wise-nav-icon"></i>
+                <span>Gestion ATMs</span>
+            </a>
+            <a href="{{ url_for('app.admin_api_control') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_api' else '' }}">
+                <i data-lucide="key" class="wise-nav-icon"></i>
+                <span>Contrôle API</span>
+            </a>
+            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'bank_settings' else '' }}">
+                <i data-lucide="settings" class="wise-nav-icon"></i>
+                <span>Paramètres</span>
+            </a>
+            {% endif %}
+
+            <!-- Section USER BANQUE (user banque) -->
+            {% if user and user.role == 'bank_user' %}
+            <div class="mt-6 mb-2 text-xs text-slate-500 font-bold uppercase px-4">Espace Banque</div>
+            <a href="{{ url_for('app.bank_settings') }}" class="wise-nav-item">
+                <i data-lucide="building-2" class="wise-nav-icon"></i>
+                <span>API Banque</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="wise-sidebar-footer">
+            <a href="{{ url_for('app.settings') }}" class="wise-nav-item {{ 'active' if active_tab == 'settings' else '' }}">
+                <i data-lucide="settings" class="wise-nav-icon"></i>
+                <span>Réglages</span>
+            </a>
+            <button onclick="toggleTheme()" class="wise-nav-item wise-theme-toggle">
+                <i data-lucide="sun" id="theme-icon-light" class="wise-nav-icon"></i>
+                <i data-lucide="moon" id="theme-icon-dark" class="wise-nav-icon" style="display: none;"></i>
+                <span id="theme-label">Mode sombre</span>
+            </button>
+            <a href="{{ url_for('auth.logout') }}" class="wise-nav-item wise-logout-btn">
+                <i data-lucide="log-out" class="wise-nav-icon"></i>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="main-content" class="wise-main-content">
+        <div class="wise-content-inner">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION (visible <1024px) -->
+    <nav class="wise-bottom-nav" id="mobile-nav">
+        <a href="{{ url_for('app.home') }}" class="wise-bottom-item {{ 'active' if active_tab == 'home' else '' }}">
+            <i data-lucide="home" class="wise-bottom-icon"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('app.wallets') }}" class="wise-bottom-item {{ 'active' if active_tab == 'wallets' else '' }}">
+            <i data-lucide="wallet" class="wise-bottom-icon"></i>
+            <span>Wallets</span>
+        </a>
+        <a href="{{ url_for('app.converter') }}" class="wise-bottom-item {{ 'active' if active_tab == 'converter' else '' }}">
+            <i data-lucide="repeat" class="wise-bottom-icon"></i>
+            <span>Exchange</span>
+        </a>
+        <a href="{{ url_for('app.atms') }}" class="wise-bottom-item {{ 'active' if active_tab == 'atms' else '' }}">
+            <i data-lucide="map-pin" class="wise-bottom-icon"></i>
+            <span>ATMs</span>
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="wise-bottom-item wise-logout-mobile">
+            <i data-lucide="log-out" class="wise-bottom-icon"></i>
+            <span>Sortir</span>
+        </a>
+    </nav>
+
+    <!-- Global JavaScript -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const body = document.body;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            body.classList.toggle('theme-dark', newTheme === 'dark');
+            body.style.background = newTheme === 'dark' ? 'var(--bg-primary)' : 'var(--bg-primary)';
+            body.style.color = 'var(--text-primary)';
+
+            localStorage.setItem('sarfx_theme', newTheme);
+            updateThemeToggleUI(newTheme === 'dark');
+            updateThemeColor(newTheme);
+
+            // Sync with server
+            fetch('/api/theme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme: newTheme })
+            }).catch(() => {});
+        }
+
+        function updateThemeToggleUI(isDark) {
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            const themeLabel = document.getElementById('theme-label');
+            const dot = document.getElementById('theme-toggle-dot');
+            const btn = document.getElementById('theme-toggle-btn');
+
+            if (lightIcon && darkIcon) {
+                lightIcon.style.display = isDark ? 'block' : 'none';
+                darkIcon.style.display = isDark ? 'none' : 'block';
+            }
+            if (themeLabel) {
+                themeLabel.textContent = isDark ? 'Mode clair' : 'Mode sombre';
+            }
+            if (dot && btn) {
+                dot.style.transform = isDark ? 'translateX(0)' : 'translateX(24px)';
+            }
+        }
+
+        function updateThemeColor(theme) {
+            const themeColor = theme === 'dark' ? '#0f172a' : '#ffffff';
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
+        }
+
+        // Notifications - Enhanced with close button and stacking
+        const MAX_TOASTS = 5;
+
+        function showNotification(message, type = 'info', duration = null) {
+            const container = document.getElementById('notification-container');
+
+            // Auto duration based on type
+            const durations = {
+                success: 3000,
+                error: 6000,
+                warning: 5000,
+                info: 4000
+            };
+            const autoDuration = duration || durations[type] || 4000;
+
+            // Limit number of toasts
+            const existingToasts = container.querySelectorAll('.toast');
+            if (existingToasts.length >= MAX_TOASTS) {
+                existingToasts[0].remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type} toast-enter`;
+
+            const icons = {
+                success: 'check-circle',
+                error: 'x-circle',
+                info: 'info',
+                warning: 'alert-triangle'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <i data-lucide="${icons[type] || 'info'}" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+                    <span style="flex: 1;">${message}</span>
+                </div>
+                <button class="toast-close" aria-label="Fermer">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Close button handler
+            const closeBtn = toast.querySelector('.toast-close');
+            closeBtn.addEventListener('click', () => dismissToast(toast));
+
+            // Auto dismiss
+            const timeoutId = setTimeout(() => dismissToast(toast), autoDuration);
+            toast.dataset.timeoutId = timeoutId;
+        }
+
+        function dismissToast(toast) {
+            if (!toast || !toast.parentNode) return;
+
+            // Clear timeout if exists
+            if (toast.dataset.timeoutId) {
+                clearTimeout(parseInt(toast.dataset.timeoutId));
+            }
+
+            toast.classList.remove('toast-enter');
+            toast.classList.add('toast-exit');
+
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 300);
+        }
+
+        // Global notification function for external scripts
+        window.SarfXNotify = {
+            success: (msg, duration) => showNotification(msg, 'success', duration),
+            error: (msg, duration) => showNotification(msg, 'error', duration),
+            warning: (msg, duration) => showNotification(msg, 'warning', duration),
+            info: (msg, duration) => showNotification(msg, 'info', duration)
+        };
+
+        // Init Theme on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('sarfx_theme') || '{{ user_theme | default("light") }}';
+            const html = document.documentElement;
+            const body = document.body;
+
+            html.setAttribute('data-theme', savedTheme);
+            body.classList.toggle('theme-dark', savedTheme === 'dark');
+
+            updateThemeToggleUI(savedTheme === 'dark');
+            updateThemeColor(savedTheme);
+
+            // Re-init icons after DOM ready
+            setTimeout(() => lucide.createIcons(), 100);
+        });
+
+        // Detect system theme preference
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('sarfx_theme')) {
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    document.body.classList.toggle('theme-dark', e.matches);
+                    updateThemeToggleUI(e.matches);
+                }
+            });
+        }
+
+        // Mobile Sidebar Toggle
+        (function() {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.getElementById('desktop-nav');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            if (sidebarToggle && sidebar && overlay) {
+                function openSidebar() {
+                    sidebar.classList.add('open');
+                    overlay.classList.add('active');
+                    sidebarToggle.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeSidebar() {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    sidebarToggle.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+
+                sidebarToggle.addEventListener('click', () => {
+                    if (sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    } else {
+                        openSidebar();
+                    }
+                });
+
+                overlay.addEventListener('click', closeSidebar);
+
+                // Close sidebar when clicking a nav item on mobile
+                sidebar.querySelectorAll('.wise-nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        if (window.innerWidth < 1024) {
+                            closeSidebar();
+                        }
+                    });
+                });
+
+                // Close on escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    }
+                });
+
+                // Handle resize - close sidebar if switching to desktop
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth >= 1024) {
+                        closeSidebar();
+                    }
+                });
+            }
+        })();
+    </script>
+
+    {% block scripts %}{% endblock %}
+
+    <!-- Notifications System -->
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+    <!-- Chatbot SarfX avec API Gemini -->
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+</html>

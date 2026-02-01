@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>429 - Trop de requêtes | SarfX</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-primary);">
+    <div class="text-center max-w-md">
+        <div class="feature-icon feature-icon-lg mx-auto mb-6" style="width: 80px; height: 80px; background: var(--warning-bg); color: var(--warning);">
+            <i data-lucide="timer" style="width: 40px; height: 40px;"></i>
+        </div>
+
+        <h1 class="text-4xl font-bold mb-2" style="color: var(--text-primary);">429</h1>
+        <h2 class="text-xl font-semibold mb-4" style="color: var(--text-secondary);">Trop de requêtes</h2>
+
+        <p class="text-sm mb-6" style="color: var(--text-tertiary);">
+            {{ error or "Vous avez effectué trop de requêtes. Veuillez patienter quelques instants avant de réessayer." }}
+        </p>
+
+        <div class="flex flex-col gap-3">
+            <a href="{{ url_for('app.home') }}" class="btn btn-gradient">
+                <i data-lucide="home" style="width: 18px; height: 18px;"></i>
+                Retour à l'accueil
+            </a>
+            <button onclick="location.reload()" class="btn btn-secondary">
+                <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+                Réessayer
+            </button>
+        </div>
+
+        <p class="text-xs mt-8" style="color: var(--text-tertiary);">
+            Cette limite protège notre service contre les abus.
+        </p>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

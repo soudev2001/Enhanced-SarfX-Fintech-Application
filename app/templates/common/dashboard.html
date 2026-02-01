@@ -1,0 +1,46 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<!-- Statistiques (Scroll Horizontal) -->
+<div style="display: flex; overflow-x: auto; padding: 0 16px; margin-bottom: 20px; gap: 12px; scroll-behavior: smooth;">
+    <div class="card" style="min-width: 150px; margin: 0; background: linear-gradient(135deg, #007AFF, #00C6FF); color: white;">
+        <span style="opacity: 0.8; font-size: 12px; text-transform: uppercase;">Utilisateurs</span>
+        <div style="font-size: 32px; font-weight: 700;">{{ user_count }}</div>
+    </div>
+    <div class="card" style="min-width: 150px; margin: 0;">
+        <span style="color: var(--ios-gray); font-size: 12px; text-transform: uppercase;">Fournisseurs</span>
+        <div style="font-size: 32px; font-weight: 700;">{{ supplier_count }}</div>
+    </div>
+    <div class="card" style="min-width: 150px; margin: 0;">
+        <span style="color: var(--ios-gray); font-size: 12px; text-transform: uppercase;">Logs</span>
+        <div style="font-size: 32px; font-weight: 700;">24h</div>
+    </div>
+</div>
+
+<!-- Activité Récente -->
+<h2 style="margin: 0 16px 10px;">Historique</h2>
+<div class="list-group" style="background: white; border-radius: 12px; margin: 0 16px; overflow: hidden;">
+    {% for log in history %}
+    <div style="padding: 16px; border-bottom: 1px solid #E5E5EA; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-weight: 600; font-size: 15px;">{{ log.action }}</div>
+            <div style="font-size: 13px; color: #8E8E93;">{{ log.user }}</div>
+        </div>
+        <div style="font-size: 12px; color: #C7C7CC;">
+            {{ log.timestamp.strftime('%H:%M') }}
+        </div>
+    </div>
+    {% else %}
+    <div style="padding: 20px; text-align: center; color: #8E8E93;">Aucune activité récente.</div>
+    {% endfor %}
+</div>
+
+<!-- Actions Rapides -->
+<h2 style="margin: 20px 16px 10px;">Actions</h2>
+<div class="card" style="margin-top: 0;">
+    <button class="btn btn-primary" style="margin-bottom: 10px;">Simuler Transaction</button>
+    <button class="btn btn-ghost" style="color: var(--ios-red);">Purger les Logs</button>
+</div>
+{% endblock %}

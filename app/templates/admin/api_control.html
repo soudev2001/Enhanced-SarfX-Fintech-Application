@@ -1,0 +1,191 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Contrôle API - SarfX{% endblock %}
+
+{% block content %}
+<div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
+            Contrôle API Banque
+        </h1>
+        <p style="color: var(--text-secondary);">Gestion des accès et paramètres API</p>
+    </div>
+
+    <!-- Statut API -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0; color: var(--text-primary);">Statut de l'API</h2>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                {% if api_info.is_active %}
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></span>
+                <span style="font-weight: 600; color: #10b981;">Actif</span>
+                {% else %}
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></span>
+                <span style="font-weight: 600; color: #ef4444;">Inactif</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Informations API -->
+        <div style="display: grid; gap: 1rem;">
+            <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                <label style="display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Clé API</label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <code id="api-key" style="flex: 1; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px; font-family: monospace; color: var(--text-primary);">
+                        {{ api_info.api_key or 'Non configuré' }}
+                    </code>
+                    {% if api_info.api_key %}
+                    <button onclick="copyToClipboard('api-key')" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                        📋 Copier
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                <label style="display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Secret API</label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <code id="api-secret" style="flex: 1; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px; font-family: monospace; color: var(--text-primary);">
+                        {{ api_info.api_secret or 'Non configuré' }}
+                    </code>
+                    {% if api_info.api_secret %}
+                    <button onclick="copyToClipboard('api-secret')" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                        📋 Copier
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                <label style="display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Webhook URL</label>
+                <code style="display: block; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px; font-family: monospace; color: var(--text-primary);">
+                    {{ api_info.webhook_url or 'Non configuré' }}
+                </code>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">Configuration</h2>
+        <form id="api-config-form">
+            <div style="display: grid; gap: 1.5rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Limite de requêtes (par heure)</label>
+                    <input type="number" value="{{ api_info.rate_limit }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                </div>
+
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">URL Webhook</label>
+                    <input type="url" value="{{ api_info.webhook_url or '' }}" placeholder="https://votre-banque.com/api/webhook" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary);">
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        💾 Sauvegarder
+                    </button>
+                    <button type="button" onclick="regenerateKeys()" style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔄 Régénérer les clés
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dernière synchronisation -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Synchronisation</h2>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <p style="color: var(--text-secondary); margin: 0;">Dernière synchronisation</p>
+                <p style="font-weight: 600; margin: 0.5rem 0 0 0; color: var(--text-primary);">
+                    {% if api_info.last_sync %}
+                    {{ api_info.last_sync }}
+                    {% else %}
+                    Jamais synchronisé
+                    {% endif %}
+                </p>
+            </div>
+            <button onclick="syncNow()" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                🔄 Synchroniser maintenant
+            </button>
+        </div>
+    </div>
+
+    <!-- Documentation API -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Documentation API</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Consultez la documentation complète de l'API SarfX pour intégrer nos services à votre système bancaire.
+        </p>
+        <a href="/docs/api" target="_blank" style="display: inline-block; padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+            📖 Voir la documentation
+        </a>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent.trim();
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Copié dans le presse-papiers', 'success');
+    });
+}
+
+function regenerateKeys() {
+    if (confirm('Êtes-vous sûr de vouloir régénérer les clés API ? Les anciennes clés seront invalidées.')) {
+        fetch('/api/bank-settings/regenerate-keys', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Clés régénérées avec succès', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('Erreur lors de la régénération', 'error');
+            }
+        });
+    }
+}
+
+function syncNow() {
+    showNotification('Synchronisation en cours...', 'info');
+    
+    fetch('/api/bank-settings/sync', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Synchronisation réussie', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Erreur lors de la synchronisation', 'error');
+        }
+    });
+}
+
+document.getElementById('api-config-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    showNotification('Configuration sauvegardée', 'success');
+});
+
+function showNotification(message, type) {
+    // Utilise le système de notifications existant
+    if (typeof window.showNotification === 'function') {
+        window.showNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}

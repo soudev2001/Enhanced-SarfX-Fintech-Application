@@ -1,0 +1,876 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Mes Bénéficiaires - SarfX{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1 class="page-title">
+                <i data-lucide="users" style="width: 28px; height: 28px; color: var(--brand-primary);"></i>
+                Mes Bénéficiaires
+            </h1>
+            <p class="page-subtitle">Gérez vos bénéficiaires et consultez l'historique des transferts</p>
+        </div>
+        <button class="btn-primary" onclick="openAddBeneficiaryModal()">
+            <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
+            Ajouter
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(224, 90, 3, 0.1); color: #e05a03;">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ beneficiaries|length }}</span>
+                <span class="stat-label">Bénéficiaires</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                <i data-lucide="send" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ total_transfers }}</span>
+                <span class="stat-label">Transferts</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beneficiaries List -->
+    {% if beneficiaries %}
+    <div class="beneficiaries-list">
+        {% for benef in beneficiaries %}
+        <div class="beneficiary-card {% if selected_beneficiary == benef._id %}expanded{% endif %}">
+            <div class="beneficiary-header">
+                <div class="beneficiary-avatar">
+                    {{ benef.name[:2]|upper if benef.name else 'XX' }}
+                </div>
+                <div class="beneficiary-info">
+                    <h3 class="beneficiary-name">{{ benef.name }}</h3>
+                    <p class="beneficiary-details">
+                        <i data-lucide="landmark" style="width: 14px; height: 14px;"></i>
+                        {{ benef.bank_name|default('Banque non spécifiée') }}
+                    </p>
+                    <p class="beneficiary-details">
+                        <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i>
+                        {{ benef.account_number|default(benef.iban|default('****')) }}
+                    </p>
+                </div>
+                <div class="beneficiary-stats">
+                    <div class="benef-stat">
+                        <span class="benef-stat-value">{{ benef.transfer_count }}</span>
+                        <span class="benef-stat-label">Transferts</span>
+                    </div>
+                    {% if benef.total_sent > 0 %}
+                    <div class="benef-stat">
+                        <span class="benef-stat-value">{{ "{:,.0f}".format(benef.total_sent) }}</span>
+                        <span class="benef-stat-label">Total envoyé</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="beneficiary-actions">
+                    <button class="btn-icon btn-send" onclick="sendToBeneficiary('{{ benef._id }}')" title="Envoyer">
+                        <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    <button class="btn-icon" onclick="toggleHistory('{{ benef._id }}')" title="Historique">
+                        <i data-lucide="history" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    <button class="btn-icon" onclick="editBeneficiary('{{ benef._id }}')" title="Modifier">
+                        <i data-lucide="pencil" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Transaction History for this beneficiary -->
+            <div class="beneficiary-history" id="history-{{ benef._id }}" {% if selected_beneficiary != benef._id %}style="display: none;"{% endif %}>
+                <h4 class="history-title">
+                    <i data-lucide="history" style="width: 16px; height: 16px;"></i>
+                    Historique des transferts ({{ benef.transfer_count }} total)
+                </h4>
+
+                {% if benef.transactions %}
+                <div class="history-list">
+                    {% for tx in benef.transactions %}
+                    <div class="history-item">
+                        <div class="history-icon {{ 'success' if tx.status == 'completed' else ('pending' if tx.status == 'pending' else 'failed') }}">
+                            <i data-lucide="{{ 'check' if tx.status == 'completed' else ('clock' if tx.status == 'pending' else 'x') }}" style="width: 14px; height: 14px;"></i>
+                        </div>
+                        <div class="history-details">
+                            <span class="history-amount">-{{ "{:,.2f}".format(tx.amount or 0) }} {{ tx.from_currency or tx.currency or 'MAD' }}</span>
+                            {% if tx.final_amount %}
+                            <span class="history-received">→ {{ "{:,.2f}".format(tx.final_amount) }} {{ tx.to_currency or 'MAD' }}</span>
+                            {% endif %}
+                            <span class="history-date">{{ tx.created_at.strftime('%d/%m/%Y à %H:%M') if tx.created_at else 'N/A' }}</span>
+                        </div>
+                        <div class="history-meta">
+                            <span class="history-status {{ tx.status }}">
+                                {{ 'Complété' if tx.status == 'completed' else ('En attente' if tx.status == 'pending' else 'Échoué') }}
+                            </span>
+                            {% if tx.rate %}
+                            <span class="history-rate">Taux: {{ tx.rate }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination for history -->
+                {% if benef.pagination and benef.pagination.pages > 1 %}
+                <div class="history-pagination">
+                    {% if benef.pagination.page > 1 %}
+                    <a href="{{ url_for('app.beneficiaries', beneficiary_id=benef._id, history_page=benef.pagination.page - 1) }}" class="pagination-btn">
+                        <i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    {% endif %}
+                    <span class="pagination-info">Page {{ benef.pagination.page }} / {{ benef.pagination.pages }}</span>
+                    {% if benef.pagination.page < benef.pagination.pages %}
+                    <a href="{{ url_for('app.beneficiaries', beneficiary_id=benef._id, history_page=benef.pagination.page + 1) }}" class="pagination-btn">
+                        <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                {% elif benef.transfer_count > 5 and selected_beneficiary != benef._id %}
+                <a href="{{ url_for('app.beneficiaries', beneficiary_id=benef._id) }}" class="view-all-btn">
+                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                    Voir tous les {{ benef.transfer_count }} transferts
+                </a>
+                {% endif %}
+
+                {% else %}
+                <div class="no-history">
+                    <i data-lucide="inbox" style="width: 24px; height: 24px; opacity: 0.5;"></i>
+                    <span>Aucun transfert vers ce bénéficiaire</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i data-lucide="user-plus" style="width: 48px; height: 48px;"></i>
+        </div>
+        <h3>Aucun bénéficiaire</h3>
+        <p>Ajoutez des bénéficiaires pour effectuer des transferts rapides</p>
+        <button class="btn-primary" onclick="openAddBeneficiaryModal()">
+            <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+            Ajouter un bénéficiaire
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Beneficiary Modal -->
+<div id="addBeneficiaryModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeAddBeneficiaryModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Ajouter un bénéficiaire</h3>
+            <button class="modal-close" onclick="closeAddBeneficiaryModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <form id="addBeneficiaryForm" onsubmit="submitBeneficiary(event)">
+            <div class="form-group">
+                <label>Nom complet</label>
+                <input type="text" name="name" required placeholder="Ex: Mohammed Alami">
+            </div>
+            <div class="form-group">
+                <label>Banque</label>
+                <select name="bank_code" required>
+                    <option value="">Sélectionner une banque</option>
+                    <option value="AWB">Attijariwafa Bank</option>
+                    <option value="BCP">Banque Populaire</option>
+                    <option value="BMCE">BMCE Bank</option>
+                    <option value="BMCI">BMCI</option>
+                    <option value="CIH">CIH Bank</option>
+                    <option value="CAM">Crédit Agricole</option>
+                    <option value="SGM">Société Générale</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>RIB / Numéro de compte</label>
+                <input type="text" name="account_number" required placeholder="Ex: 007 780 0001234567890123 45">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeAddBeneficiaryModal()">Annuler</button>
+                <button type="submit" class="btn-primary">
+                    <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.page-container {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.beneficiaries-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.beneficiary-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.beneficiary-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.1);
+}
+
+.beneficiary-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+}
+
+.beneficiary-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e05a03, #ff8c42);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.beneficiary-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.beneficiary-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.beneficiary-details {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 2px 0;
+}
+
+.beneficiary-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: var(--brand-primary);
+    color: white;
+    border-color: var(--brand-primary);
+}
+
+.beneficiary-history {
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+.history-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: var(--surface);
+    border-radius: 10px;
+}
+
+.history-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-icon.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.history-icon.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.history-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-amount {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.history-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.history-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.history-status.completed {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.history-status.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.history-status.failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.history-icon.failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.history-received {
+    font-size: 12px;
+    color: #10b981;
+}
+
+.history-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.history-rate {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.beneficiary-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.benef-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.benef-stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.benef-stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.btn-send {
+    background: var(--brand-primary) !important;
+    color: white !important;
+    border-color: var(--brand-primary) !important;
+}
+
+.btn-send:hover {
+    background: #ff7a2f !important;
+}
+
+.no-history {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+}
+
+.pagination-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.view-all-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--brand-primary);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.view-all-btn:hover {
+    background: var(--brand-primary);
+    color: white;
+    border-color: var(--brand-primary);
+}
+
+.beneficiary-no-history {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #e05a03, #ff8c42);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.3);
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--border-light);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--surface);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: var(--border-light);
+}
+
+#addBeneficiaryForm {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+</style>
+
+<script>
+function openAddBeneficiaryModal() {
+    document.getElementById('addBeneficiaryModal').style.display = 'flex';
+    lucide.createIcons();
+}
+
+function closeAddBeneficiaryModal() {
+    document.getElementById('addBeneficiaryModal').style.display = 'none';
+}
+
+function submitBeneficiary(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch('/api/beneficiaries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: formData.get('name'),
+            bank_code: formData.get('bank_code'),
+            iban: formData.get('account_number')
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Bénéficiaire ajouté avec succès', 'success');
+            closeAddBeneficiaryModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Erreur lors de l\'ajout', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+function sendToBeneficiary(id) {
+    window.location.href = `/app/beneficiaries/${id}/send`;
+}
+
+function editBeneficiary(id) {
+    showNotification('Édition en cours de développement', 'info');
+}
+
+function toggleHistory(beneficiaryId) {
+    const historySection = document.getElementById('history-' + beneficiaryId);
+    const btn = document.querySelector(`[data-toggle="${beneficiaryId}"]`);
+
+    if (historySection) {
+        const isHidden = historySection.style.display === 'none';
+        historySection.style.display = isHidden ? 'block' : 'none';
+
+        if (btn) {
+            const icon = btn.querySelector('[data-lucide]');
+            if (icon) {
+                icon.setAttribute('data-lucide', isHidden ? 'chevron-up' : 'chevron-down');
+                lucide.createIcons();
+            }
+        }
+    }
+}
+
+function deleteBeneficiary(id) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce bénéficiaire ?')) {
+        return;
+    }
+
+    fetch('/api/beneficiaries/' + id, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Bénéficiaire supprimé', 'success');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showNotification(data.error || 'Erreur lors de la suppression', 'error');
+        }
+    })
+    .catch(err => {
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+// Init: Expand selected beneficiary's history
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedId = urlParams.get('selected_beneficiary');
+    if (selectedId) {
+        const historySection = document.getElementById('history-' + selectedId);
+        if (historySection) {
+            historySection.style.display = 'block';
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,2617 @@
+{% extends "common/app_base.html" %}
+
+{% block content %}
+<div class="wise-converter">
+    <!-- Header Section - Matching HOMEPAGE.txt design -->
+    <div class="wise-rate-header">
+        <div class="wise-rate-header-content">
+            <div class="wise-rate-badge">
+                <i data-lucide="brain-circuit" style="width: 16px; height: 16px;"></i>
+                AI-Powered Rate Comparison
+            </div>
+            <h1 class="wise-rate-title">Compare Real-Time Exchange Rates</h1>
+            <p class="wise-rate-subtitle">Our AI scans 6+ providers every minute to guarantee you the best rates</p>
+        </div>
+    </div>
+
+    <!-- Exchange Card - You Send / Recipient Gets -->
+    <div class="wise-exchange-card">
+        <div class="wise-exchange-row">
+            <div class="wise-exchange-field">
+                <label class="wise-field-label">You send</label>
+                <div class="wise-field-input">
+                    <input type="number" id="smart-amount" value="1000" min="0" class="wise-amount-input" placeholder="0.00">
+                    <select id="from-currency" class="wise-currency-select">
+                        <option value="USD" selected>🇺🇸 USD ($)</option>
+                        <option value="EUR">🇪🇺 EUR (€)</option>
+                        <option value="GBP">🇬🇧 GBP (£)</option>
+                        <option value="CHF">🇨🇭 CHF (Fr)</option>
+                        <option value="CAD">🇨🇦 CAD ($)</option>
+                    </select>
+                </div>
+                <!-- Affichage du solde disponible -->
+                {% if wallet and wallet.balances %}
+                <div class="wise-balance-indicator" id="balance-indicator">
+                    <i data-lucide="wallet" style="width: 14px; height: 14px;"></i>
+                    <span>Solde disponible: <strong id="available-balance">--</strong></span>
+                </div>
+                <div class="wise-balance-warning" id="balance-warning" style="display: none;">
+                    <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                    <span>Solde insuffisant!</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="wise-exchange-arrow">
+                <i data-lucide="arrow-right" style="width: 24px; height: 24px;"></i>
+            </div>
+
+            <div class="wise-exchange-field">
+                <label class="wise-field-label">Le bénéficiaire reçoit</label>
+                <div class="wise-field-input">
+                    <input type="text" id="recipient-amount" value="" class="wise-amount-input wise-amount-result" readonly placeholder="Calcul en cours...">
+                    <select id="to-currency" class="wise-currency-select" onchange="calculateSmartExchange()">
+                        <option value="EUR">🇪🇺 EUR (€)</option>
+                        <option value="MAD" selected>🇲🇦 MAD (DH)</option>
+                        <option value="GBP">🇬🇧 GBP (£)</option>
+                        <option value="USD">🇺🇸 USD ($)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rate Info Box (like Wise) -->
+        <div class="wise-rate-info-box">
+            <div class="wise-rate-line">
+                <span>Taux SarfX</span>
+                <span class="wise-rate-value" id="conv-rate-display">--</span>
+            </div>
+            <div class="wise-rate-line">
+                <span>Frais SarfX</span>
+                <span class="wise-fees-badge" id="conv-fees-display">0.00 €</span>
+            </div>
+        </div>
+
+        <div class="wise-exchange-footer">
+            <div class="wise-last-updated">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                Last updated: <span id="update-time">--:--:--</span>
+            </div>
+            <button onclick="refreshRates()" class="wise-refresh-btn">
+                <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+                Refresh Rates
+            </button>
+        </div>
+
+        <!-- AI Status Messages -->
+        <div class="wise-ai-status">
+            <div class="wise-ai-message">
+                <span class="wise-ai-dot"></span>
+                <span id="ai-message-1">AI scanning market opportunities...</span>
+            </div>
+            <div class="wise-ai-message">
+                <span class="wise-ai-dot"></span>
+                <span id="ai-message-2">Analyzing market sentiment...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Section -->
+    <div class="wise-providers-tabs">
+        <button class="wise-tab active" data-tab="providers">Compare Providers</button>
+        <button class="wise-tab" data-tab="pairs">Popular Pairs</button>
+        <button class="wise-tab" data-tab="alerts">Rate Alerts</button>
+    </div>
+
+    <!-- Tab Content: Compare Providers -->
+    <div id="tab-providers" class="wise-tab-content active">
+        <div id="suppliers-list" class="wise-providers-grid"></div>
+    </div>
+
+    <!-- Tab Content: Popular Pairs -->
+    <div id="tab-pairs" class="wise-tab-content">
+        <div class="wise-pairs-grid">
+            <div class="wise-pair-card" onclick="setPair('USD', 'EUR')">
+                <span class="wise-pair-flags">🇺🇸 → 🇪🇺</span>
+                <span class="wise-pair-name">USD/EUR</span>
+                <span class="wise-pair-rate" id="rate-usd-eur">0.9232</span>
+            </div>
+            <div class="wise-pair-card" onclick="setPair('EUR', 'GBP')">
+                <span class="wise-pair-flags">🇪🇺 → 🇬🇧</span>
+                <span class="wise-pair-name">EUR/GBP</span>
+                <span class="wise-pair-rate" id="rate-eur-gbp">0.8410</span>
+            </div>
+            <div class="wise-pair-card" onclick="setPair('USD', 'GBP')">
+                <span class="wise-pair-flags">🇺🇸 → 🇬🇧</span>
+                <span class="wise-pair-name">USD/GBP</span>
+                <span class="wise-pair-rate" id="rate-usd-gbp">0.7834</span>
+            </div>
+            <div class="wise-pair-card" onclick="setPair('USD', 'MAD')">
+                <span class="wise-pair-flags">🇺🇸 → 🇲🇦</span>
+                <span class="wise-pair-name">USD/MAD</span>
+                <span class="wise-pair-rate" id="rate-usd-mad">10.12</span>
+            </div>
+            <div class="wise-pair-card" onclick="setPair('EUR', 'MAD')">
+                <span class="wise-pair-flags">🇪🇺 → 🇲🇦</span>
+                <span class="wise-pair-name">EUR/MAD</span>
+                <span class="wise-pair-rate" id="rate-eur-mad">10.85</span>
+            </div>
+            <div class="wise-pair-card" onclick="setPair('GBP', 'MAD')">
+                <span class="wise-pair-flags">🇬🇧 → 🇲🇦</span>
+                <span class="wise-pair-name">GBP/MAD</span>
+                <span class="wise-pair-rate" id="rate-gbp-mad">12.76</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Rate Alerts -->
+    <div id="tab-alerts" class="wise-tab-content">
+        <div class="wise-alerts-section">
+            <div class="wise-alert-form-card">
+                <h3>
+                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                    Set Rate Alert
+                </h3>
+                <p class="wise-text-muted">Get notified when the rate reaches your target</p>
+
+                <div class="wise-alert-form-grid">
+                    <div class="wise-form-group">
+                        <label>Currency Pair</label>
+                        <select class="wise-select" id="alert-pair">
+                            <option>USD → EUR</option>
+                            <option>EUR → GBP</option>
+                            <option>USD → MAD</option>
+                            <option>EUR → MAD</option>
+                        </select>
+                    </div>
+                    <div class="wise-form-group">
+                        <label>Target Rate</label>
+                        <input type="number" class="wise-input" placeholder="e.g. 0.95" step="0.0001" id="alert-rate">
+                    </div>
+                    <div class="wise-form-group">
+                        <label>Alert When</label>
+                        <select class="wise-select" id="alert-condition">
+                            <option>Above target</option>
+                            <option>Below target</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="wise-btn wise-btn-primary" onclick="createAlert()">
+                    <i data-lucide="bell-plus" style="width: 18px; height: 18px;"></i>
+                    Create Alert
+                </button>
+            </div>
+
+            <div class="wise-active-alerts">
+                <h4>Your Active Alerts</h4>
+                <div class="wise-alerts-empty">
+                    <i data-lucide="bell-off" style="width: 32px; height: 32px; opacity: 0.4;"></i>
+                    <p>No active alerts. Create one above!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipient Section -->
+    <div id="recipient-section" class="wise-card hidden-opacity">
+        <div class="wise-card-icon-header">
+            <div class="wise-card-icon" style="background: rgba(224, 90, 3, 0.1); color: var(--brand-primary);">
+                <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <h3 class="wise-card-title">Bénéficiaire</h3>
+                <p class="wise-card-desc">Sélectionnez ou ajoutez un destinataire</p>
+            </div>
+        </div>
+
+        <!-- Saved Beneficiaries Dropdown -->
+        <div class="wise-beneficiary-selector">
+            <label class="wise-input-label">
+                <i data-lucide="users" style="width: 14px; height: 14px;"></i>
+                Bénéficiaires enregistrés
+            </label>
+            <div class="wise-dropdown-container">
+                <select id="saved-beneficiaries" class="wise-select" onchange="selectBeneficiary(this.value)">
+                    <option value="">-- Sélectionner un bénéficiaire --</option>
+                    <option value="new">➕ Nouveau bénéficiaire</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Manual Input Fields (hidden when beneficiary selected) -->
+        <div id="manual-recipient-fields" class="wise-form-grid" style="margin-top: 12px;">
+            <input type="text" id="recipient-name" placeholder="Nom complet" class="wise-input">
+            <input type="text" id="recipient-account" placeholder="IBAN / Numéro de compte" class="wise-input">
+            <input type="tel" id="recipient-phone" placeholder="Téléphone (optionnel)" class="wise-input">
+        </div>
+
+        <!-- Selected Beneficiary Preview -->
+        <div id="selected-beneficiary-preview" class="wise-beneficiary-preview hidden">
+            <div class="wise-beneficiary-avatar">
+                <span id="beneficiary-initials">AB</span>
+            </div>
+            <div class="wise-beneficiary-info">
+                <p class="wise-beneficiary-name" id="preview-ben-name">--</p>
+                <p class="wise-beneficiary-bank" id="preview-ben-bank">--</p>
+                <p class="wise-beneficiary-iban" id="preview-ben-iban">--</p>
+            </div>
+            <button type="button" onclick="clearBeneficiary()" class="wise-beneficiary-clear">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bank Selection -->
+    <div id="bank-selection-section" class="wise-card hidden-opacity">
+        <div class="wise-card-icon-header">
+            <div class="wise-card-icon" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">
+                <i data-lucide="landmark" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <h3 class="wise-card-title">Banque de Retrait</h3>
+                <p class="wise-card-desc">Choisissez votre banque</p>
+            </div>
+        </div>
+        <div id="banks-grid" class="wise-banks-select-grid"></div>
+    </div>
+
+    <!-- ATM Locations -->
+    <div id="atm-section" class="wise-card hidden-opacity">
+        <div class="wise-card-icon-header">
+            <div class="wise-card-icon" style="background: var(--success-bg); color: var(--success);">
+                <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <h3 class="wise-card-title">Distributeurs Proches</h3>
+                <p class="wise-card-desc" id="atm-subtitle">Détectez votre position</p>
+            </div>
+            <button onclick="getUserLocation()" id="location-btn" class="wise-location-btn">
+                <i data-lucide="crosshair" style="width: 16px; height: 16px;"></i> Ma Position
+            </button>
+        </div>
+        <div id="atm-list" class="wise-atm-list">
+            <div class="wise-atm-empty">
+                <i data-lucide="navigation" style="width: 40px; height: 40px; opacity: 0.4;"></i>
+                <p>Sélectionnez une banque et activez votre position</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Result - Wise Style -->
+    <div id="summary-section" class="wise-result-card hidden-opacity">
+        <div class="wise-result-header">
+            <div>
+                <p class="wise-result-label">
+                    <i data-lucide="gift" style="width: 14px; height: 14px;"></i>
+                    Le bénéficiaire reçoit
+                </p>
+                <h2 class="wise-result-amount" id="smart-final-amount">--</h2>
+            </div>
+            <div class="wise-result-currency-tag" id="result-currency-tag">
+                <span id="result-currency-flag">🇲🇦</span>
+                <span id="result-currency-code">MAD</span>
+            </div>
+        </div>
+        <div class="wise-result-details">
+            <div class="wise-detail-row">
+                <span>Montant envoyé</span>
+                <span id="summary-send-amount">-- USD</span>
+            </div>
+            <div class="wise-detail-row">
+                <span>Taux de change</span>
+                <span id="summary-rate">--</span>
+            </div>
+            <div class="wise-detail-row">
+                <span>Frais SarfX</span>
+                <span id="summary-fees" class="wise-fees-highlight">--</span>
+            </div>
+        </div>
+        <form action="{{ url_for('api.create_exchange') }}" method="POST" id="exchange-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="amount" id="form-amount">
+            <input type="hidden" name="from_currency" id="form-from-currency">
+            <input type="hidden" name="to_currency" id="form-to-currency" value="MAD">
+            <input type="hidden" name="rate" id="form-rate">
+            <input type="hidden" name="final_amount" id="form-final-amount">
+            <input type="hidden" name="supplier_id" id="form-supplier-id">
+            <button type="submit" class="wise-confirm-btn">
+                <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                Confirmer l'échange
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   HOMEPAGE.TXT EXCHANGE RATES DESIGN
+   ========================================== */
+
+.wise-converter {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 100px;
+}
+
+/* Rate Header */
+.wise-rate-header {
+    text-align: center;
+    padding: 24px 0;
+}
+
+.wise-rate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(224, 90, 3, 0.1);
+    color: var(--brand-primary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.wise-rate-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.wise-rate-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Exchange Card */
+.wise-exchange-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto 24px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+    .wise-exchange-card {
+        max-width: 1100px;
+        padding: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .wise-exchange-card {
+        padding: 20px;
+        border-radius: 16px;
+        margin: 0 12px 20px;
+    }
+}
+
+.wise-currency-select {
+    font-size: 16px;
+    padding: 12px 16px;
+    min-width: 160px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.wise-currency-select option {
+    font-size: 16px;
+    padding: 8px;
+}
+
+.wise-exchange-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .wise-exchange-row {
+        flex-direction: column;
+    }
+}
+
+.wise-exchange-field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.wise-field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.wise-field-input {
+    display: grid;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 4px;
+    transition: border-color 0.2s;
+}
+
+.wise-field-input:focus-within {
+    border-color: var(--brand-primary);
+}
+
+.wise-amount-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding: 12px 16px;
+    outline: none;
+}
+
+.wise-amount-result {
+    color: var(--brand-primary);
+}
+
+.wise-currency-select {
+    background: var(--card-bg);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.wise-exchange-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    color: var(--text-secondary);
+}
+
+.wise-exchange-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.wise-last-updated {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wise-refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-refresh-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+/* AI Status */
+.wise-ai-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.wise-ai-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wise-ai-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Rate Info Box */
+.wise-rate-info-box {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #86efac;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 16px;
+}
+
+.wise-rate-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #166534;
+    margin-bottom: 6px;
+}
+
+.wise-rate-line:last-child {
+    margin-bottom: 0;
+}
+
+.wise-rate-value {
+    font-weight: 700;
+    font-family: 'SF Mono', Monaco, monospace;
+}
+
+.wise-fees-badge {
+    background: #22c55e;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* Balance Indicator */
+.wise-balance-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #166534;
+}
+
+.wise-balance-indicator strong {
+    font-family: 'SF Mono', Monaco, monospace;
+}
+
+.wise-balance-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.wise-balance-indicator.insufficient {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+}
+
+/* Tabs */
+.wise-providers-tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 6px;
+    border-radius: 12px;
+}
+
+.wise-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-tab:hover {
+    color: var(--text-primary);
+}
+
+.wise-tab.active {
+    background: var(--card-bg);
+    color: var(--brand-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wise-tab-content {
+    display: none;
+}
+
+.wise-tab-content.active {
+    display: block;
+}
+
+/* Providers Grid - Matching HOMEPAGE.txt exactly */
+.wise-providers-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wise-provider-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-provider-card:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.wise-provider-card.best {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+    border-color: #10b981;
+}
+
+.wise-provider-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.wise-provider-logo img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.wise-provider-info {
+    flex: 1;
+}
+
+.wise-provider-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.wise-provider-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-provider-badge {
+    padding: 3px 8px;
+    background: #10b981;
+    color: white;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.wise-provider-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wise-provider-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+}
+
+.wise-provider-delivery {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wise-provider-amount {
+    text-align: right;
+    min-width: 120px;
+}
+
+.wise-provider-result {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--brand-primary);
+}
+
+.wise-provider-details {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.wise-provider-select {
+    padding: 12px 20px;
+    background: var(--brand-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.wise-provider-select:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+/* Popular Pairs */
+.wise-pairs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.wise-pair-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-pair-card:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+}
+
+.wise-pair-flags {
+    font-size: 24px;
+}
+
+.wise-pair-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.wise-pair-rate {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--brand-primary);
+}
+
+/* Rate Alerts */
+.wise-alerts-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.wise-alert-form-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.wise-alert-form-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-alert-form-card .wise-text-muted {
+    margin: 0 0 20px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.wise-alert-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.wise-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wise-form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.wise-select {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.wise-active-alerts {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.wise-active-alerts h4 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.wise-alerts-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-secondary);
+}
+
+.wise-alerts-empty p {
+    margin: 8px 0 0 0;
+}
+
+/* Legacy styles kept for compatibility */
+
+.wise-breadcrumb a:hover {
+    color: var(--brand-primary);
+}
+
+.wise-conv-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.wise-conv-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.25);
+}
+
+.wise-conv-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.wise-conv-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wise-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--success-bg);
+    color: var(--success);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wise-live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+/* Input Card */
+.wise-input-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.wise-input-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.wise-input-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+}
+
+.wise-savings-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--success);
+    background: var(--success-bg);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.wise-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wise-big-input {
+    flex: 1;
+    font-size: 36px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    padding: 8px 0;
+    min-width: 0;
+}
+
+.wise-big-input:focus {
+    outline: none;
+}
+
+.wise-currency-pill {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.wise-currency-pill:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+/* Timeline */
+.wise-timeline {
+    position: relative;
+    padding-left: 28px;
+    margin-left: 14px;
+    border-left: 2px solid var(--border-light);
+}
+
+.wise-timeline-item {
+    position: relative;
+    padding: 12px 0;
+}
+
+.wise-timeline-dot {
+    position: absolute;
+    left: -35px;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--surface);
+    border: 2px solid var(--border-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+}
+
+.wise-dot-accent {
+    background: rgba(224, 90, 3, 0.1);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.wise-timeline-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wise-timeline-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-timeline-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-value-success {
+    color: var(--success);
+}
+
+/* Suppliers */
+.wise-suppliers-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+}
+
+.wise-suppliers-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.wise-suppliers-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wise-supplier-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.wise-supplier-item:hover {
+    border-color: var(--brand-primary);
+}
+
+.wise-supplier-best {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--success);
+}
+
+.wise-supplier-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: white;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-supplier-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.wise-supplier-info {
+    flex: 1;
+}
+
+.wise-supplier-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.wise-supplier-rate {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.wise-supplier-tag {
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--success);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+/* Cards */
+.wise-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+}
+
+.wise-card-icon-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.wise-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wise-card-desc {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.wise-form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wise-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.wise-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+.wise-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Banks Grid */
+.wise-banks-select-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+@media (min-width: 640px) {
+    .wise-banks-select-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .wise-banks-select-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.wise-bank-select-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 10px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wise-bank-select-item:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+}
+
+.wise-bank-select-item.selected {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.wise-bank-select-item img {
+    width: 100%;
+    height: 40px;
+    object-fit: contain;
+}
+
+.wise-bank-select-item span {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+/* Location Button */
+.wise-location-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--brand-primary);
+    border-radius: 8px;
+    color: var(--brand-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.wise-location-btn:hover {
+    background: var(--brand-primary);
+    color: white;
+}
+
+.wise-location-btn.success {
+    background: var(--success-bg);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* ATM List */
+.wise-atm-list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.wise-atm-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+}
+
+.wise-atm-empty i {
+    margin-bottom: 8px;
+}
+
+.wise-atm-item {
+    padding: 14px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wise-atm-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.wise-atm-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.wise-atm-address {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.wise-atm-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.wise-atm-distance {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.wise-atm-hours {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+.wise-atm-24h {
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* Result Card */
+.wise-result-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1a1a2e 100%);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    box-shadow: 0 8px 24px rgba(14, 27, 42, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.wise-result-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    background: rgba(224, 90, 3, 0.15);
+    border-radius: 50%;
+    filter: blur(40px);
+}
+
+.wise-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-result-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+    margin-bottom: 8px;
+}
+
+.wise-result-amount {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.wise-result-currency-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wise-result-currency-tag span:first-child {
+    font-size: 20px;
+}
+
+/* Result Details */
+.wise-result-details {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wise-detail-row:last-child {
+    border-bottom: none;
+}
+
+.wise-detail-row span:first-child {
+    opacity: 0.7;
+}
+
+.wise-detail-row span:last-child {
+    font-weight: 600;
+}
+
+.wise-fees-highlight {
+    color: #4ade80 !important;
+    background: rgba(74, 222, 128, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.wise-confirm-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 24px;
+    background: white;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 1;
+}
+
+.wise-confirm-btn:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Visibility */
+.hidden-opacity {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.visible-opacity {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Beneficiary Selector Styles */
+.wise-beneficiary-selector {
+    margin-bottom: 16px;
+}
+
+.wise-input-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.wise-select {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 42px;
+}
+
+.wise-select:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+.wise-beneficiary-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    margin-top: 12px;
+}
+
+.wise-beneficiary-preview.hidden {
+    display: none;
+}
+
+.wise-beneficiary-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.wise-beneficiary-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.wise-beneficiary-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.wise-beneficiary-bank {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.wise-beneficiary-iban {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wise-beneficiary-clear {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    color: var(--error);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.wise-beneficiary-clear:hover {
+    background: var(--error-bg);
+}
+
+/* ========== RESPONSIVE STYLES ========== */
+@media (max-width: 640px) {
+    .wise-rate-header {
+        padding: 16px 0;
+    }
+
+    .wise-rate-title {
+        font-size: 20px;
+    }
+
+    .wise-rate-subtitle {
+        font-size: 13px;
+    }
+
+    .wise-exchange-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .wise-amount-input {
+        font-size: 18px;
+        padding: 10px 12px;
+    }
+
+    .wise-currency-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .wise-exchange-arrow {
+        width: 36px;
+        height: 36px;
+    }
+
+    .wise-providers-tabs {
+        gap: 4px;
+        padding: 4px;
+    }
+
+    .wise-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .wise-provider-card {
+        padding: 14px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .wise-provider-logo {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .wise-provider-logo img {
+        width: 28px;
+        height: 28px;
+    }
+
+    .wise-provider-name {
+        font-size: 14px;
+    }
+
+    .wise-provider-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .wise-provider-result {
+        font-size: 16px !important;
+    }
+
+    .wise-provider-details {
+        font-size: 11px;
+    }
+
+    .wise-pairs-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .wise-pair-card {
+        padding: 14px 12px;
+    }
+
+    .wise-pair-flags {
+        font-size: 20px;
+    }
+
+    .wise-pair-rate {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wise-rate-badge {
+        font-size: 11px;
+        padding: 6px 12px;
+    }
+
+    .wise-rate-title {
+        font-size: 18px;
+    }
+
+    .wise-exchange-card {
+        padding: 14px;
+    }
+
+    .wise-amount-input {
+        font-size: 16px;
+    }
+
+    .wise-provider-card {
+        padding: 12px;
+    }
+
+    .wise-provider-amount {
+        width: 100%;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-light);
+        text-align: left;
+    }
+
+    .wise-tab {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
+    .wise-pairs-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wise-alert-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wise-section {
+        padding: 14px;
+    }
+
+    .wise-section-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Suppliers data from server
+    const suppliers = {{ suppliers | tojson | safe }};
+    const SARFX_FEE_PCT = 0.0025; // SarfX = 0.25% (2.50 pour 1000) - moins que Wise!
+    let bestSupplier = null;
+    let selectedBank = null;
+    let userLocation = null;
+    let beneficiariesData = [];
+    let selectedBeneficiary = null;
+
+    // Fallback country → currency mapping for beneficiary selection
+    const countryCurrencyMap = {
+        'Maroc': 'MAD', 'Morocco': 'MAD',
+        'France': 'EUR', 'Espagne': 'EUR', 'Spain': 'EUR',
+        'Allemagne': 'EUR', 'Germany': 'EUR', 'Italie': 'EUR', 'Italy': 'EUR',
+        'Belgique': 'EUR', 'Belgium': 'EUR', 'Pays-Bas': 'EUR', 'Netherlands': 'EUR',
+        'Portugal': 'EUR',
+        'UK': 'GBP', 'Royaume-Uni': 'GBP', 'United Kingdom': 'GBP',
+        'USA': 'USD', 'United States': 'USD', 'Etats-Unis': 'USD',
+        'Canada': 'CAD', 'Suisse': 'CHF', 'Switzerland': 'CHF'
+    };
+
+    // Initial values from Flask session
+    const initialAmount = {{ initial_amount | tojson | safe }};
+    const initialFromCurrency = {{ initial_from | tojson | safe }};
+    const initialToCurrency = {{ initial_to | tojson | safe }};
+
+    // Wallet balances from Flask
+    {% if wallet and wallet.balances %}
+    const walletBalances = {{ wallet.balances | tojson | safe }};
+    {% else %}
+    const walletBalances = {};
+    {% endif %}
+
+    // Function to check and update balance display
+    function updateBalanceDisplay() {
+        const fromCurrency = document.getElementById('from-currency').value;
+        const amount = parseFloat(document.getElementById('smart-amount').value) || 0;
+        const balanceIndicator = document.getElementById('balance-indicator');
+        const balanceWarning = document.getElementById('balance-warning');
+        const availableBalanceEl = document.getElementById('available-balance');
+        const submitBtn = document.querySelector('#exchange-form button[type="submit"]');
+
+        if (!balanceIndicator || !availableBalanceEl) return;
+
+        const availableBalance = parseFloat(walletBalances[fromCurrency] || 0);
+        availableBalanceEl.textContent = `${availableBalance.toFixed(2)} ${fromCurrency}`;
+
+        if (amount > availableBalance) {
+            // Solde insuffisant
+            balanceIndicator.classList.add('insufficient');
+            if (balanceWarning) balanceWarning.style.display = 'flex';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+        } else {
+            // Solde suffisant
+            balanceIndicator.classList.remove('insufficient');
+            if (balanceWarning) balanceWarning.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        }
+    }
+
+    // Currency symbols map
+    const currencySymbols = {
+        'MAD': 'DH',
+        'EUR': '€',
+        'USD': '$',
+        'GBP': '£'
+    };
+
+    // Format amount with currency symbol
+    function formatAmountWithCurrency(amount, currency) {
+        const symbol = currencySymbols[currency] || currency;
+        const formattedAmount = new Intl.NumberFormat('fr-FR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+        return `${formattedAmount} ${symbol}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🚀 DOMContentLoaded - Initialisation...');
+
+        // Lire les paramètres URL (venant de app_home)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAmount = urlParams.get('amount');
+        const urlFrom = urlParams.get('from');
+        const urlTo = urlParams.get('to');
+        const urlRate = urlParams.get('rate');
+        const urlResult = urlParams.get('result');
+
+        console.log('📥 Paramètres URL:', { urlAmount, urlFrom, urlTo, urlRate, urlResult });
+        console.log('📥 Valeurs Flask:', { initialAmount, initialFromCurrency, initialToCurrency });
+
+        // Priorité aux paramètres URL, sinon valeurs Flask
+        const finalAmount = urlAmount || initialAmount;
+        const finalFrom = urlFrom || initialFromCurrency;
+        const finalTo = urlTo || initialToCurrency;
+
+        // Initialiser les champs
+        if (finalAmount) {
+            document.getElementById('smart-amount').value = finalAmount;
+            console.log('✅ Montant initialisé:', finalAmount);
+        }
+        if (finalFrom) {
+            document.getElementById('from-currency').value = finalFrom;
+            console.log('✅ Devise source initialisée:', finalFrom);
+        }
+        if (finalTo) {
+            document.getElementById('to-currency').value = finalTo;
+            console.log('✅ Devise destination initialisée:', finalTo);
+        }
+
+        // Si on a un résultat pré-calculé depuis app_home, l'afficher temporairement
+        if (urlResult) {
+            const recipientEl = document.getElementById('recipient-amount');
+            if (recipientEl) {
+                recipientEl.value = urlResult.replace('.', ',') + ' DH';
+            }
+        }
+
+        document.getElementById('smart-amount').addEventListener('input', () => {
+            calculateSmartExchange();
+            updateBalanceDisplay();
+        });
+        document.getElementById('from-currency').addEventListener('change', () => {
+            calculateSmartExchange();
+            updateBalanceDisplay();
+        });
+
+        // Charger les données d'abord
+        loadBanks();
+        loadBeneficiaries();
+
+        // Calculer après un court délai pour s'assurer que tout est initialisé
+        console.log('⏱️ Lancement du calcul dans 200ms...');
+        setTimeout(() => {
+            console.log('▶️ Exécution du calcul maintenant');
+            calculateSmartExchange();
+            updateBalanceDisplay();  // Mise à jour initiale du solde
+        }, 200);
+    });
+
+    // ==================== BENEFICIARIES ====================
+
+    async function loadBeneficiaries() {
+        try {
+            const response = await fetch('/api/beneficiaries');
+            const data = await response.json();
+
+            if (data.success && data.beneficiaries) {
+                beneficiariesData = data.beneficiaries;
+                populateBeneficiaryDropdown(data.beneficiaries);
+            }
+        } catch (error) {
+            console.error('Erreur chargement bénéficiaires:', error);
+        }
+    }
+
+    function populateBeneficiaryDropdown(beneficiaries) {
+        const select = document.getElementById('saved-beneficiaries');
+
+        // Clear existing options except first two
+        while (select.options.length > 2) {
+            select.remove(2);
+        }
+
+        // Add favorites first
+        const favorites = beneficiaries.filter(b => b.is_favorite);
+        const others = beneficiaries.filter(b => !b.is_favorite);
+
+        if (favorites.length > 0) {
+            const favGroup = document.createElement('optgroup');
+            favGroup.label = '⭐ Favoris';
+            favorites.forEach(ben => {
+                const option = document.createElement('option');
+                option.value = ben._id || ben.beneficiary_id;
+                option.textContent = `${ben.name} - ${ben.bank_name || ben.bank_code}`;
+                option.dataset.beneficiary = JSON.stringify(ben);
+                favGroup.appendChild(option);
+            });
+            select.appendChild(favGroup);
+        }
+
+        if (others.length > 0) {
+            const othersGroup = document.createElement('optgroup');
+            othersGroup.label = '📋 Autres';
+            others.forEach(ben => {
+                const option = document.createElement('option');
+                option.value = ben._id || ben.beneficiary_id;
+                option.textContent = `${ben.name} - ${ben.bank_name || ben.bank_code}`;
+                option.dataset.beneficiary = JSON.stringify(ben);
+                othersGroup.appendChild(option);
+            });
+            select.appendChild(othersGroup);
+        }
+    }
+
+    function selectBeneficiary(value) {
+        const manualFields = document.getElementById('manual-recipient-fields');
+        const preview = document.getElementById('selected-beneficiary-preview');
+
+        if (!value || value === '') {
+            // Reset to manual entry
+            manualFields.style.display = 'flex';
+            preview.classList.add('hidden');
+            selectedBeneficiary = null;
+            document.getElementById('recipient-name').value = '';
+            document.getElementById('recipient-account').value = '';
+            return;
+        }
+
+        if (value === 'new') {
+            // Show manual entry for new beneficiary
+            manualFields.style.display = 'flex';
+            preview.classList.add('hidden');
+            selectedBeneficiary = null;
+            document.getElementById('recipient-name').value = '';
+            document.getElementById('recipient-account').value = '';
+            document.getElementById('recipient-name').focus();
+            return;
+        }
+
+        // Find selected beneficiary
+        const ben = beneficiariesData.find(b => (b._id || b.beneficiary_id) === value);
+
+        if (ben) {
+            selectedBeneficiary = ben;
+
+            // Sync destination currency to match beneficiary's currency
+            const benCurrency = ben.currency || countryCurrencyMap[ben.country] || 'MAD';
+            const toCurrencySelect = document.getElementById('to-currency');
+            const existingOpt = Array.from(toCurrencySelect.options).find(o => o.value === benCurrency);
+            if (existingOpt) {
+                toCurrencySelect.value = benCurrency;
+            } else {
+                const newOpt = document.createElement('option');
+                newOpt.value = benCurrency;
+                newOpt.textContent = benCurrency;
+                toCurrencySelect.appendChild(newOpt);
+                toCurrencySelect.value = benCurrency;
+            }
+
+            // Hide manual fields, show preview
+            manualFields.style.display = 'none';
+            preview.classList.remove('hidden');
+
+            // Update preview
+            const initials = getInitials(ben.name);
+            document.getElementById('beneficiary-initials').textContent = initials;
+            document.getElementById('preview-ben-name').textContent = ben.name;
+            document.getElementById('preview-ben-bank').textContent = ben.bank_name || ben.bank_code;
+            document.getElementById('preview-ben-iban').textContent = ben.iban ? maskIBAN(ben.iban) : '--';
+
+            // Fill hidden form fields
+            document.getElementById('recipient-name').value = ben.name;
+
+            // Recalculer le montant après sélection du bénéficiaire
+            calculateSmartExchange();
+            document.getElementById('recipient-account').value = ben.iban || ben.rib || '';
+
+            showNotification(`Bénéficiaire: ${ben.name}`, 'success');
+            lucide.createIcons();
+        }
+    }
+
+    function clearBeneficiary() {
+        document.getElementById('saved-beneficiaries').value = '';
+        selectBeneficiary('');
+    }
+
+    function getInitials(name) {
+        if (!name) return 'XX';
+        const parts = name.trim().split(' ').filter(p => p);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    function maskIBAN(iban) {
+        if (!iban || iban.length < 8) return iban;
+        return iban.substring(0, 4) + ' •••• •••• ' + iban.substring(iban.length - 4);
+    }
+
+    function calculateSmartExchange() {
+        const amountInput = document.getElementById('smart-amount');
+        const amount = parseFloat(amountInput.value) || 0;
+        const fromCurrency = document.getElementById('from-currency').value;
+        const toCurrency = document.getElementById('to-currency').value;
+
+        console.log('🔄 calculateSmartExchange called:', { amount, fromCurrency, toCurrency });
+
+        const resSection = document.getElementById('exchange-results');
+        const sumSection = document.getElementById('summary-section');
+        const recSection = document.getElementById('recipient-section');
+        const bankSection = document.getElementById('bank-selection-section');
+        const atmSection = document.getElementById('atm-section');
+
+        if (amount <= 0) {
+            console.warn('⚠️ Montant invalide ou zéro, affichage vide');
+            // Vider le champ recipient-amount si montant invalide
+            document.getElementById('recipient-amount').value = '';
+            [resSection, sumSection, recSection, bankSection, atmSection].forEach(sec => {
+                if (sec) {
+                    sec.classList.add('hidden-opacity');
+                    sec.classList.remove('visible-opacity');
+                }
+            });
+            return;
+        }
+
+        // Show sections
+        [resSection, sumSection, recSection, bankSection].forEach(sec => {
+            if (sec) {
+                sec.classList.remove('hidden-opacity');
+                sec.classList.add('visible-opacity');
+            }
+        });
+
+        if (selectedBank && atmSection) {
+            atmSection.classList.remove('hidden-opacity');
+            atmSection.classList.add('visible-opacity');
+        }
+
+        const sarfxFee = amount * SARFX_FEE_PCT;
+        const amountToConvert = amount - sarfxFee;
+
+        // Default providers matching HOMEPAGE.txt design
+        const defaultProviders = [
+            { name: 'Wise', icon: '/static/images/source-service/wise.svg', rating: 4.9, delivery: 'instant', fee: 4.50, rateMultiplier: 1.002 },
+            { name: 'Revolut', icon: '/static/images/source-service/revolut.svg', rating: 4.7, delivery: '1-2 hours', fee: 5.00, rateMultiplier: 0.998 },
+            { name: 'PayPal', icon: '/static/images/source-service/paypal.svg', rating: 4.3, delivery: 'instant', fee: 8.50, rateMultiplier: 0.994 },
+            { name: 'Western Union', icon: '/static/images/source-service/western-union.svg', rating: 4.1, delivery: '1 day', fee: 12.00, rateMultiplier: 0.991 },
+            { name: 'MoneyGram', icon: '/static/images/source-service/moneygram.svg', rating: 4.0, delivery: '1 day', fee: 10.00, rateMultiplier: 0.990 },
+            { name: 'Bank Transfer', icon: '/static/images/source-service/bank-transfer.svg', rating: 3.8, delivery: '3-5 days', fee: 25.00, rateMultiplier: 0.980 }
+        ];
+
+        // Taux par défaut réalistes selon la paire de devises
+        const pair = `${fromCurrency}${toCurrency}`;
+        const defaultRates = {
+            'EURMAD': 10.82,
+            'USDMAD': 10.05,
+            'GBPMAD': 12.67,
+            'CHFMAD': 11.23,
+            'CADMAD': 7.45,
+            'MADEUR': 0.092,
+            'MADUSD': 0.099,
+            'MADGBP': 0.079,
+            'EUREUR': 1.00,
+            'USDEUR': 0.93,
+            'GBPEUR': 1.17,
+            'CHFEUR': 1.09,
+            'CADEUR': 0.68,
+            'EURUSD': 1.08,
+            'USDUSD': 1.00,
+            'GBPUSD': 1.26,
+            'CHFUSD': 1.17,
+            'CADUSD': 0.73,
+            'EURGBP': 0.85,
+            'USDGBP': 0.79,
+            'GBPGBP': 1.00,
+            'CHFGBP': 0.93,
+            'CADGBP': 0.58,
+            'EURCHF': 0.92,
+            'USDCHF': 0.85,
+            'GBPCHF': 1.07,
+            'CHFCHF': 1.00,
+            'CADCHF': 0.62,
+            'EURCAD': 1.47,
+            'USDCAD': 1.37,
+            'GBPCAD': 1.72,
+            'CHFCAD': 1.61,
+            'CADCAD': 1.00
+        };
+
+        let baseRate = defaultRates[pair] || 1.00;
+        console.log('🔄 Conversion:', fromCurrency, '→', toCurrency, '| Taux:', baseRate);
+
+        // Calculate for each provider
+        const providers = defaultProviders.map(p => {
+            const rate = baseRate * p.rateMultiplier;
+            const amountAfterFee = amountToConvert - p.fee;
+            const finalAmount = amountAfterFee * rate;
+            return {
+                ...p,
+                rate: rate,
+                finalAmount: finalAmount > 0 ? finalAmount : 0
+            };
+        });
+
+        // Sort by final amount (best first)
+        providers.sort((a, b) => b.finalAmount - a.finalAmount);
+
+        bestSupplier = providers[0];
+
+        // Calculate SarfX rate (best rate) - calculer AVANT de mettre à jour l'affichage
+        const sarfxRate = baseRate * 1.005;
+        const sarfxFinalAmount = (amountToConvert - sarfxFee) * sarfxRate;
+
+        // Update recipient amount display with SarfX amount (le meilleur)
+        const recipientAmountField = document.getElementById('recipient-amount');
+        if (!recipientAmountField) {
+            console.error('❌ Élément recipient-amount introuvable dans le DOM!');
+            return;
+        }
+
+        const formattedValue = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
+        console.log('📝 Avant mise à jour - Field value:', recipientAmountField.value);
+        console.log('📝 Valeur à assigner:', formattedValue);
+
+        recipientAmountField.value = formattedValue;
+
+        console.log('✅ Après mise à jour - Field value:', recipientAmountField.value);
+        console.log('✅ Montant final affiché:', formattedValue, '| Raw:', sarfxFinalAmount.toFixed(2), toCurrency);
+
+        // Update time
+        const now = new Date();
+        document.getElementById('update-time').textContent = now.toTimeString().split(' ')[0];
+
+        // Update rate info box
+        const rateDisplay = document.getElementById('conv-rate-display');
+        const feesDisplay = document.getElementById('conv-fees-display');
+        if (rateDisplay) {
+            rateDisplay.textContent = `1 ${fromCurrency} = ${sarfxRate.toFixed(4)} ${toCurrency}`;
+        }
+        if (feesDisplay) {
+            feesDisplay.textContent = sarfxFee.toFixed(2) + ' ' + fromCurrency;
+        }
+
+        // Currency flags mapping
+        const currencyFlags = {
+            'MAD': '🇲🇦', 'EUR': '🇪🇺', 'USD': '🇺🇸', 'GBP': '🇬🇧', 'CHF': '🇨🇭', 'CAD': '🇨🇦'
+        };
+
+        // Update summary section with dynamic values
+        document.getElementById('smart-final-amount').textContent = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
+        document.getElementById('result-currency-flag').textContent = currencyFlags[toCurrency] || '💱';
+        document.getElementById('result-currency-code').textContent = toCurrency;
+        document.getElementById('summary-send-amount').textContent = `${amount.toFixed(2)} ${fromCurrency}`;
+        document.getElementById('summary-rate').textContent = `1 ${fromCurrency} = ${sarfxRate.toFixed(4)} ${toCurrency}`;
+        document.getElementById('summary-fees').textContent = `${sarfxFee.toFixed(2)} ${fromCurrency}`;
+
+        // Form fields - utiliser les valeurs SarfX
+        document.getElementById('form-amount').value = amount;
+        document.getElementById('form-from-currency').value = fromCurrency;
+        document.getElementById('form-to-currency').value = toCurrency;
+        document.getElementById('form-rate').value = sarfxRate.toFixed(4);
+        document.getElementById('form-final-amount').value = sarfxFinalAmount.toFixed(2);
+        document.getElementById('form-supplier-id').value = 'SarfX';
+
+        // Render providers - SarfX as the best, others for comparison only
+        const list = document.getElementById('suppliers-list');
+        list.innerHTML = '';
+
+        // SarfX Card - Always the best option
+        const sarfxDiv = document.createElement('div');
+        sarfxDiv.className = 'wise-provider-card best selected';
+        sarfxDiv.innerHTML = `
+            <div class="wise-provider-logo" style="background: linear-gradient(135deg, #e05a03, #f97316); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(224,90,3,0.3);">S</div>
+            <div class="wise-provider-info">
+                <div class="wise-provider-header">
+                    <span class="wise-provider-name" style="font-weight: 700; font-size: 16px;">SarfX</span>
+                    <span class="wise-provider-badge" style="background: linear-gradient(135deg, #e05a03, #f97316);">Meilleur Taux</span>
+                </div>
+                <div class="wise-provider-meta">
+                    <span class="wise-provider-rating">⭐ 5.0</span>
+                    <span class="wise-provider-delivery">⚡ Instantané</span>
+                </div>
+            </div>
+            <div class="wise-provider-amount">
+                <div class="wise-provider-result" style="color: var(--success); font-size: 18px; font-weight: 700;">${sarfxFinalAmount.toFixed(2)} ${toCurrency}</div>
+                <div class="wise-provider-details">Taux: ${sarfxRate.toFixed(4)} • Frais: ${sarfxFee.toFixed(2)} ${fromCurrency}</div>
+            </div>
+            <div style="background: var(--success-bg, rgba(16,185,129,0.1)); color: var(--success, #10b981); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 13px; text-align: center;">
+                ✓ Votre choix
+            </div>
+        `;
+        list.appendChild(sarfxDiv);
+
+        // Update form with SarfX values
+        document.getElementById('form-supplier-id').value = 'SarfX';
+        document.getElementById('form-rate').value = sarfxRate;
+        document.getElementById('form-final-amount').value = sarfxFinalAmount.toFixed(2);
+        document.getElementById('recipient-amount').value = formatAmountWithCurrency(sarfxFinalAmount, toCurrency);
+
+        // Comparison label
+        const compLabel = document.createElement('div');
+        compLabel.style.cssText = 'padding: 16px 0 12px; font-size: 13px; color: var(--text-tertiary); font-weight: 500; border-top: 1px solid var(--border-light); margin-top: 16px;';
+        compLabel.innerHTML = '📊 Comparaison avec les autres services <span style="color: var(--error);">(plus chers)</span>';
+        list.appendChild(compLabel);
+
+        // Other providers - comparison only (no select button)
+        providers.forEach((p, i) => {
+            const savings = sarfxFinalAmount - p.finalAmount;
+            const div = document.createElement('div');
+            div.className = 'wise-provider-card';
+            div.style.opacity = '0.75';
+            div.innerHTML = `
+                <div class="wise-provider-logo"><img src="${p.icon}" alt="${p.name}" onerror="this.style.display='none'; this.parentElement.textContent='${p.name.charAt(0)}'"></div>
+                <div class="wise-provider-info">
+                    <div class="wise-provider-header">
+                        <span class="wise-provider-name">${p.name}</span>
+                    </div>
+                    <div class="wise-provider-meta">
+                        <span class="wise-provider-rating">⭐ ${p.rating}</span>
+                        <span class="wise-provider-delivery">⚡ ${p.delivery}</span>
+                    </div>
+                </div>
+                <div class="wise-provider-amount">
+                    <div class="wise-provider-result">${p.finalAmount.toFixed(2)} ${toCurrency}</div>
+                    <div class="wise-provider-details">Taux: ${p.rate.toFixed(4)} • Frais: $${p.fee.toFixed(2)}</div>
+                    <div style="color: var(--error, #ef4444); font-size: 11px; margin-top: 4px; font-weight: 500;">−${savings.toFixed(2)} ${toCurrency} vs SarfX</div>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+
+        lucide.createIcons();
+    }
+
+    // Select provider function
+    function selectProvider(provider) {
+        const toCurrency = document.getElementById('to-currency').value;
+        document.getElementById('form-supplier-id').value = provider.name;
+        document.getElementById('form-rate').value = provider.rate;
+        document.getElementById('form-final-amount').value = provider.finalAmount.toFixed(2);
+        document.getElementById('recipient-amount').value = formatAmountWithCurrency(provider.finalAmount, toCurrency);
+
+        // Highlight selected card
+        document.querySelectorAll('.wise-provider-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        event.currentTarget.closest('.wise-provider-card')?.classList.add('selected');
+
+        showNotification(`${provider.name} selected! Rate: ${provider.rate.toFixed(4)}`, 'success');
+    }
+
+    // Refresh rates
+    function refreshRates() {
+        const btn = document.querySelector('.wise-refresh-btn');
+        btn.innerHTML = '<i data-lucide="loader" class="animate-spin" style="width: 16px; height: 16px;"></i> Refreshing...';
+
+        setTimeout(() => {
+            calculateSmartExchange();
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh Rates';
+            lucide.createIcons();
+            showNotification('Rates updated!', 'success');
+        }, 1000);
+    }
+
+    // Set currency pair
+    function setPair(from, to) {
+        document.getElementById('from-currency').value = from;
+        document.getElementById('to-currency').value = to;
+        calculateExchange();
+
+        // Switch to providers tab
+        document.querySelectorAll('.wise-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.wise-tab[data-tab="providers"]').classList.add('active');
+        document.querySelectorAll('.wise-tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-providers').classList.add('active');
+    }
+
+    // Create rate alert
+    function createAlert() {
+        const pair = document.getElementById('alert-pair').value;
+        const rate = document.getElementById('alert-rate').value;
+        const condition = document.getElementById('alert-condition').value;
+
+        if (!rate) {
+            showNotification('Please enter a target rate', 'error');
+            return;
+        }
+
+        showNotification(`Alert created for ${pair} ${condition.toLowerCase()} ${rate}`, 'success');
+    }
+
+    // Tab switching
+    document.querySelectorAll('.wise-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+
+            document.querySelectorAll('.wise-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            document.querySelectorAll('.wise-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        });
+    });
+
+    // Form submission
+    document.getElementById('exchange-form').addEventListener('submit', function(e) {
+        const name = document.getElementById('recipient-name').value;
+        const account = document.getElementById('recipient-account').value;
+
+        if (!name || !account) {
+            e.preventDefault();
+            showNotification('Veuillez remplir les informations du bénéficiaire', 'error');
+            return;
+        }
+
+        // Add recipient info to form
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'recipient_name';
+        nameInput.value = name;
+        this.appendChild(nameInput);
+
+        const accountInput = document.createElement('input');
+        accountInput.type = 'hidden';
+        accountInput.name = 'recipient_account';
+        accountInput.value = account;
+        this.appendChild(accountInput);
+
+        // Add bank selection
+        if (selectedBank) {
+            const bankInput = document.createElement('input');
+            bankInput.type = 'hidden';
+            bankInput.name = 'bank_code';
+            bankInput.value = selectedBank.code;
+            this.appendChild(bankInput);
+        }
+    });
+
+    // Load banks - Wise style
+    async function loadBanks() {
+        try {
+            const response = await fetch('/api/banks');
+            const data = await response.json();
+
+            if (data.success) {
+                const banksGrid = document.getElementById('banks-grid');
+                banksGrid.innerHTML = '';
+
+                data.banks.forEach(bank => {
+                    const bankCard = document.createElement('div');
+                    bankCard.className = 'wise-bank-select-item';
+                    bankCard.innerHTML = `
+                        <img src="${bank.logo}" alt="${bank.name}" onerror="this.parentElement.querySelector('.bank-fallback').style.display='flex'; this.style.display='none'">
+                        <div class="bank-fallback" style="display:none; width:100%; height:40px; background:var(--bg-tertiary); border-radius:8px; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:var(--text-secondary);">${bank.name.substring(0, 3).toUpperCase()}</div>
+                        <span class="bank-name" style="font-size:11px; font-weight:600; color:var(--text-primary); text-align:center;">${bank.name}</span>
+                        <span style="font-size:9px; color:var(--text-tertiary);">${bank.atm_count} ATM disponibles</span>
+                    `;
+                    bankCard.onclick = () => selectBank(bank, bankCard);
+                    banksGrid.appendChild(bankCard);
+                });
+
+                lucide.createIcons();
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    }
+
+    // Select bank
+    function selectBank(bank, cardElement) {
+        selectedBank = bank;
+
+        document.querySelectorAll('.wise-bank-select-item').forEach(card => {
+            card.classList.remove('selected');
+        });
+        cardElement.classList.add('selected');
+
+        const atmSection = document.getElementById('atm-section');
+        atmSection.classList.remove('hidden-opacity');
+        atmSection.classList.add('visible-opacity');
+
+        loadATMsForBank(bank.code);
+        showNotification(`Banque: ${bank.name}`, 'success');
+    }
+
+    // Load ATMs
+    async function loadATMsForBank(bankCode) {
+        const atmList = document.getElementById('atm-list');
+        atmList.innerHTML = '<div class="wise-atm-empty"><i data-lucide="loader-2" style="width: 32px; height: 32px; animation: spin 1s linear infinite;"></i><p>Chargement...</p></div>';
+        lucide.createIcons();
+
+        try {
+            let url = `/api/atms?bank_code=${bankCode}&limit=20`;
+
+            if (userLocation) {
+                const response = await fetch('/api/atms/nearest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: userLocation.latitude,
+                        longitude: userLocation.longitude,
+                        bank_code: bankCode,
+                        max_distance_km: 20,
+                        limit: 10
+                    })
+                });
+                const data = await response.json();
+                if (data.success && data.atms.length > 0) {
+                    displayATMs(data.atms, true);
+                    return;
+                }
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.success) displayATMs(data.atms, false);
+        } catch (error) {
+            atmList.innerHTML = '<div class="wise-atm-empty" style="color: var(--error);">Erreur de connexion</div>';
+        }
+    }
+
+    // Display ATMs - Wise style
+    function displayATMs(atms, withDistance) {
+        const atmList = document.getElementById('atm-list');
+
+        if (atms.length === 0) {
+            atmList.innerHTML = '<div class="wise-atm-empty">Aucun distributeur trouvé</div>';
+            return;
+        }
+
+        atmList.innerHTML = '';
+
+        atms.forEach(atm => {
+            const atmCard = document.createElement('div');
+            atmCard.className = 'wise-atm-item';
+
+            const distanceHTML = withDistance && atm.distance_km
+                ? `<span class="wise-atm-distance">${atm.distance_km} km • ~${atm.walk_time_min} min</span>` : '';
+
+            const hoursHTML = atm.available_24h
+                ? '<span class="wise-atm-hours wise-atm-24h">🕐 24/7</span>'
+                : `<span class="wise-atm-hours">${atm.hours || ''}</span>`;
+
+            atmCard.innerHTML = `
+                <div class="wise-atm-name">${atm.name}</div>
+                <div class="wise-atm-address">
+                    <i data-lucide="map-pin" style="width: 12px; height: 12px; flex-shrink: 0;"></i>
+                    <span>${atm.address}, ${atm.city}</span>
+                </div>
+                <div class="wise-atm-meta">
+                    ${distanceHTML}
+                    ${hoursHTML}
+                </div>
+            `;
+
+            atmCard.onclick = () => openInMaps(atm);
+            atmList.appendChild(atmCard);
+        });
+
+        lucide.createIcons();
+    }
+
+    // Get location
+    function getUserLocation() {
+        const btn = document.getElementById('location-btn');
+        const subtitle = document.getElementById('atm-subtitle');
+
+        if (!navigator.geolocation) {
+            showNotification('Géolocalisation non supportée', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Détection...';
+        lucide.createIcons();
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+
+                btn.innerHTML = '<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> OK';
+                btn.classList.add('success');
+                subtitle.textContent = 'Triés par distance';
+                lucide.createIcons();
+
+                if (selectedBank) loadATMsForBank(selectedBank.code);
+                showNotification('Position détectée!', 'success');
+            },
+            (error) => {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="crosshair" style="width: 16px; height: 16px;"></i> Ma Position';
+                lucide.createIcons();
+                showNotification('Permission refusée', 'error');
+            }
+        );
+    }
+
+    function openInMaps(atm) {
+        if (atm.location && atm.location.coordinates) {
+            const [lng, lat] = atm.location.coordinates;
+            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+        }
+    }
+</script>
+{% endblock %}

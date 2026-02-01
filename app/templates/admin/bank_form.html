@@ -1,0 +1,196 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}{% if action == 'create' %}Ajouter une Banque{% else %}Modifier la Banque{% endif %} - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Custom styles for better form presentation */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+    @media (min-width: 1024px) {
+        .form-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .grid-col-span-2 {
+            grid-column: span 2 / span 2;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto pb-24">
+    <!-- Header -->
+    <div class="pt-2 mb-8">
+        <a href="{{ url_for('admin_banks.list_banks') }}" class="btn btn-ghost mb-4">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Retour aux banques</span>
+        </a>
+        <h1 class="text-3xl font-bold text-default flex items-center gap-3">
+            {% if action == 'create' %}
+                <i data-lucide="plus-circle" class="w-8 h-8 text-emerald-500"></i>
+                <span>Créer une nouvelle banque</span>
+            {% else %}
+                <i data-lucide="edit" class="w-8 h-8 text-blue-500"></i>
+                <span>Modifier la banque</span>
+            {% endif %}
+        </h1>
+        <p class="text-muted mt-1">
+            {% if action == 'create' %}
+            Remplissez les informations ci-dessous pour ajouter une nouvelle banque partenaire.
+            {% else %}
+            Mettez à jour les informations de <span class="font-bold text-default">{{ bank.name }}</span>.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-grid">
+            <!-- Left Column -->
+            <div class="space-y-6">
+                <!-- Name -->
+                <div class="card p-6 rounded-2xl">
+                    <div class="input-group">
+                        <label for="name" class="input-label">Nom de la banque *</label>
+                        <input type="text" id="name" name="name" required
+                               value="{{ bank.name if bank else '' }}"
+                               class="input input-lg"
+                               placeholder="Ex: Attijariwafa Bank">
+                    </div>
+                </div>
+
+                <!-- Code -->
+                <div class="card p-6 rounded-2xl">
+                    <div class="input-group">
+                        <label for="code" class="input-label">Code de la banque *</label>
+                        <input type="text" id="code" name="code" required
+                               value="{{ bank.code if bank else '' }}"
+                               {% if action == 'edit' %}readonly{% endif %}
+                               class="input input-lg {% if action == 'edit' %}bg-gray-100 dark:bg-gray-700 cursor-not-allowed{% endif %}"
+                               placeholder="Ex: attijariwafa">
+                        {% if action == 'edit' %}
+                        <p class="text-xs text-muted mt-2">Le code ne peut pas être modifié après la création pour des raisons de cohérence des données.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Website -->
+                <div class="card p-6 rounded-2xl">
+                    <div class="input-group">
+                        <label for="website" class="input-label">Site web</label>
+                         <div class="relative flex items-center">
+                            <i data-lucide="globe" class="absolute left-4 w-5 h-5 text-muted"></i>
+                            <input type="url" id="website" name="website"
+                                   value="{{ bank.website if bank else '' }}"
+                                   class="input pl-12"
+                                   placeholder="https://www.attijariwafa.com">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Logo Upload -->
+                <div class="card p-6 rounded-2xl">
+                    <label class="input-label mb-3">Logo de la banque</label>
+
+                    {% if bank and bank.logo %}
+                    <div class="mb-4">
+                        <p class="text-xs text-muted mb-2">Logo actuel:</p>
+                        <div class="p-2 bg-white rounded-lg inline-block shadow-sm">
+                            <img src="{{ bank.logo }}" alt="{{ bank.name }} Logo" class="h-12 w-auto object-contain">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex items-center justify-center w-full">
+                        <label for="logo" class="flex flex-col items-center justify-center w-full h-40 border-2 border-border border-dashed rounded-xl cursor-pointer hover:bg-surface-hover transition">
+                            <div class="flex flex-col items-center justify-center text-center p-4">
+                                <i data-lucide="upload-cloud" class="w-10 h-10 mb-3 text-muted"></i>
+                                <p class="mb-2 text-sm text-muted">
+                                    <span class="font-semibold text-primary">Cliquez pour télécharger</span> ou glissez-déposez
+                                </p>
+                                <p class="text-xs text-muted">PNG, JPG, SVG (MAX. 2MB)</p>
+                            </div>
+                            <input id="logo" name="logo" type="file" accept="image/png, image/jpeg, image/svg+xml" class="hidden" onchange="previewLogo(this)">
+                        </label>
+                    </div>
+
+                    <!-- Preview -->
+                    <div id="logoPreview" class="mt-4 hidden">
+                        <p class="input-label mb-2">Aperçu du nouveau logo:</p>
+                        <div class="p-2 bg-white rounded-lg inline-block shadow-sm">
+                            <img id="previewImage" src="#" alt="Aperçu du logo" class="h-12 w-auto object-contain">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full-width Description -->
+            <div class="card p-6 rounded-2xl grid-col-span-2">
+                <div class="input-group">
+                    <label for="description" class="input-label">Description</label>
+                    <textarea id="description" name="description" rows="4"
+                              class="input"
+                              placeholder="Brève description de la banque, ses services principaux, etc.">{{ bank.description if bank else '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Full-width Active Status -->
+            <div class="card p-5 rounded-2xl grid-col-span-2">
+                <label for="is_active" class="flex items-center justify-between cursor-pointer">
+                    <span class="flex flex-col">
+                        <span class="font-semibold text-default">Banque Active</span>
+                        <span class="text-sm text-muted">Rendre cette banque visible et opérationnelle pour les utilisateurs.</span>
+                    </span>
+                    <div class="relative">
+                        <input type="checkbox" id="is_active" name="is_active" class="sr-only peer"
+                               {% if bank is not defined or bank.is_active %}checked{% endif %}>
+                        <div class="w-14 h-8 bg-gray-200 rounded-full dark:bg-gray-700 peer-checked:bg-emerald-500 transition"></div>
+                        <div class="absolute left-1 top-1 bg-white border-gray-300 border rounded-full h-6 w-6 transition-transform transform peer-checked:translate-x-6"></div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex items-center justify-end gap-4 pt-6 sticky bottom-0 py-4 bg-background/80 backdrop-blur-lg z-10 -mx-4 px-4">
+            <a href="{{ url_for('admin_banks.list_banks') }}" class="btn btn-secondary">
+                Annuler
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg">
+                {% if action == 'create' %}
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Créer la banque</span>
+                {% else %}
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>Enregistrer les modifications</span>
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function previewLogo(input) {
+    const previewContainer = document.getElementById('logoPreview');
+    const previewImage = document.getElementById('previewImage');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewContainer.classList.remove('hidden');
+        }
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        previewContainer.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

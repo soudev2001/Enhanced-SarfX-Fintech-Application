@@ -1,0 +1,579 @@
+{% extends "common/app_base.html" %}
+
+{% block content %}
+<div class="wise-settings">
+    <!-- Page Header -->
+    <div class="wise-page-header">
+        <nav class="wise-breadcrumb">
+            <a href="{{ url_for('app.home') }}">
+                <i data-lucide="home" style="width: 14px; height: 14px;"></i>
+                Accueil
+            </a>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span>Réglages</span>
+        </nav>
+        <h1 class="wise-page-title">Réglages</h1>
+        <p class="wise-page-subtitle">Personnalisez votre expérience SarfX</p>
+    </div>
+
+    <!-- Theme Toggle -->
+    <div class="wise-section wise-setting-row">
+        <div class="wise-setting-info">
+            <div class="wise-setting-icon" style="background: rgba(99, 102, 241, 0.15);">
+                <i data-lucide="moon" style="width: 20px; height: 20px; color: #818cf8;"></i>
+            </div>
+            <div>
+                <span class="wise-setting-title">Mode Sombre</span>
+                <p class="wise-setting-subtitle">Réduire la fatigue oculaire</p>
+            </div>
+        </div>
+        <button onclick="toggleTheme()" class="wise-toggle" id="theme-toggle-btn">
+            <div class="wise-toggle-dot" id="theme-toggle-dot"></div>
+        </button>
+    </div>
+
+    <!-- Account Settings -->
+    <div class="wise-section">
+        <h3 class="wise-section-title" style="margin-bottom: 16px;">
+            <div class="wise-setting-icon" style="background: rgba(159, 232, 112, 0.15);">
+                <i data-lucide="user-cog" style="width: 18px; height: 18px; color: rgb(255 214 187);"></i>
+            </div>
+            Compte
+        </h3>
+
+        <div class="wise-account-list">
+            <div class="wise-account-item">
+                <span class="wise-account-label">
+                    <i data-lucide="mail" style="width: 16px; height: 16px;"></i>
+                    Email
+                </span>
+                <span class="wise-account-value">{{ user.email if user else '--' }}</span>
+            </div>
+            <div class="wise-account-item">
+                <span class="wise-account-label">
+                    <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                    Rôle
+                </span>
+                <span class="wise-account-value">{{ user.role | default('user') | capitalize }}</span>
+            </div>
+            <div class="wise-account-item">
+                <span class="wise-account-label">
+                    <i data-lucide="activity" style="width: 16px; height: 16px;"></i>
+                    Statut
+                </span>
+                <span class="wise-account-badge {% if user and user.verified %}wise-bg-success wise-status-success{% else %}wise-bg-warning wise-status-warning{% endif %}">
+                    <span class="wise-badge-dot {% if user and user.verified %}wise-dot-success{% else %}wise-dot-warning{% endif %}"></span>
+                    {{ 'Vérifié' if user and user.verified else 'Non vérifié' }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {% if user and user.role == 'admin' %}
+    <!-- Admin Section -->
+    <div class="wise-admin-section">
+        <div class="wise-admin-header">
+            <div class="wise-admin-icon">
+                <i data-lucide="shield-alert" style="width: 24px; height: 24px; color: white;"></i>
+            </div>
+            <div>
+                <h3 class="wise-admin-title">Administration</h3>
+                <p class="wise-admin-subtitle">Accès réservé aux administrateurs</p>
+            </div>
+        </div>
+
+        <!-- Admin Links -->
+        <div class="wise-admin-grid">
+            <a href="{{ url_for('admin.dashboard') }}" class="wise-admin-card">
+                <div class="wise-admin-card-icon wise-bg-success">
+                    <i data-lucide="layout-dashboard" class="wise-status-success" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div class="wise-admin-card-content">
+                    <h4>Dashboard Admin</h4>
+                    <p>Vue d'ensemble et statistiques</p>
+                </div>
+                <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            </a>
+
+            <a href="{{ url_for('admin.users') }}" class="wise-admin-card">
+                <div class="wise-admin-card-icon" style="background: rgba(168, 85, 247, 0.15);">
+                    <i data-lucide="users" style="width: 22px; height: 22px; color: #a855f7;"></i>
+                </div>
+                <div class="wise-admin-card-content">
+                    <h4>Utilisateurs</h4>
+                    <p>Gérer les comptes</p>
+                </div>
+                <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            </a>
+
+            <a href="{{ url_for('suppliers.list_suppliers') }}" class="wise-admin-card">
+                <div class="wise-admin-card-icon wise-bg-info">
+                    <i data-lucide="building-2" class="wise-status-info" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div class="wise-admin-card-content">
+                    <h4>Fournisseurs</h4>
+                    <p>Taux et partenaires</p>
+                </div>
+                <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            </a>
+
+            <a href="{{ url_for('admin.wallets') }}" class="wise-admin-card">
+                <div class="wise-admin-card-icon wise-bg-warning">
+                    <i data-lucide="wallet" class="wise-status-warning" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div class="wise-admin-card-content">
+                    <h4>Portefeuilles</h4>
+                    <p>Soldes et ajustements</p>
+                </div>
+                <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            </a>
+
+            <a href="{{ url_for('admin.transactions') }}" class="wise-admin-card">
+                <div class="wise-admin-card-icon wise-bg-error">
+                    <i data-lucide="receipt" class="wise-status-error" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div class="wise-admin-card-content">
+                    <h4>Transactions</h4>
+                    <p>Historique complet</p>
+                </div>
+                <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            </a>
+        </div>
+
+        <!-- API Config -->
+        <div class="wise-section wise-api-config">
+            <h4 class="wise-section-title" style="margin-bottom: 16px;">
+                <div class="wise-setting-icon" style="background: rgba(239, 68, 68, 0.15);">
+                    <i data-lucide="database" style="width: 18px; height: 18px; color: #ef4444;"></i>
+                </div>
+                Configuration API IA
+            </h4>
+            <form action="{{ url_for('api.save_settings') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="wise-form-group">
+                    <label class="wise-form-label">
+                        <i data-lucide="link" style="width: 14px; height: 14px;"></i>
+                        URL Backend
+                    </label>
+                    <input type="text" name="ai_backend_url"
+                           value="{{ settings.ai_backend_url | default('https://sarfx-backend-ai-618432953337.europe-west1.run.app') }}"
+                           class="wise-form-input">
+                </div>
+                <button type="submit" class="wise-btn wise-btn-primary" style="width: 100%; margin-top: 16px;">
+                    <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+                    Sauvegarder
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- App Info -->
+    <div class="wise-section">
+        <h3 class="wise-section-title" style="margin-bottom: 16px;">
+            <div class="wise-setting-icon" style="background: var(--bg-tertiary);">
+                <i data-lucide="info" style="width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+            </div>
+            À propos de SarfX
+        </h3>
+        <div class="wise-info-list">
+            <div class="wise-info-item">
+                <span class="wise-info-label">
+                    <i data-lucide="tag" style="width: 14px; height: 14px;"></i>
+                    Version
+                </span>
+                <span class="wise-info-value wise-version-badge">1.0.0</span>
+            </div>
+            <div class="wise-info-item">
+                <span class="wise-info-label">
+                    <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                    Build
+                </span>
+                <span class="wise-info-value">2026.01</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Links -->
+    <div class="wise-actions-grid">
+        <a href="#" class="wise-action-card">
+            <div class="wise-action-icon wise-bg-success">
+                <i data-lucide="help-circle" style="width: 24px; height: 24px;" class="wise-status-success"></i>
+            </div>
+            <span class="wise-action-title">Aide</span>
+            <span class="wise-action-subtitle">FAQ & Support</span>
+        </a>
+        <a href="#" class="wise-action-card">
+            <div class="wise-action-icon wise-bg-info">
+                <i data-lucide="message-circle" style="width: 24px; height: 24px;" class="wise-status-info"></i>
+            </div>
+            <span class="wise-action-title">Contact</span>
+            <span class="wise-action-subtitle">Nous joindre</span>
+        </a>
+    </div>
+
+    <!-- Logout Button -->
+    <a href="{{ url_for('auth.logout') }}" class="wise-logout-btn">
+        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+        Déconnexion
+    </a>
+</div>
+
+<style>
+.wise-settings {
+    max-width: 100%;
+}
+
+/* Setting Row */
+.wise-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.wise-setting-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.wise-setting-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wise-setting-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+}
+
+.wise-setting-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* Toggle */
+.wise-toggle {
+    width: 52px;
+    height: 28px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 100px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.wise-toggle-dot {
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .wise-toggle {
+    background: rgb(255 214 187);
+}
+
+[data-theme="dark"] .wise-toggle-dot {
+    transform: translateX(24px);
+}
+
+/* Account List */
+.wise-account-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wise-account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.wise-account-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-tertiary);
+}
+
+.wise-account-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-family: monospace;
+    background: var(--bg-tertiary);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.wise-account-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wise-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.wise-dot-success { background: var(--success); }
+.wise-dot-warning { background: var(--warning); }
+
+/* Admin Section */
+.wise-admin-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-light);
+}
+
+.wise-admin-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.wise-admin-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-admin-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.wise-admin-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+.wise-admin-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.wise-admin-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wise-admin-card:hover {
+    border-color: rgb(255 214 187);
+    transform: translateX(4px);
+}
+
+.wise-admin-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wise-admin-card-content {
+    flex: 1;
+}
+
+.wise-admin-card-content h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+}
+
+.wise-admin-card-content p {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 0;
+}
+
+/* API Config */
+.wise-api-config {
+    border-left: 3px solid var(--error);
+}
+
+.wise-form-group {
+    margin-bottom: 12px;
+}
+
+.wise-form-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.wise-form-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: monospace;
+    color: var(--text-primary);
+}
+
+.wise-form-input:focus {
+    outline: none;
+    border-color: rgb(255 214 187);
+}
+
+/* Info List */
+.wise-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wise-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.wise-info-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.wise-info-value {
+    font-size: 13px;
+    font-family: monospace;
+    color: var(--text-primary);
+}
+
+.wise-version-badge {
+    background: rgba(159, 232, 112, 0.15);
+    color: rgb(255 214 187);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Actions Grid */
+.wise-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.wise-action-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wise-action-card:hover {
+    border-color: rgb(255 214 187);
+    transform: translateY(-2px);
+}
+
+.wise-action-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.wise-action-title {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.wise-action-subtitle {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* Logout */
+.wise-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    margin-top: 16px;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    color: var(--error);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wise-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+</style>
+{% endblock %}

@@ -19,7 +19,11 @@ instance/
 
 # Résultats des tests
 robot_results/
+
+# Ignorer les fichiers HTML générés (rapports de tests, etc.)
+# MAIS garder tous les templates Flask
 *.html
+!app/templates/**/*.html
 !app/templates/*.html
 
 # Windows

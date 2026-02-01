@@ -1,0 +1,576 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Envoyer à {{ beneficiary.name }} - SarfX{% endblock %}
+
+{% block extra_head %}
+<style>
+    .send-container {
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .send-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .send-header {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.15));
+        padding: 28px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .send-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-default);
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .send-header p {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .send-body {
+        padding: 28px;
+    }
+
+    /* Beneficiary Card */
+    .beneficiary-preview {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        border-radius: 16px;
+        padding: 20px;
+        color: white;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .beneficiary-preview::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .beneficiary-info {
+        position: relative;
+        z-index: 1;
+    }
+
+    .beneficiary-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .beneficiary-details {
+        font-size: 13px;
+        opacity: 0.8;
+    }
+
+    .beneficiary-details span {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    /* Balance Section */
+    .balance-section {
+        background: var(--bg-secondary);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .balance-section h4 {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 0 0 12px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .balance-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .balance-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .balance-item:hover {
+        border-color: var(--brand-orange);
+    }
+
+    .balance-item.selected {
+        border-color: var(--brand-orange);
+        background: rgba(224, 90, 3, 0.1);
+    }
+
+    .balance-item .flag {
+        font-size: 18px;
+        margin-right: 8px;
+    }
+
+    .balance-item .currency {
+        font-weight: 600;
+        color: var(--text-default);
+    }
+
+    .balance-item .amount {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-default);
+        font-family: 'SF Mono', monospace;
+    }
+
+    /* Form Inputs */
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .input-group input,
+    .input-group select,
+    .input-group textarea {
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 16px;
+        color: var(--text-default);
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus,
+    .input-group textarea:focus {
+        border-color: var(--brand-orange);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(224, 90, 3, 0.1);
+    }
+
+    /* Amount Input Special */
+    .amount-input-wrapper {
+        position: relative;
+    }
+
+    .amount-input-wrapper input {
+        padding-right: 80px;
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .currency-badge {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 6px 12px;
+        background: var(--card-bg);
+        border-radius: 8px;
+        font-weight: 600;
+        color: var(--text-default);
+        font-size: 14px;
+    }
+
+    /* Balance Warning */
+    .balance-warning {
+        display: none;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 10px;
+        color: #ef4444;
+        font-size: 13px;
+        margin-bottom: 16px;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .balance-warning.visible {
+        display: flex;
+    }
+
+    /* Quick Amount Buttons */
+    .quick-amounts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .quick-amount {
+        padding: 12px 8px;
+        background: var(--card-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-default);
+        transition: all 0.2s;
+    }
+
+    .quick-amount:hover {
+        border-color: var(--brand-orange);
+        color: var(--brand-orange);
+    }
+
+    .quick-amount.active {
+        background: var(--brand-orange);
+        border-color: var(--brand-orange);
+        color: white;
+    }
+
+    /* Send Button */
+    .send-btn {
+        width: 100%;
+        padding: 18px 24px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .send-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(59, 130, 246, 0.4);
+    }
+
+    .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Summary */
+    .transfer-summary {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .summary-row:last-child {
+        border-bottom: none;
+        padding-top: 12px;
+        margin-top: 4px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    .summary-row .label {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .summary-row .value {
+        font-weight: 600;
+        color: var(--text-default);
+    }
+
+    .summary-row.total .value {
+        font-size: 20px;
+        color: #3b82f6;
+    }
+
+    @media (max-width: 480px) {
+        .send-container {
+            padding: 0 8px;
+        }
+
+        .send-body {
+            padding: 20px;
+        }
+
+        .balance-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-amounts {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-24">
+
+    <!-- Back Button -->
+    <a href="{{ url_for('app.beneficiaries') }}" class="inline-flex items-center gap-2 text-muted hover:text-default transition">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span class="text-sm">Retour aux bénéficiaires</span>
+    </a>
+
+    <div class="send-container">
+        <div class="send-card">
+            <div class="send-header">
+                <h1>
+                    <i data-lucide="send" class="w-7 h-7 text-blue-500"></i>
+                    Envoyer de l'argent
+                </h1>
+                <p>Transférer des fonds depuis votre portefeuille</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('app.send_to_beneficiary', beneficiary_id=beneficiary._id) }}" class="send-body" id="sendForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Beneficiary Preview -->
+                <div class="beneficiary-preview">
+                    <div class="beneficiary-info">
+                        <div class="beneficiary-name">{{ beneficiary.name }}</div>
+                        <div class="beneficiary-details">
+                            {% if beneficiary.bank %}<span>🏦 {{ beneficiary.bank }}</span>{% endif %}
+                            {% if beneficiary.iban %}<span>💳 {{ beneficiary.iban[:8] }}...{{ beneficiary.iban[-4:] }}</span>{% endif %}
+                            {% if beneficiary.country %}<span>🌍 {{ beneficiary.country }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Balance Section -->
+                <div class="balance-section">
+                    <h4>Vos soldes disponibles</h4>
+                    <div class="balance-grid">
+                        {% for currency, balance in wallet.balances.items() %}
+                        <div class="balance-item" onclick="selectCurrency('{{ currency }}', {{ balance }})" data-currency="{{ currency }}" data-balance="{{ balance }}">
+                            <div>
+                                <span class="flag">
+                                    {% if currency == 'USD' %}🇺🇸{% elif currency == 'EUR' %}🇪🇺{% elif currency == 'GBP' %}🇬🇧{% elif currency == 'MAD' %}🇲🇦{% elif currency == 'CHF' %}🇨🇭{% elif currency == 'CAD' %}🇨🇦{% elif currency == 'AED' %}🇦🇪{% elif currency == 'SAR' %}🇸🇦{% else %}💵{% endif %}
+                                </span>
+                                <span class="currency">{{ currency }}</span>
+                            </div>
+                            <span class="amount">{{ "%.2f"|format(balance) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Currency Selection (hidden, synced with balance items) -->
+                <input type="hidden" name="currency" id="selectedCurrency" value="EUR">
+
+                <!-- Amount Input -->
+                <div class="input-group">
+                    <label>Montant à envoyer</label>
+                    <div class="amount-input-wrapper">
+                        <input type="number"
+                               name="amount"
+                               id="sendAmount"
+                               placeholder="0.00"
+                               step="0.01"
+                               min="1"
+                               required>
+                        <span class="currency-badge" id="currencyBadge">EUR</span>
+                    </div>
+
+                    <!-- Quick Amounts -->
+                    <div class="quick-amounts">
+                        <div class="quick-amount" onclick="setAmount(50)">50</div>
+                        <div class="quick-amount" onclick="setAmount(100)">100</div>
+                        <div class="quick-amount" onclick="setAmount(250)">250</div>
+                        <div class="quick-amount" onclick="setAmount(500)">500</div>
+                    </div>
+                </div>
+
+                <!-- Balance Warning -->
+                <div class="balance-warning" id="balanceWarning">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span id="warningText">Solde insuffisant!</span>
+                </div>
+
+                <!-- Note -->
+                <div class="input-group">
+                    <label>Note (optionnel)</label>
+                    <textarea name="note" id="sendNote" rows="2" placeholder="Ex: Remboursement dîner, cadeau..."></textarea>
+                </div>
+
+                <!-- Transfer Summary -->
+                <div class="transfer-summary">
+                    <div class="summary-row">
+                        <span class="label">Bénéficiaire</span>
+                        <span class="value">{{ beneficiary.name }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="label">Frais SarfX</span>
+                        <span class="value" style="color: #22c55e;">Gratuit</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span class="label">Total à débiter</span>
+                        <span class="value" id="totalAmount">0.00 EUR</span>
+                    </div>
+                </div>
+
+                <!-- Send Button -->
+                <button type="submit" class="send-btn" id="submitBtn">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                    <span>Envoyer maintenant</span>
+                </button>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedCurrency = 'EUR';
+let availableBalance = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Select first currency with balance > 0
+    const firstWithBalance = document.querySelector('.balance-item[data-balance]');
+    if (firstWithBalance) {
+        const currency = firstWithBalance.dataset.currency;
+        const balance = parseFloat(firstWithBalance.dataset.balance);
+        selectCurrency(currency, balance);
+    }
+});
+
+function selectCurrency(currency, balance) {
+    selectedCurrency = currency;
+    availableBalance = balance;
+
+    // Update hidden input
+    document.getElementById('selectedCurrency').value = currency;
+
+    // Update badge
+    document.getElementById('currencyBadge').textContent = currency;
+
+    // Update visual selection
+    document.querySelectorAll('.balance-item').forEach(item => {
+        item.classList.remove('selected');
+        if (item.dataset.currency === currency) {
+            item.classList.add('selected');
+        }
+    });
+
+    // Validate current amount
+    validateAmount();
+}
+
+function setAmount(amount) {
+    document.getElementById('sendAmount').value = amount;
+
+    // Update quick amount buttons
+    document.querySelectorAll('.quick-amount').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    validateAmount();
+}
+
+function validateAmount() {
+    const amountInput = document.getElementById('sendAmount');
+    const amount = parseFloat(amountInput.value) || 0;
+    const warning = document.getElementById('balanceWarning');
+    const warningText = document.getElementById('warningText');
+    const submitBtn = document.getElementById('submitBtn');
+    const totalDisplay = document.getElementById('totalAmount');
+
+    // Update total display
+    totalDisplay.textContent = `${amount.toFixed(2)} ${selectedCurrency}`;
+
+    if (amount > availableBalance) {
+        warning.classList.add('visible');
+        warningText.textContent = `Solde insuffisant! Disponible: ${availableBalance.toFixed(2)} ${selectedCurrency}`;
+        submitBtn.disabled = true;
+    } else if (amount <= 0) {
+        warning.classList.remove('visible');
+        submitBtn.disabled = true;
+    } else {
+        warning.classList.remove('visible');
+        submitBtn.disabled = false;
+    }
+}
+
+// Listen for amount changes
+document.getElementById('sendAmount').addEventListener('input', validateAmount);
+
+// Form submission
+document.getElementById('sendForm').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('sendAmount').value) || 0;
+
+    if (amount > availableBalance) {
+        e.preventDefault();
+        alert(`Solde insuffisant! Disponible: ${availableBalance.toFixed(2)} ${selectedCurrency}`);
+        return;
+    }
+
+    if (amount <= 0) {
+        e.preventDefault();
+        alert('Le montant doit être supérieur à 0');
+        return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+        <span>Envoi en cours...</span>
+    `;
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

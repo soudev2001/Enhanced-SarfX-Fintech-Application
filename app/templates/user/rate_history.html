@@ -1,0 +1,555 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Historique des Taux - SarfX{% endblock %}
+
+{% block content %}
+<div class="wise-page-container">
+    <!-- Header -->
+    <div class="wise-page-header">
+        <div>
+            <h1 class="wise-page-title">📈 Historique des Taux</h1>
+            <p class="wise-page-subtitle">Suivez l'évolution des taux de change en temps réel</p>
+        </div>
+        <div class="flex gap-2">
+            <select id="currency-pair" class="wise-select" onchange="loadRateHistory()">
+                <option value="USD-MAD">USD → MAD</option>
+                <option value="EUR-MAD">EUR → MAD</option>
+                <option value="GBP-MAD">GBP → MAD</option>
+                <option value="USD-EUR">USD → EUR</option>
+            </select>
+            <select id="time-range" class="wise-select" onchange="loadRateHistory()">
+                <option value="24h">24 heures</option>
+                <option value="7d">7 jours</option>
+                <option value="30d">30 jours</option>
+                <option value="90d">3 mois</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="wise-card p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Taux Actuel</p>
+                    <p class="text-2xl font-bold text-primary" id="current-rate">10.12</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <i data-lucide="trending-up" class="w-6 h-6 text-primary"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="wise-card p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Plus Haut (24h)</p>
+                    <p class="text-2xl font-bold text-green-500" id="high-rate">10.25</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <i data-lucide="arrow-up" class="w-6 h-6 text-green-500"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="wise-card p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Plus Bas (24h)</p>
+                    <p class="text-2xl font-bold text-red-500" id="low-rate">9.98</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <i data-lucide="arrow-down" class="w-6 h-6 text-red-500"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="wise-card p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Variation</p>
+                    <p class="text-2xl font-bold" id="change-rate">
+                        <span class="text-green-500">+0.15%</span>
+                    </p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <i data-lucide="percent" class="w-6 h-6 text-blue-500"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chart -->
+    <div class="wise-card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Évolution du Taux</h2>
+            <div class="flex gap-2">
+                <button onclick="setChartType('area')" class="chart-type-btn active" data-type="area">
+                    <i data-lucide="area-chart" class="w-4 h-4"></i>
+                </button>
+                <button onclick="setChartType('line')" class="chart-type-btn" data-type="line">
+                    <i data-lucide="line-chart" class="w-4 h-4"></i>
+                </button>
+                <button onclick="setChartType('bar')" class="chart-type-btn" data-type="bar">
+                    <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        <div id="rate-chart" style="height: 350px;"></div>
+    </div>
+
+    <!-- Suppliers Comparison -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Supplier Rates -->
+        <div class="wise-card p-6">
+            <h2 class="text-lg font-semibold mb-4">🏦 Comparaison Fournisseurs</h2>
+            <div id="supplier-chart" style="height: 300px;"></div>
+        </div>
+        
+        <!-- Best Rates Table -->
+        <div class="wise-card p-6">
+            <h2 class="text-lg font-semibold mb-4">🏆 Meilleurs Taux Actuels</h2>
+            <div class="space-y-3" id="best-rates-list">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="wise-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">🔔 Alertes de Taux</h2>
+            <button onclick="openAlertModal()" class="wise-btn wise-btn-primary">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Nouvelle Alerte
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="alerts-list">
+            <div class="alert-card border border-dashed border-slate-300 rounded-xl p-4 text-center">
+                <i data-lucide="bell-plus" class="w-8 h-8 mx-auto mb-2 text-slate-400"></i>
+                <p class="text-sm text-slate-500">Créez une alerte pour être notifié quand le taux atteint votre objectif</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Modal -->
+<div id="alert-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content wise-card p-6" style="max-width: 400px;">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Créer une Alerte</h3>
+            <button onclick="closeAlertModal()" class="text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="alert-form" onsubmit="createAlert(event)">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Paire de devises</label>
+                    <select name="pair" class="wise-input w-full">
+                        <option value="USD-MAD">USD → MAD</option>
+                        <option value="EUR-MAD">EUR → MAD</option>
+                        <option value="GBP-MAD">GBP → MAD</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Condition</label>
+                    <select name="condition" class="wise-input w-full">
+                        <option value="above">Supérieur à</option>
+                        <option value="below">Inférieur à</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Taux cible</label>
+                    <input type="number" name="target" step="0.01" class="wise-input w-full" placeholder="10.50" required>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="email_notify" id="email_notify" checked>
+                    <label for="email_notify" class="text-sm">Notification par email</label>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="closeAlertModal()" class="wise-btn wise-btn-secondary flex-1">
+                    Annuler
+                </button>
+                <button type="submit" class="wise-btn wise-btn-primary flex-1">
+                    Créer l'alerte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .chart-type-btn {
+        padding: 8px;
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        transition: all 0.2s;
+    }
+    
+    .chart-type-btn.active, .chart-type-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+        animation: modalIn 0.3s ease;
+    }
+    
+    @keyframes modalIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    
+    .alert-card {
+        background: var(--bg-secondary);
+        transition: all 0.2s;
+    }
+    
+    .alert-card:hover {
+        border-color: var(--primary);
+    }
+    
+    .rate-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+    
+    .rate-item:hover {
+        transform: translateX(4px);
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let rateChart = null;
+    let supplierChart = null;
+    let currentChartType = 'area';
+    
+    // Initialize charts on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        loadRateHistory();
+        loadBestRates();
+        loadAlerts();
+        lucide.createIcons();
+    });
+    
+    function initCharts() {
+        // Main rate chart
+        const chartOptions = {
+            series: [{
+                name: 'Taux USD/MAD',
+                data: generateMockData()
+            }],
+            chart: {
+                type: 'area',
+                height: 350,
+                toolbar: { show: false },
+                animations: { enabled: true, easing: 'easeinout', speed: 800 },
+                background: 'transparent'
+            },
+            colors: ['#667eea'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.1,
+                    stops: [0, 100]
+                }
+            },
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 3 },
+            grid: {
+                borderColor: 'var(--border-color)',
+                strokeDashArray: 4
+            },
+            xaxis: {
+                type: 'datetime',
+                labels: { style: { colors: 'var(--text-secondary)' } }
+            },
+            yaxis: {
+                labels: {
+                    formatter: val => val.toFixed(2),
+                    style: { colors: 'var(--text-secondary)' }
+                }
+            },
+            tooltip: {
+                theme: document.documentElement.getAttribute('data-theme') || 'light',
+                x: { format: 'dd MMM yyyy HH:mm' }
+            }
+        };
+        
+        rateChart = new ApexCharts(document.getElementById('rate-chart'), chartOptions);
+        rateChart.render();
+        
+        // Supplier comparison chart
+        const supplierOptions = {
+            series: [{
+                name: 'Taux',
+                data: [10.12, 9.85, 9.95, 9.90, 10.05]
+            }],
+            chart: {
+                type: 'bar',
+                height: 300,
+                toolbar: { show: false },
+                background: 'transparent'
+            },
+            colors: ['#667eea', '#764ba2', '#22c55e', '#f59e0b', '#ef4444'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 8,
+                    horizontal: true,
+                    distributed: true,
+                    dataLabels: { position: 'bottom' }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: val => val.toFixed(2),
+                style: { fontSize: '12px' }
+            },
+            xaxis: {
+                categories: ['Binance P2P', 'Banque Pop', 'Western Union', 'MoneyGram', 'Marché'],
+                labels: { style: { colors: 'var(--text-secondary)' } }
+            },
+            yaxis: {
+                labels: { style: { colors: 'var(--text-secondary)' } }
+            },
+            legend: { show: false },
+            grid: { borderColor: 'var(--border-color)' }
+        };
+        
+        supplierChart = new ApexCharts(document.getElementById('supplier-chart'), supplierOptions);
+        supplierChart.render();
+    }
+    
+    function generateMockData() {
+        const data = [];
+        const now = Date.now();
+        let rate = 10.00;
+        
+        for (let i = 48; i >= 0; i--) {
+            rate += (Math.random() - 0.5) * 0.05;
+            rate = Math.max(9.80, Math.min(10.30, rate));
+            data.push({
+                x: now - i * 30 * 60 * 1000,
+                y: parseFloat(rate.toFixed(2))
+            });
+        }
+        
+        return data;
+    }
+    
+    function setChartType(type) {
+        currentChartType = type;
+        document.querySelectorAll('.chart-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+        
+        rateChart.updateOptions({
+            chart: { type: type === 'bar' ? 'bar' : type }
+        });
+    }
+    
+    async function loadRateHistory() {
+        const pair = document.getElementById('currency-pair').value;
+        const range = document.getElementById('time-range').value;
+        
+        try {
+            const response = await fetch(`/api/rates/history?pair=${pair}&range=${range}`);
+            const data = await response.json();
+            
+            if (data.success && data.history) {
+                rateChart.updateSeries([{
+                    name: `Taux ${pair}`,
+                    data: data.history.map(h => ({
+                        x: new Date(h.timestamp).getTime(),
+                        y: h.rate
+                    }))
+                }]);
+                
+                // Update stats
+                if (data.stats) {
+                    document.getElementById('current-rate').textContent = data.stats.current.toFixed(2);
+                    document.getElementById('high-rate').textContent = data.stats.high.toFixed(2);
+                    document.getElementById('low-rate').textContent = data.stats.low.toFixed(2);
+                    
+                    const change = data.stats.change;
+                    const changeEl = document.getElementById('change-rate');
+                    changeEl.innerHTML = `<span class="${change >= 0 ? 'text-green-500' : 'text-red-500'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
+                }
+            }
+        } catch (error) {
+            console.log('Using mock data');
+        }
+    }
+    
+    async function loadBestRates() {
+        try {
+            const response = await fetch('/api/rates/best?amount=1000');
+            const data = await response.json();
+            
+            const container = document.getElementById('best-rates-list');
+            
+            if (data.success && data.rates) {
+                container.innerHTML = data.rates.map((r, i) => `
+                    <div class="rate-item">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center font-bold ${i === 0 ? 'ring-2 ring-primary' : ''}">
+                                ${i + 1}
+                            </div>
+                            <div>
+                                <p class="font-medium">${r.supplier}</p>
+                                <p class="text-xs text-slate-500">${r.type}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg">${r.rate.toFixed(2)}</p>
+                            <p class="text-xs ${r.fee > 0 ? 'text-orange-500' : 'text-green-500'}">
+                                ${r.fee > 0 ? `Frais: ${r.fee} MAD` : 'Sans frais'}
+                            </p>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Mock data
+                const mockRates = [
+                    { supplier: 'Binance P2P', type: 'Crypto', rate: 10.12, fee: 0 },
+                    { supplier: 'Marché Parallèle', type: 'Cash', rate: 10.05, fee: 0 },
+                    { supplier: 'Western Union', type: 'Transfer', rate: 9.95, fee: 15 },
+                    { supplier: 'MoneyGram', type: 'Transfer', rate: 9.90, fee: 12 },
+                    { supplier: 'Banque Populaire', type: 'Bank', rate: 9.85, fee: 20 }
+                ];
+                
+                container.innerHTML = mockRates.map((r, i) => `
+                    <div class="rate-item">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center font-bold ${i === 0 ? 'ring-2 ring-primary' : ''}">
+                                ${i + 1}
+                            </div>
+                            <div>
+                                <p class="font-medium">${r.supplier}</p>
+                                <p class="text-xs text-slate-500">${r.type}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg">${r.rate.toFixed(2)}</p>
+                            <p class="text-xs ${r.fee > 0 ? 'text-orange-500' : 'text-green-500'}">
+                                ${r.fee > 0 ? `Frais: ${r.fee} MAD` : 'Sans frais'}
+                            </p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            console.log('Error loading rates');
+        }
+    }
+    
+    function loadAlerts() {
+        // Load user alerts from API
+        const alerts = JSON.parse(localStorage.getItem('sarfx_alerts') || '[]');
+        
+        if (alerts.length > 0) {
+            const container = document.getElementById('alerts-list');
+            container.innerHTML = alerts.map(a => `
+                <div class="alert-card border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium">${a.pair}</span>
+                        <button onclick="deleteAlert('${a.id}')" class="text-red-500 hover:text-red-600">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <p class="text-lg font-bold">${a.condition === 'above' ? '>' : '<'} ${a.target}</p>
+                    <p class="text-xs text-slate-500 mt-1">
+                        <i data-lucide="bell" class="w-3 h-3 inline"></i> 
+                        ${a.email_notify ? 'Email + Push' : 'Push seulement'}
+                    </p>
+                </div>
+            `).join('') + `
+                <div class="alert-card border border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer" onclick="openAlertModal()">
+                    <i data-lucide="plus" class="w-8 h-8 mx-auto mb-2 text-slate-400"></i>
+                    <p class="text-sm text-slate-500">Ajouter une alerte</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+    }
+    
+    function openAlertModal() {
+        document.getElementById('alert-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+    
+    function closeAlertModal() {
+        document.getElementById('alert-modal').style.display = 'none';
+    }
+    
+    function createAlert(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        const alert = {
+            id: Date.now().toString(),
+            pair: formData.get('pair'),
+            condition: formData.get('condition'),
+            target: parseFloat(formData.get('target')),
+            email_notify: formData.get('email_notify') === 'on'
+        };
+        
+        // Save to localStorage (would be API in production)
+        const alerts = JSON.parse(localStorage.getItem('sarfx_alerts') || '[]');
+        alerts.push(alert);
+        localStorage.setItem('sarfx_alerts', JSON.stringify(alerts));
+        
+        closeAlertModal();
+        loadAlerts();
+        showNotification('Alerte créée avec succès!', 'success');
+    }
+    
+    function deleteAlert(id) {
+        const alerts = JSON.parse(localStorage.getItem('sarfx_alerts') || '[]');
+        const filtered = alerts.filter(a => a.id !== id);
+        localStorage.setItem('sarfx_alerts', JSON.stringify(filtered));
+        loadAlerts();
+        showNotification('Alerte supprimée', 'info');
+    }
+</script>
+{% endblock %}

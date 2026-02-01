@@ -1,0 +1,122 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Admin Associé Banque - SarfX{% endblock %}
+
+{% block content %}
+<div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
+            Dashboard Admin Associé Banque
+        </h1>
+        {% if bank %}
+        <p style="color: var(--text-secondary);">Gestion de {{ bank.name }}</p>
+        {% else %}
+        <p style="color: var(--text-secondary);">Aucune banque associée</p>
+        {% endif %}
+    </div>
+
+    {% if bank %}
+    <!-- Informations Banque -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            {% if bank.logo %}
+            <img src="{{ bank.logo }}" alt="{{ bank.name }}" style="width: 60px; height: 60px; border-radius: 12px; background: white; padding: 0.5rem;">
+            {% else %}
+            <div style="width: 60px; height: 60px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                🏦
+            </div>
+            {% endif %}
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0;">{{ bank.name }}</h2>
+                <p style="margin: 0; opacity: 0.9;">Code: {{ bank.code }}</p>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+            <div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Swift Code</div>
+                <div style="font-weight: 600;">{{ bank.swift_code or 'N/A' }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Ville</div>
+                <div style="font-weight: 600;">{{ bank.city or 'N/A' }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Statut</div>
+                <div style="font-weight: 600;">
+                    {% if bank.is_active %}
+                    ✅ Actif
+                    {% else %}
+                    ❌ Inactif
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">ATMs</span>
+                <span style="font-size: 2rem;">🏧</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.atm_count }}</div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Utilisateurs</span>
+                <span style="font-size: 2rem;">👥</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ stats.user_count }}</div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Transactions</span>
+                <span style="font-size: 2rem;">💳</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--info);">{{ stats.transaction_count }}</div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Appels API</span>
+                <span style="font-size: 2rem;">🔌</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ stats.api_calls }}</div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">Gestion</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{{ url_for('app.admin_api_control') }}" style="display: block; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                🔌 Contrôle API
+            </a>
+            <a href="{{ url_for('app.admin_atm_management') }}" style="display: block; padding: 1rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                🏧 Gérer les ATMs
+            </a>
+            <a href="/app/bank-settings" style="display: block; padding: 1rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                ⚙️ Paramètres
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <!-- Message d'association -->
+    <div style="background: var(--card-bg); padding: 3rem; border-radius: 12px; text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🏦</div>
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+            Aucune banque associée
+        </h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+            Vous devez être associé à une banque pour accéder à ce dashboard
+        </p>
+        <a href="{{ url_for('app.associate_bank') }}" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+            S'associer à une banque
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "common/app_base.html" %}
+
+{% block title %}Admin SR Banque - SarfX{% endblock %}
+
+{% block content %}
+<div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
+            Dashboard Admin SR Banque
+        </h1>
+        <p style="color: var(--text-secondary);">Vue d'ensemble des opérations bancaires</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Total Banques</span>
+                <span style="font-size: 2rem;">🏦</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.total_banks }}</div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Total ATMs</span>
+                <span style="font-size: 2rem;">🏧</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ stats.total_atms }}</div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Utilisateurs</span>
+                <span style="font-size: 2rem;">👥</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--info);">{{ stats.total_users }}</div>
+        </div>
+
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">Transactions</span>
+                <span style="font-size: 2rem;">💳</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ stats.total_transactions }}</div>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">Actions Rapides</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="/admin/banks" style="display: block; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                Gérer les Banques
+            </a>
+            <a href="/admin/atms" style="display: block; padding: 1rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                Gérer les ATMs
+            </a>
+            <a href="/admin/users" style="display: block; padding: 1rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                Gérer les Utilisateurs
+            </a>
+            <a href="/admin/transactions" style="display: block; padding: 1rem; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600;">
+                Voir les Transactions
+            </a>
+        </div>
+    </div>
+
+    <!-- Volume des transactions -->
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Volume Total</h2>
+        <div style="font-size: 2.5rem; font-weight: 700; color: var(--success);">
+            ${{ "{:,.2f}".format(stats.total_volume) }}
+        </div>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem;">Volume total des transactions complétées</p>
+    </div>
+</div>
+{% endblock %}

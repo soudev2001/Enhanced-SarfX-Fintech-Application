@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SarfX - Le Futur du Change</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        html[dir="rtl"] body { font-family: 'Noto Kufi Arabic', sans-serif; }
+
+        /* Background Grid Effect */
+        .bg-grid {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
+            -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(224, 90, 3, 0.4);
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 20px 40px -10px rgba(224, 90, 3, 0.15);
+        }
+
+        /* Neon Glow Text */
+        .text-glow {
+            text-shadow: 0 0 25px rgba(224, 90, 3, 0.6);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #e05a03 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .blob {
+            position: absolute; filter: blur(90px); z-index: -2; opacity: 0.4;
+            animation: float 15s ease-in-out infinite;
+        }
+        .blob-1 { background: #2563eb; animation-delay: 0s; }
+        .blob-2 { background: #e05a03; animation-delay: -5s; }
+        .blob-3 { background: #059669; animation-delay: -2s; }
+
+        @keyframes float {
+            0% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0,0) scale(1); }
+        }
+
+        .btn-shimmer {
+            background: linear-gradient(110deg, #e05a03 45%, #fb923c 55%, #e05a03);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* PHONE MOCKUP */
+        .phone-mockup {
+            box-shadow: 0 0 0 12px #1e293b, 0 0 0 14px #334155, 0 30px 60px rgba(0,0,0,0.6);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s;
+        }
+
+        /* Phone Mockup Responsive */
+        @media (max-width: 1024px) {
+            .phone-mockup {
+                width: 240px !important;
+                height: 500px !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .phone-mockup {
+                width: 220px !important;
+                height: 460px !important;
+                margin: 0 auto;
+            }
+        }
+        @media (max-width: 480px) {
+            .phone-mockup {
+                width: 200px !important;
+                height: 420px !important;
+                border-radius: 2rem !important;
+            }
+        }
+
+        /* MODAL */
+        .modal { transition: opacity 0.3s ease-in-out; opacity: 0; pointer-events: none; z-index: 100; }
+        .modal.open { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease-in-out; }
+        .modal.open .modal-content { transform: scale(1); }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+        /* QR Code Animation */
+        .qr-container {
+            animation: qr-float 3s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+        .qr-container:hover {
+            transform: scale(1.08) !important;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3) !important;
+        }
+        @keyframes qr-float {
+            0%, 100% {
+                transform: translateY(0);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            }
+            50% {
+                transform: translateY(-8px);
+                box-shadow: 0 30px 50px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+        }
+
+        /* Region Badge */
+        .region-badge {
+            animation: badge-float 3s ease-in-out infinite;
+        }
+        @keyframes badge-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-[#e05a03]/30">
+
+    <!-- ABOUT US MODAL -->
+    <div id="about-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('about-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+            <div class="text-center mb-16 relative">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#e05a03]/10 rounded-full blur-[80px] pointer-events-none"></div>
+                <span class="font-bold text-4xl tracking-tight text-white flex items-center justify-center gap-2 mb-6 relative z-10">
+                    Sarf<span class="text-[#e05a03] text-glow">X</span>
+                </span>
+                <h2 class="text-4xl md:text-6xl font-extrabold text-white mb-6 relative z-10 leading-tight">Making Global Money <br/><span class="gradient-text">Transfers Simple</span></h2>
+                <p class="text-slate-400 max-w-2xl mx-auto text-lg relative z-10">SarfX was founded with a simple mission: eliminate hidden fees and complexity from international money transfers.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-20 text-center">
+                <div class="p-8 bg-slate-800/40 rounded-3xl border border-slate-700 hover:border-[#e05a03]/50 transition duration-300">
+                    <div class="text-4xl font-extrabold text-[#e05a03] mb-2">150+</div>
+                    <div class="text-sm text-slate-400 font-medium uppercase tracking-wide">Supported Currencies</div>
+                </div>
+                <div class="p-8 bg-slate-800/40 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition duration-300">
+                    <div class="text-4xl font-extrabold text-blue-400 mb-2">10K+</div>
+                    <div class="text-sm text-slate-400 font-medium uppercase tracking-wide">Active Users</div>
+                </div>
+                <div class="p-8 bg-slate-800/40 rounded-3xl border border-slate-700 hover:border-emerald-500/50 transition duration-300">
+                    <div class="text-4xl font-extrabold text-emerald-400 mb-2">$50M+</div>
+                    <div class="text-sm text-slate-400 font-medium uppercase tracking-wide">Transferred</div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-16 mb-20 items-center">
+                <div>
+                    <h3 class="text-3xl font-bold text-white mb-6 flex items-center gap-3"><span class="w-8 h-1 bg-[#e05a03] rounded-full"></span> Our Story</h3>
+                    <p class="text-slate-400 leading-relaxed mb-6 text-lg">Founded in 2023, SarfX emerged from a frustrating experience our founders had with traditional money transfer services.</p>
+                    <p class="text-slate-400 leading-relaxed text-lg">We built SarfX to solve this problem. By aggregating rates from multiple sources and leveraging modern technology, we provide users with the best possible rates and a seamless experience.</p>
+                </div>
+                <div class="bg-slate-800/20 p-8 rounded-3xl border border-white/5">
+                    <h3 class="text-2xl font-bold text-white mb-6">Our Values</h3>
+                    <div class="space-y-6">
+                        <div class="flex gap-5">
+                            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 flex-shrink-0 border border-blue-500/20"><i data-lucide="shield" class="w-6 h-6"></i></div>
+                            <div><h4 class="text-white font-bold text-lg">Security First</h4><p class="text-sm text-slate-400 mt-1">Bank-level encryption and compliance.</p></div>
+                        </div>
+                        <div class="flex gap-5">
+                            <div class="w-12 h-12 rounded-xl bg-[#e05a03]/10 flex items-center justify-center text-[#e05a03] flex-shrink-0 border border-[#e05a03]/20"><i data-lucide="heart" class="w-6 h-6"></i></div>
+                            <div><h4 class="text-white font-bold text-lg">Customer Focused</h4><p class="text-sm text-slate-400 mt-1">Your success is our success.</p></div>
+                        </div>
+                        <div class="flex gap-5">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0 border border-emerald-500/20"><i data-lucide="globe" class="w-6 h-6"></i></div>
+                            <div><h4 class="text-white font-bold text-lg">Global Reach</h4><p class="text-sm text-slate-400 mt-1">Access to 150+ currencies worldwide.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <h3 class="text-3xl font-bold text-white mb-10">Meet Our Team</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-[#e05a03]/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">👨‍💼</div>
+                        <h4 class="text-white font-bold mb-1">Mohammed Aggoram</h4>
+                        <p class="text-[#e05a03] text-xs font-bold uppercase tracking-wider">CEO & Co-Founder</p>
+                    </div>
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-blue-500/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">👨‍💻</div>
+                        <h4 class="text-white font-bold mb-1">Issam Aggoram</h4>
+                        <p class="text-blue-400 text-xs font-bold uppercase tracking-wider">CTO & Co-Founder</p>
+                    </div>
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-purple-500/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">👩‍💼</div>
+                        <h4 class="text-white font-bold mb-1">Soukaina Rami</h4>
+                        <p class="text-purple-400 text-xs font-bold uppercase tracking-wider">Head of Compliance</p>
+                    </div>
+                    <div class="group p-6 bg-slate-800/30 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition duration-300">
+                        <div class="w-24 h-24 bg-slate-700/50 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition duration-300">🚀</div>
+                        <h4 class="text-white font-bold mb-1">Soufiane ANIBA</h4>
+                        <p class="text-emerald-400 text-xs font-bold uppercase tracking-wider">VP of Engineering</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTACT & FAQ MODAL -->
+    <div id="contact-modal" class="modal fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8">
+            <button onclick="closeModal('contact-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+            <div class="grid md:grid-cols-2 gap-16">
+                <div>
+                    <h2 class="text-4xl font-bold text-white mb-4">Get in Touch</h2>
+                    <p class="text-slate-400 mb-10 text-lg">Have questions? We'd love to hear from you.</p>
+
+                    <div class="space-y-8">
+                        <div class="flex items-start gap-6 group">
+                            <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 transition"><i data-lucide="mail" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-lg">Email</h4>
+                                <p class="text-slate-400">support@sarfx.com</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-6 group">
+                            <div class="w-12 h-12 bg-[#e05a03]/10 rounded-2xl flex items-center justify-center text-[#e05a03] border border-[#e05a03]/20 group-hover:bg-[#e05a03]/20 transition"><i data-lucide="phone" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-lg">Phone</h4>
+                                <p class="text-slate-400">+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-6 group">
+                            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition"><i data-lucide="map-pin" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-lg">Office</h4>
+                                <p class="text-slate-400">San Francisco, CA</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-16">
+                        <h3 class="text-2xl font-bold text-white mb-6">FAQ</h3>
+                        <div class="space-y-4">
+                            <details class="group bg-slate-800/30 rounded-2xl p-5 cursor-pointer border border-white/5 hover:border-white/10 transition">
+                                <summary class="flex justify-between items-center font-medium text-slate-200 list-none text-lg">
+                                    Is SarfX free?
+                                    <span class="transition group-open:rotate-180 text-slate-500 group-open:text-white"><i data-lucide="chevron-down" class="w-5 h-5"></i></span>
+                                </summary>
+                                <p class="text-slate-400 mt-4 leading-relaxed">Yes, signing up for the waitlist is completely free. You'll get exclusive access when we launch.</p>
+                            </details>
+                            <details class="group bg-slate-800/30 rounded-2xl p-5 cursor-pointer border border-white/5 hover:border-white/10 transition">
+                                <summary class="flex justify-between items-center font-medium text-slate-200 list-none text-lg">
+                                    When will it launch?
+                                    <span class="transition group-open:rotate-180 text-slate-500 group-open:text-white"><i data-lucide="chevron-down" class="w-5 h-5"></i></span>
+                                </summary>
+                                <p class="text-slate-400 mt-4 leading-relaxed">We are targeting a global launch in Q2 2026, starting with Morocco, Africa, and Europe.</p>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass p-10 rounded-[2rem] border border-white/5 h-fit">
+                    <h3 class="text-2xl font-bold text-white mb-8">Send us a message</h3>
+                    <form class="space-y-5">
+                        <div class="grid grid-cols-2 gap-5">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Name</label>
+                                <input type="text" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-blue-500 transition" placeholder="John Doe">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
+                                <input type="email" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-blue-500 transition" placeholder="john@example.com">
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase ml-1">Message</label>
+                            <textarea class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-blue-500 h-40 resize-none" placeholder="How can we help?"></textarea>
+                        </div>
+                        <button type="button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-blue-600/20 transform active:scale-95">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TERMS OF SERVICE MODAL -->
+    <div id="terms-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('terms-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+            <div class="mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="terms_title">Conditions d'utilisation</h2>
+                <p class="text-slate-400 text-lg" data-i18n="terms_subtitle">Veuillez lire attentivement avant d'utiliser nos services.</p>
+            </div>
+
+            <div class="space-y-8 text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">1. Acceptation des conditions</h3>
+                    <p data-i18n="terms_p1">En accédant et en utilisant SarfX, vous acceptez d'être lié par ces conditions d'utilisation.</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">2. Utilisation de la plateforme</h3>
+                    <p data-i18n="terms_p2">Vous acceptez d'utiliser SarfX uniquement à des fins légales.</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">3. Compte utilisateur</h3>
+                    <p data-i18n="terms_p3">Vous êtes responsable du maintien de la confidentialité de vos identifiants.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRIVACY POLICY MODAL -->
+    <div id="privacy-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('privacy-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+            <div class="mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="privacy_title">Politique de confidentialité</h2>
+                <p class="text-slate-400 text-lg" data-i18n="privacy_subtitle">Nous prenons la protection de vos données au sérieux.</p>
+            </div>
+
+            <div class="space-y-8 text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">1. Collecte d'informations</h3>
+                    <p data-i18n="privacy_p1">Nous collectons des informations que vous nous fournissez directement.</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">2. Sécurité des données</h3>
+                    <p data-i18n="privacy_p4">Nous mettons en œuvre des mesures de sécurité de pointe pour protéger vos données.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COOKIES POLICY MODAL -->
+    <div id="cookies-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto">
+        <div class="modal-content glass w-full max-w-5xl rounded-[2.5rem] p-8 md:p-14 relative border border-white/10 my-8 max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('cookies-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+            <div class="mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4" data-i18n="cookies_title">Politique des Cookies</h2>
+                <p class="text-slate-400 text-lg" data-i18n="cookies_subtitle">Informations sur l'utilisation des cookies.</p>
+            </div>
+
+            <div class="space-y-8 text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">1. Qu'est-ce qu'un cookie?</h3>
+                    <p data-i18n="cookies_p1">Les cookies sont de petits fichiers texte stockés sur votre appareil.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="modal fixed inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-y-auto z-[100]">
+        <div class="modal-content glass w-full max-w-md rounded-[2.5rem] p-8 md:p-12 relative border border-white/10">
+            <button onclick="closeModal('login-modal')" class="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition hover:rotate-90 duration-300"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+            <div class="text-center mb-10">
+                <span class="font-bold text-4xl tracking-tight text-white flex items-center justify-center gap-2 mb-4">
+                    Sarf<span class="text-[#e05a03] text-glow">X</span>
+                </span>
+                <h2 class="text-2xl font-bold text-white mb-2" data-i18n="login_title">Connexion</h2>
+                <p class="text-slate-400" data-i18n="login_subtitle">Accédez à votre compte SarfX</p>
+            </div>
+
+            <form id="login-form" method="POST" action="/login" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Error Message -->
+                <div id="login-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm"></div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1" data-i18n="login_email">Email</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                        <input type="email" name="email" id="login-email" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="nom@exemple.com" value="">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1" data-i18n="login_password">Mot de passe</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                        <input type="password" name="password" id="login-password" required class="w-full bg-slate-900/60 border border-slate-700 rounded-xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-[#e05a03] focus:ring-1 focus:ring-[#e05a03] transition placeholder-slate-600" placeholder="••••••••" value="">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-[#e05a03] focus:ring-[#e05a03]">
+                        <span data-i18n="login_remember">Se souvenir de moi</span>
+                    </label>
+                    <a href="#" class="text-[#e05a03] hover:underline" data-i18n="login_forgot">Mot de passe oublié ?</a>
+                </div>
+
+                <button type="submit" class="w-full btn-shimmer text-white font-bold py-4 rounded-xl shadow-xl hover:shadow-orange-600/30 transition transform active:scale-95 flex justify-center items-center gap-3">
+                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                    <span data-i18n="login_btn">Se connecter</span>
+                </button>
+
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700"></div></div>
+                    <div class="relative flex justify-center text-sm"><span class="px-4 bg-[#0f172a] text-slate-500" data-i18n="login_or">Ou continuer avec</span></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="{{ url_for('auth.google_login') }}" class="flex items-center justify-center gap-2 bg-white hover:bg-gray-100 border border-slate-200 rounded-xl py-3 text-slate-800 font-medium transition">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Google
+                    </a>
+                    <button type="button" onclick="showComingSoon('Apple Sign-In')" class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl py-3 text-white font-medium transition">
+                        <i data-lucide="apple" class="w-5 h-5"></i>
+                        Apple
+                    </button>
+                </div>
+
+                <p class="text-center text-slate-500 text-sm mt-6">
+                    <span data-i18n="login_no_account">Pas encore de compte ?</span>
+                    <a href="#" class="text-[#e05a03] hover:underline ml-1" data-i18n="login_signup">S'inscrire</a>
+                </p>
+
+                <!-- Quick Demo Login -->
+                <div class="mt-8 pt-6 border-t border-slate-700">
+                    <p class="text-xs text-slate-500 text-center mb-4">Connexion rapide (Démo)</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" onclick="quickLogin('user@demo.com', 'demo123')" class="flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl py-2.5 text-emerald-400 text-sm font-medium transition">
+                            <i data-lucide="user" class="w-4 h-4"></i> User
+                        </button>
+                        <button type="button" onclick="quickLogin('bank@attijariwafa.ma', 'bank123')" class="flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl py-2.5 text-blue-400 text-sm font-medium transition">
+                            <i data-lucide="landmark" class="w-4 h-4"></i> Bank
+                        </button>
+                        <button type="button" onclick="quickLogin('admin@sarfx.io', 'admin123')" class="flex items-center justify-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-xl py-2.5 text-purple-400 text-sm font-medium transition">
+                            <i data-lucide="shield" class="w-4 h-4"></i> Admin
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="/" class="flex items-center gap-2" style="text-decoration: none;">
+                    <!--
+                    <div class="relative group cursor-pointer">
+                        <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-[#e05a03] rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
+                        <img src="{{ url_for('static', filename='images/logo-icon.svg') }}" alt="SarfX Logo" class="relative h-10 w-auto rounded-lg object-contain bg-slate-900/50 p-1" onerror="this.style.display='none'">
+                    </div>
+                    -->
+                    <span class="font-bold text-2xl tracking-tight text-white flex items-center">
+                        Sarf<span class="text-[#e05a03] text-4xl leading-none text-glow">X</span>
+                    </span>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300 rtl:space-x-reverse">
+                    <a href="#home" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_home">
+                        <i data-lucide="home" class="w-4 h-4 text-[#e05a03] group-hover:animate-bounce"></i> Accueil
+                    </a>
+                    <a href="#features" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_features">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-yellow-400 group-hover:rotate-12 transition"></i> Fonctionnalités
+                    </a>
+                    <a href="#atm" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_atm">
+                        <i data-lucide="landmark" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i> ATM
+                    </a>
+                    <a href="#ai" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_ai">
+                        <i data-lucide="brain" class="w-4 h-4 text-purple-400 group-hover:animate-pulse transition"></i> IA
+                    </a>
+                    <button onclick="openModal('about-modal')" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_about">
+                        <i data-lucide="info" class="w-4 h-4 text-blue-400 group-hover:rotate-12 transition"></i> À Propos
+                    </button>
+                    <button onclick="openModal('contact-modal')" class="flex items-center gap-2 hover:text-white hover:scale-105 transition duration-200 group" data-i18n="nav_contact">
+                        <i data-lucide="mail" class="w-4 h-4 text-pink-400 group-hover:translate-x-1 transition"></i> Contact
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <!-- Language Selector with Flags -->
+                    <div class="relative group">
+                        <button class="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white focus:outline-none px-3 py-2 rounded-xl hover:bg-white/5 transition">
+                            <img id="current-lang-flag" src="https://flagcdn.com/w40/fr.png" class="h-4 w-6 object-cover rounded-sm border border-white/10">
+                            <span id="current-lang-code">FR</span>
+                            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-40 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform z-50 overflow-hidden">
+                            <a href="#" onclick="changeLanguage('fr')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                                <img src="https://flagcdn.com/w40/fr.png" class="h-4 w-6 object-cover rounded-sm"> Français
+                            </a>
+                            <a href="#" onclick="changeLanguage('en')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                                <img src="https://flagcdn.com/w40/us.png" class="h-4 w-6 object-cover rounded-sm"> English
+                            </a>
+                            <a href="#" onclick="changeLanguage('ar')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                                <img src="https://flagcdn.com/w40/ma.png" class="h-4 w-6 object-cover rounded-sm"> العربية
+                            </a>
+                            <a href="#" onclick="changeLanguage('es')" class="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                                <img src="https://flagcdn.com/w40/es.png" class="h-4 w-6 object-cover rounded-sm"> Español
+                            </a>
+                        </div>
+                    </div>
+                    <button onclick="openModal('login-modal')" class="bg-white text-slate-900 px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#e05a03] hover:text-white transition duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-[#e05a03]/50 flex items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        <span data-i18n="btn_login">Connexion</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative pt-40 pb-20 overflow-hidden min-h-screen flex items-center">
+        <div class="bg-grid"></div>
+        <div class="blob blob-1 w-[500px] h-[500px] rounded-full top-0 left-0 -translate-x-1/3 -translate-y-1/3"></div>
+        <div class="blob blob-2 w-[400px] h-[400px] rounded-full bottom-0 right-0 translate-x-1/3 translate-y-1/3"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <!-- Left Content -->
+                <div class="text-center lg:text-left">
+                    <!-- Region Badges -->
+                    <div class="flex flex-wrap justify-center lg:justify-start gap-3 mb-8">
+                        <span class="region-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                            <img src="https://flagcdn.com/w20/ma.png" class="h-3 w-4 object-cover rounded-sm"> Maroc
+                        </span>
+                        <span class="region-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold" style="animation-delay: 0.5s">
+                            <i data-lucide="globe-2" class="w-3 h-3"></i> Afrique
+                        </span>
+                        <span class="region-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold" style="animation-delay: 1s">
+                            <i data-lucide="map" class="w-3 h-3"></i> IMEA
+                        </span>
+                    </div>
+
+                    <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-slate-800/50 border border-slate-700/50 text-[#e05a03] text-xs font-bold uppercase tracking-wider mb-8 hover:bg-slate-800 transition cursor-default shadow-xl backdrop-blur-md">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e05a03] opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-[#e05a03]"></span>
+                        </span>
+                        <span data-i18n="hero_tag">Le futur du change de devises</span>
+                    </div>
+
+                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-8 leading-tight text-white drop-shadow-2xl">
+                        <span data-i18n="hero_title_1">Le Premier Bureau de Change</span> <br/>
+                        <span class="text-[#e05a03] text-glow" data-i18n="hero_title_2">100% Digitalisé</span> <br/>
+                        <span data-i18n="hero_title_3">Dans ta poche.</span>
+                    </h1>
+
+                    <p class="mt-6 max-w-xl text-xl text-slate-400 font-light leading-relaxed" data-i18n="hero_desc">
+                        Obtenez les meilleurs taux de change en temps réel grâce à l'IA. Plus de files d'attente, plus de frais cachés.
+                    </p>
+
+                    <div class="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                        <button onclick="openModal('login-modal')" class="btn-shimmer px-10 py-5 text-white rounded-2xl font-bold text-xl shadow-2xl shadow-orange-600/30 transition transform hover:-translate-y-1 hover:shadow-orange-600/50 flex items-center justify-center gap-3 group">
+                            <span data-i18n="hero_cta_1">Découvrir l'App</span>
+                            <i data-lucide="arrow-right" class="w-6 h-6 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Content - Phone Mockup with QR Codes -->
+                <div class="relative flex flex-col items-center">
+                    <!-- Phone Mockup -->
+                    <div class="phone-mockup relative w-[280px] bg-[#0f172a] rounded-[3rem] overflow-hidden border-4 border-slate-800 h-[580px]">
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-900 rounded-b-xl z-20"></div>
+                        <div class="flex-1 flex flex-col relative z-10 bg-gradient-to-b from-slate-900 to-[#020617] h-full">
+                            <div class="h-12 w-full flex justify-between items-end px-6 pb-2 text-[10px] text-white font-mono">
+                                <span>9:41</span>
+                                <div class="flex gap-1"><i data-lucide="signal" class="w-3 h-3"></i><i data-lucide="wifi" class="w-3 h-3"></i><i data-lucide="battery-full" class="w-3 h-3"></i></div>
+                            </div>
+                            <!-- App Content Preview -->
+                            <div class="flex-1 p-4 space-y-4">
+                                <div class="text-center">
+                                    <span class="font-bold text-xl text-white">Sarf<span class="text-[#e05a03]">X</span></span>
+                                </div>
+                                <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700">
+                                    <p class="text-xs text-slate-500 mb-2">Taux EUR/MAD</p>
+                                    <div class="flex items-baseline gap-2">
+                                        <span class="text-3xl font-bold text-white">10.95</span>
+                                        <span class="text-emerald-400 text-sm flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i>+0.45%</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="bg-slate-800/30 rounded-xl p-3 text-center border border-slate-700/50">
+                                        <i data-lucide="repeat" class="w-5 h-5 mx-auto text-[#e05a03] mb-1"></i>
+                                        <span class="text-[10px] text-slate-400">Change</span>
+                                    </div>
+                                    <div class="bg-slate-800/30 rounded-xl p-3 text-center border border-slate-700/50">
+                                        <i data-lucide="landmark" class="w-5 h-5 mx-auto text-emerald-400 mb-1"></i>
+                                        <span class="text-[10px] text-slate-400">ATM</span>
+                                    </div>
+                                    <div class="bg-slate-800/30 rounded-xl p-3 text-center border border-slate-700/50">
+                                        <i data-lucide="brain" class="w-5 h-5 mx-auto text-purple-400 mb-1"></i>
+                                        <span class="text-[10px] text-slate-400">IA</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-r from-[#e05a03]/20 to-blue-500/20 rounded-2xl p-4 border border-[#e05a03]/30">
+                                    <p class="text-xs text-slate-300 mb-2">Prédiction IA - 7 jours</p>
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-slate-500">EUR/MAD</span>
+                                        <span class="text-emerald-400">↗ 11.05</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="h-1 w-1/3 bg-slate-700 rounded-full mx-auto mb-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile QR Codes Section - Visible on small screens -->
+                    <div class="lg:hidden mt-10 w-full max-w-md">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold text-white mb-2">📱 Téléchargez l'App</h3>
+                            <p class="text-slate-400 text-sm">Scannez pour un accès instantané</p>
+                        </div>
+                        <div class="flex justify-center items-center gap-4 sm:gap-8">
+                            <!-- iOS QR -->
+                            <div class="bg-white/95 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-xl border-2 border-blue-500/30 text-center cursor-pointer" onclick="showComingSoon('Application iOS')">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sarfx.io/app-coming-soon&bgcolor=ffffff" alt="App Store QR" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg mx-auto mb-2 opacity-50">
+                                <div class="block">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" class="h-8 sm:h-9 mx-auto opacity-50">
+                                    <span class="text-xs text-slate-500 mt-1 block">Bientôt disponible</span>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-500 to-transparent"></div>
+                                <span class="text-xs text-slate-500 font-medium">OU</span>
+                                <div class="w-px h-8 bg-gradient-to-b from-transparent via-slate-500 to-transparent"></div>
+                            </div>
+
+                            <!-- Android QR -->
+                            <div class="bg-white/95 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-xl border-2 border-emerald-500/30 text-center cursor-pointer" onclick="showComingSoon('Application Android')">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sarfx.io/app-coming-soon&bgcolor=ffffff" alt="Play Store QR" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg mx-auto mb-2 opacity-50">
+                                <div class="block">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" class="h-8 sm:h-9 mx-auto opacity-50">
+                                    <span class="text-xs text-slate-500 mt-1 block">Bientôt disponible</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Badges with QR Codes - Desktop only -->
+                    <div class="absolute -left-24 top-1/4 transform -translate-y-1/2 hidden lg:block">
+                        <div class="qr-container bg-white/95 backdrop-blur-lg p-5 rounded-2xl shadow-2xl border-2 border-blue-500/30 cursor-pointer" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="showComingSoon('Application iOS')">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://sarfx.io/app-coming-soon&bgcolor=ffffff" alt="App Store QR" class="w-28 h-28 rounded-lg mb-3 opacity-50">
+                            <div class="block">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store" class="h-10 mx-auto opacity-50">
+                                <span class="text-xs text-slate-500 mt-2 block text-center">Bientôt disponible</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="absolute -right-24 top-2/3 transform -translate-y-1/2 hidden lg:block">
+                        <div class="qr-container bg-white/95 backdrop-blur-lg p-5 rounded-2xl shadow-2xl border-2 border-emerald-500/30 cursor-pointer" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="showComingSoon('Application Android')">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://sarfx.io/app-coming-soon&bgcolor=ffffff" alt="Play Store QR" class="w-28 h-28 rounded-lg mb-3 opacity-50">
+                            <div class="block">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" class="h-10 mx-auto opacity-50">
+                                <span class="text-xs text-slate-500 mt-2 block text-center">Bientôt disponible</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6" data-i18n="features_title">Fonctionnalités Premium</h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto" data-i18n="features_desc">Découvrez une nouvelle façon de gérer vos devises avec des outils puissants.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 - Exchange -->
+                <div class="feature-card glass-card p-8 rounded-3xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[#e05a03]/10 flex items-center justify-center border border-[#e05a03]/30">
+                        <i data-lucide="repeat" class="w-8 h-8 text-[#e05a03]"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3" data-i18n="feat_1_title">Meilleurs Taux</h3>
+                    <p class="text-slate-400" data-i18n="feat_1_desc">Notre IA scanne le marché en permanence pour vous offrir les meilleurs taux de change.</p>
+                </div>
+
+                <!-- Feature 2 - Security -->
+                <div class="feature-card glass-card p-8 rounded-3xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/30">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-blue-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3" data-i18n="feat_2_title">100% Sécurisé</h3>
+                    <p class="text-slate-400" data-i18n="feat_2_desc">Chiffrement militaire et conformité aux normes bancaires internationales.</p>
+                </div>
+
+                <!-- Feature 3 - Speed -->
+                <div class="feature-card glass-card p-8 rounded-3xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30">
+                        <i data-lucide="zap" class="w-8 h-8 text-emerald-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3" data-i18n="feat_3_title">Instantané</h3>
+                    <p class="text-slate-400" data-i18n="feat_3_desc">Fini le cash et les déplacements. Tout se fait en quelques secondes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ATM Section -->
+    <section id="atm" class="py-32 relative overflow-hidden bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glass rounded-[3rem] p-8 md:p-16 border border-white/10 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none"></div>
+
+                <div class="grid md:grid-cols-2 gap-16 items-center relative z-10">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-6">
+                            <i data-lucide="landmark" class="w-4 h-4"></i>
+                            <span data-i18n="atm_badge">Réseau ATM Étendu</span>
+                        </div>
+                        <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight text-white">
+                            <span data-i18n="atm_title_1">Retirez partout</span><br/>
+                            <span class="text-emerald-400" data-i18n="atm_title_2">Sans carte physique</span>
+                        </h2>
+                        <p class="text-slate-400 text-lg mb-8" data-i18n="atm_desc">
+                            Générez un code de retrait unique et récupérez vos fonds dans plus de 5087 ATM partenaires.
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-4 mb-8">
+                            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                                <div class="text-3xl font-bold text-emerald-400 mb-1">5087+</div>
+                                <div class="text-sm text-slate-400" data-i18n="atm_stat_1">ATMs Partenaires</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                                <div class="text-3xl font-bold text-blue-400 mb-1">24/7</div>
+                                <div class="text-sm text-slate-400" data-i18n="atm_stat_2">Disponibilité</div>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-4 text-slate-200">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </div>
+                                <span data-i18n="atm_feat_1">Code de retrait sécurisé</span>
+                            </li>
+                            <li class="flex items-center gap-4 text-slate-200">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </div>
+                                <span data-i18n="atm_feat_2">Localisation GPS des ATMs</span>
+                            </li>
+                            <li class="flex items-center gap-4 text-slate-200">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </div>
+                                <span data-i18n="atm_feat_3">Notifications en temps réel</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- ATM Visual -->
+                    <div class="relative">
+                        <div class="bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] p-8 border border-slate-700 shadow-2xl">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                                    <i data-lucide="landmark" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold">Retrait ATM</h4>
+                                    <p class="text-xs text-slate-500">Code valide 24h</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 text-center mb-6">
+                                <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Votre code de retrait</p>
+                                <div class="text-4xl font-mono font-bold text-emerald-400 tracking-widest" id="atm-code">847 293</div>
+                            </div>
+                            <div class="flex justify-between text-sm text-slate-400 mb-4">
+                                <span>Montant</span>
+                                <span class="text-white font-bold">500 MAD</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-slate-400">
+                                <span>Expire dans</span>
+                                <span class="text-[#e05a03] font-bold">23:45:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Section -->
+    <section id="ai" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glass rounded-[3rem] p-8 md:p-16 border border-white/10 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] -ml-32 -mt-32 pointer-events-none"></div>
+
+                <div class="grid md:grid-cols-2 gap-16 items-center relative z-10">
+                    <!-- AI Visual -->
+                    <div class="order-2 md:order-1">
+                        <div class="bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] p-8 border border-slate-700 shadow-2xl">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/30">
+                                    <i data-lucide="brain" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold">Assistant IA SarfX</h4>
+                                    <p class="text-xs text-emerald-400">● En ligne</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 max-w-[80%]">
+                                    <p class="text-sm text-slate-300">Quelle est la prédiction EUR/MAD pour la semaine prochaine ?</p>
+                                </div>
+                                <div class="bg-purple-500/10 rounded-2xl p-4 border border-purple-500/30 max-w-[80%] ml-auto">
+                                    <p class="text-sm text-slate-300">D'après mon analyse, le taux EUR/MAD devrait atteindre <span class="text-emerald-400 font-bold">11.05</span> d'ici 7 jours avec une confiance de <span class="text-purple-400 font-bold">87%</span>.</p>
+                                </div>
+                                <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 max-w-[80%]">
+                                    <p class="text-sm text-slate-300">Quel est le meilleur moment pour échanger ?</p>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex items-center gap-2 bg-slate-800/50 rounded-xl p-3 border border-slate-700">
+                                <input type="text" placeholder="Posez votre question..." class="flex-1 bg-transparent text-white text-sm focus:outline-none" readonly>
+                                <button class="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center text-white">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-1 md:order-2">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold mb-6">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span data-i18n="ai_badge">Intelligence Artificielle</span>
+                        </div>
+                        <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight text-white">
+                            <span data-i18n="ai_title_1">Prédictions IA</span><br/>
+                            <span class="text-purple-400" data-i18n="ai_title_2">Précises à 87%</span>
+                        </h2>
+                        <p class="text-slate-400 text-lg mb-8" data-i18n="ai_desc">
+                            Notre modèle LSTM analyse des millions de données pour prédire les tendances de change jusqu'à 7 jours à l'avance.
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-4 mb-8">
+                            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                                <div class="text-3xl font-bold text-purple-400 mb-1">87%</div>
+                                <div class="text-sm text-slate-400" data-i18n="ai_stat_1">Précision</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                                <div class="text-3xl font-bold text-blue-400 mb-1">J+7</div>
+                                <div class="text-sm text-slate-400" data-i18n="ai_stat_2">Prédictions</div>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-4 text-slate-200">
+                                <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </div>
+                                <span data-i18n="ai_feat_1">Analyse en temps réel</span>
+                            </li>
+                            <li class="flex items-center gap-4 text-slate-200">
+                                <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </div>
+                                <span data-i18n="ai_feat_2">Alertes personnalisées</span>
+                            </li>
+                            <li class="flex items-center gap-4 text-slate-200">
+                                <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </div>
+                                <span data-i18n="ai_feat_3">Conseils intelligents</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap Section -->
+    <section id="roadmap" class="py-32 border-t border-white/5 bg-slate-900/30 relative">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6" data-i18n="roadmap_title">Roadmap</h2>
+                <p class="text-slate-400 text-lg" data-i18n="roadmap_desc">Le futur se construit aujourd'hui.</p>
+            </div>
+
+            <div class="relative">
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-px bg-gradient-to-b from-[#e05a03] via-blue-500 to-transparent opacity-50"></div>
+
+                <!-- T2 2026 -->
+                <div class="relative flex justify-center items-center mb-24 group">
+                    <div class="w-full md:w-[45%] text-right pr-12 md:pr-0 md:mr-auto">
+                        <h3 class="text-2xl font-bold text-[#e05a03] mb-2">T2 2026</h3>
+                        <h4 class="text-white font-bold text-xl mb-2">Lancement de SarfX Pro</h4>
+                    </div>
+                    <div class="absolute w-6 h-6 bg-[#e05a03] rounded-full z-10 border-4 border-slate-900 shadow-[0_0_20px_#e05a03]"></div>
+                    <div class="w-full md:w-[45%] hidden md:block"></div>
+                </div>
+
+                <!-- T1 2027 -->
+                <div class="relative flex justify-center items-center mb-24 group">
+                    <div class="w-full md:w-[45%] hidden md:block"></div>
+                    <div class="absolute w-4 h-4 bg-blue-500 rounded-full z-10 border-4 border-slate-900"></div>
+                    <div class="w-full md:w-[45%] text-left pl-12 md:pl-0 md:ml-auto">
+                        <h3 class="text-xl font-bold text-blue-500 mb-2">T1 2027</h3>
+                        <h4 class="text-white font-bold text-xl mb-2">DeFi Exchange</h4>
+                        <p class="text-slate-400">Déploiement de la plateforme de finance décentralisée.</p>
+                    </div>
+                </div>
+
+                <!-- T2 2027 -->
+                <div class="relative flex justify-center items-center mb-24 group">
+                    <div class="w-full md:w-[45%] text-right pr-12 md:pr-0 md:mr-auto">
+                        <h3 class="text-xl font-bold text-purple-500 mb-2">T2 2027</h3>
+                        <h4 class="text-white font-bold text-xl mb-2">Expansion internationale</h4>
+                        <p class="text-slate-400">Partenariats bancaires mondiaux.</p>
+                    </div>
+                    <div class="absolute w-4 h-4 bg-purple-500 rounded-full z-10 border-4 border-slate-900"></div>
+                    <div class="w-full md:w-[45%] hidden md:block"></div>
+                </div>
+
+                <!-- StarkX Ecosystem -->
+                <div class="glass p-10 rounded-3xl border border-white/10 mt-24 relative z-10 mx-auto max-w-5xl bg-slate-900/50 backdrop-blur-xl">
+                    <h3 class="text-3xl font-bold text-center text-white mb-10">L'écosystème <span class="text-slate-400">StarkX</span></h3>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div class="p-6 bg-slate-800/40 rounded-2xl hover:bg-slate-800 transition border border-white/5 hover:border-[#e05a03]/30 group">
+                            <h4 class="text-[#e05a03] font-bold text-xl mb-3 group-hover:scale-105 transition origin-left">SarfX</h4>
+                            <p class="text-sm text-slate-400 leading-relaxed">Application mobile de bureau de change digitalisé avec IA intégrée.</p>
+                        </div>
+                        <div class="p-6 bg-slate-800/40 rounded-2xl hover:bg-slate-800 transition border border-white/5 hover:border-blue-500/30 group">
+                            <h4 class="text-blue-400 font-bold text-xl mb-3 group-hover:scale-105 transition origin-left">Niya Drive</h4>
+                            <p class="text-sm text-slate-400 leading-relaxed">Application mobile de covoiturage nouvelle génération pour passagers.</p>
+                        </div>
+                        <div class="p-6 bg-slate-800/40 rounded-2xl hover:bg-slate-800 transition border border-white/5 hover:border-emerald-500/30 group">
+                            <h4 class="text-emerald-400 font-bold text-xl mb-3 group-hover:scale-105 transition origin-left">Blablatrip</h4>
+                            <p class="text-sm text-slate-400 leading-relaxed">Découvrez le monde avec des guides locaux. Expériences authentiques.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-white/10 pt-20 pb-10" id="contact-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-2 md:col-span-1">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="font-bold text-2xl text-white tracking-tight">Sarf<span class="text-[#e05a03]">X</span></span>
+                    </div>
+                    <p class="text-slate-500 text-sm mb-6 leading-relaxed" data-i18n="footer_tagline">Votre plateforme de change de devises de confiance, conçue pour la rapidité et la sécurité.</p>
+                    <div class="flex gap-4" id="social-links">
+                        <a href="#" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:text-[#e05a03] hover:bg-slate-700 transition">
+                            <i data-lucide="instagram" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:text-[#e05a03] hover:bg-slate-700 transition">
+                            <i data-lucide="linkedin" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:text-[#e05a03] hover:bg-slate-700 transition">
+                            <i data-lucide="twitter" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg" data-i18n="footer_products">Produits</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-[#e05a03] transition block flex items-center gap-2"><i data-lucide="repeat" class="w-4 h-4"></i> SarfX</a></li>
+                        <li><a href="#" class="hover:text-[#e05a03] transition block flex items-center gap-2"><i data-lucide="car" class="w-4 h-4"></i> Niya Drive</a></li>
+                        <li><a href="#" class="hover:text-[#e05a03] transition block flex items-center gap-2"><i data-lucide="compass" class="w-4 h-4"></i> Blablatrip</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg" data-i18n="footer_company">Entreprise</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        <li><button onclick="openModal('about-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> <span data-i18n="footer_about">À propos</span></button></li>
+                        <li><button onclick="openModal('contact-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4"></i> Contact</button></li>
+                        <li><button onclick="openModal('contact-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="help-circle" class="w-4 h-4"></i> FAQ</button></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold mb-6 text-lg" data-i18n="footer_legal">Légal</h4>
+                    <ul class="space-y-4 text-sm text-slate-400">
+                        <li><button onclick="openModal('terms-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> <span data-i18n="footer_terms">Conditions d'utilisation</span></button></li>
+                        <li><button onclick="openModal('privacy-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4"></i> <span data-i18n="footer_privacy">Politique de confidentialité</span></button></li>
+                        <li><button onclick="openModal('cookies-modal')" class="hover:text-[#e05a03] transition text-left block flex items-center gap-2"><i data-lucide="cookie" class="w-4 h-4"></i> <span data-i18n="footer_cookies">Cookies</span></button></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-white/5 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-600">
+                <p>&copy; 2026 SarfX by StarkX. Tous droits réservés.</p>
+                <p class="flex items-center gap-2">Powered by <span class="text-slate-400 font-bold uppercase tracking-wider">StarkX LLC</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // --- I18N SYSTEM ---
+        const translations = {
+            fr: {
+                nav_home: "Accueil", nav_features: "Fonctionnalités", nav_atm: "ATM", nav_ai: "IA", nav_about: "À Propos", nav_contact: "Contact", btn_login: "Connexion",
+                hero_tag: "Le futur du change de devises", hero_title_1: "Le Premier Bureau de Change", hero_title_2: "100% Digitalisé", hero_title_3: "Dans ta poche.",
+                hero_desc: "Obtenez les meilleurs taux de change en temps réel grâce à l'IA. Plus de files d'attente, plus de frais cachés.",
+                hero_cta_1: "Découvrir l'App",
+                features_title: "Fonctionnalités Premium", features_desc: "Découvrez une nouvelle façon de gérer vos devises avec des outils puissants.",
+                feat_1_title: "Meilleurs Taux", feat_1_desc: "Notre IA scanne le marché en permanence pour vous offrir les meilleurs taux de change.",
+                feat_2_title: "100% Sécurisé", feat_2_desc: "Chiffrement militaire et conformité aux normes bancaires internationales.",
+                feat_3_title: "Instantané", feat_3_desc: "Fini le cash et les déplacements. Tout se fait en quelques secondes.",
+                atm_badge: "Réseau ATM Étendu", atm_title_1: "Retirez partout", atm_title_2: "Sans carte physique",
+                atm_desc: "Générez un code de retrait unique et récupérez vos fonds dans plus de 1000 ATM partenaires.",
+                atm_stat_1: "ATMs Partenaires", atm_stat_2: "Disponibilité",
+                atm_feat_1: "Code de retrait sécurisé", atm_feat_2: "Localisation GPS des ATMs", atm_feat_3: "Notifications en temps réel",
+                ai_badge: "Intelligence Artificielle", ai_title_1: "Prédictions IA", ai_title_2: "Précises à 87%",
+                ai_desc: "Notre modèle LSTM analyse des millions de données pour prédire les tendances de change jusqu'à 7 jours à l'avance.",
+                ai_stat_1: "Précision", ai_stat_2: "Prédictions",
+                ai_feat_1: "Analyse en temps réel", ai_feat_2: "Alertes personnalisées", ai_feat_3: "Conseils intelligents",
+                roadmap_title: "Roadmap", roadmap_desc: "Le futur se construit aujourd'hui.",
+                footer_tagline: "Votre plateforme de change de devises de confiance, conçue pour la rapidité et la sécurité.",
+                footer_products: "Produits", footer_company: "Entreprise", footer_legal: "Légal",
+                footer_about: "À propos", footer_terms: "Conditions d'utilisation", footer_privacy: "Politique de confidentialité", footer_cookies: "Cookies",
+                login_title: "Connexion", login_subtitle: "Accédez à votre compte SarfX",
+                login_email: "Email", login_password: "Mot de passe", login_remember: "Se souvenir de moi",
+                login_forgot: "Mot de passe oublié ?", login_btn: "Se connecter", login_or: "Ou continuer avec",
+                login_no_account: "Pas encore de compte ?", login_signup: "S'inscrire"
+            },
+            en: {
+                nav_home: "Home", nav_features: "Features", nav_atm: "ATM", nav_ai: "AI", nav_about: "About", nav_contact: "Contact", btn_login: "Login",
+                hero_tag: "The future of currency exchange", hero_title_1: "The First Exchange Bureau", hero_title_2: "100% Digital", hero_title_3: "In your pocket.",
+                hero_desc: "Get the best real-time exchange rates with AI. No more queues, no more hidden fees.",
+                hero_cta_1: "Discover the App",
+                features_title: "Premium Features", features_desc: "Discover a new way to manage your currencies with powerful tools.",
+                feat_1_title: "Best Rates", feat_1_desc: "Our AI constantly scans the market to offer you the best exchange rates.",
+                feat_2_title: "100% Secure", feat_2_desc: "Military-grade encryption and compliance with international banking standards.",
+                feat_3_title: "Instant", feat_3_desc: "No more cash or trips. Everything is done in seconds.",
+                atm_badge: "Extended ATM Network", atm_title_1: "Withdraw anywhere", atm_title_2: "Without a physical card",
+                atm_desc: "Generate a unique withdrawal code and collect your funds at over 5087 partner ATMs.",
+                atm_stat_1: "Partner ATMs", atm_stat_2: "Availability",
+                atm_feat_1: "Secure withdrawal code", atm_feat_2: "GPS ATM location", atm_feat_3: "Real-time notifications",
+                ai_badge: "Artificial Intelligence", ai_title_1: "AI Predictions", ai_title_2: "87% Accurate",
+                ai_desc: "Our LSTM model analyzes millions of data points to predict exchange trends up to 7 days ahead.",
+                ai_stat_1: "Accuracy", ai_stat_2: "Predictions",
+                ai_feat_1: "Real-time analysis", ai_feat_2: "Personalized alerts", ai_feat_3: "Smart advice",
+                roadmap_title: "Roadmap", roadmap_desc: "The future is being built today.",
+                footer_tagline: "Your trusted currency exchange platform, designed for speed and security.",
+                footer_products: "Products", footer_company: "Company", footer_legal: "Legal",
+                footer_about: "About", footer_terms: "Terms of Service", footer_privacy: "Privacy Policy", footer_cookies: "Cookies",
+                login_title: "Login", login_subtitle: "Access your SarfX account",
+                login_email: "Email", login_password: "Password", login_remember: "Remember me",
+                login_forgot: "Forgot password?", login_btn: "Sign in", login_or: "Or continue with",
+                login_no_account: "Don't have an account?", login_signup: "Sign up"
+            },
+            ar: {
+                nav_home: "الرئيسية", nav_features: "الميزات", nav_atm: "الصراف الآلي", nav_ai: "الذكاء الاصطناعي", nav_about: "حول", nav_contact: "اتصل بنا", btn_login: "تسجيل الدخول",
+                hero_tag: "مستقبل صرف العملات", hero_title_1: "أول مكتب صرف", hero_title_2: "رقمي 100٪", hero_title_3: "في جيبك.",
+                hero_desc: "احصل على أفضل أسعار الصرف في الوقت الفعلي بفضل الذكاء الاصطناعي.",
+                hero_cta_1: "اكتشف التطبيق",
+                features_title: "ميزات مميزة", features_desc: "اكتشف طريقة جديدة لإدارة عملاتك.",
+                feat_1_title: "أفضل الأسعار", feat_1_desc: "يقوم الذكاء الاصطناعي لدينا بمسح السوق باستمرار.",
+                feat_2_title: "آمن 100٪", feat_2_desc: "تشفير عسكري والامتثال للمعايير المصرفية.",
+                feat_3_title: "فوري", feat_3_desc: "لا مزيد من النقود أو التنقل.",
+                atm_badge: "شبكة الصراف الآلي الممتدة", atm_title_1: "اسحب في أي مكان", atm_title_2: "بدون بطاقة",
+                atm_desc: "قم بإنشاء رمز سحب فريد واسترد أموالك في أكثر من 1000 جهاز صراف آلي.",
+                atm_stat_1: "أجهزة الصراف الآلي", atm_stat_2: "التوفر",
+                atm_feat_1: "رمز سحب آمن", atm_feat_2: "موقع GPS للصراف الآلي", atm_feat_3: "إشعارات فورية",
+                ai_badge: "الذكاء الاصطناعي", ai_title_1: "تنبؤات الذكاء الاصطناعي", ai_title_2: "دقة 87%",
+                ai_desc: "يحلل نموذج LSTM الخاص بنا ملايين البيانات للتنبؤ باتجاهات الصرف.",
+                ai_stat_1: "الدقة", ai_stat_2: "التوقعات",
+                ai_feat_1: "تحليل فوري", ai_feat_2: "تنبيهات مخصصة", ai_feat_3: "نصائح ذكية",
+                roadmap_title: "خارطة الطريق", roadmap_desc: "المستقبل يُبنى اليوم.",
+                footer_tagline: "منصتك الموثوقة لصرف العملات.",
+                footer_products: "المنتجات", footer_company: "الشركة", footer_legal: "قانوني",
+                footer_about: "حول", footer_terms: "شروط الخدمة", footer_privacy: "سياسة الخصوصية", footer_cookies: "ملفات تعريف الارتباط",
+                login_title: "تسجيل الدخول", login_subtitle: "ادخل إلى حسابك",
+                login_email: "البريد الإلكتروني", login_password: "كلمة المرور", login_remember: "تذكرني",
+                login_forgot: "نسيت كلمة المرور؟", login_btn: "تسجيل الدخول", login_or: "أو تابع مع",
+                login_no_account: "ليس لديك حساب؟", login_signup: "سجل الآن"
+            },
+            es: {
+                nav_home: "Inicio", nav_features: "Características", nav_atm: "ATM", nav_ai: "IA", nav_about: "Acerca de", nav_contact: "Contacto", btn_login: "Iniciar sesión",
+                hero_tag: "El futuro del cambio de divisas", hero_title_1: "La Primera Casa de Cambio", hero_title_2: "100% Digital", hero_title_3: "En tu bolsillo.",
+                hero_desc: "Obtén las mejores tasas de cambio en tiempo real con IA. Sin colas, sin costos ocultos.",
+                hero_cta_1: "Descubrir la App",
+                features_title: "Características Premium", features_desc: "Descubre una nueva forma de gestionar tus divisas.",
+                feat_1_title: "Mejores Tasas", feat_1_desc: "Nuestra IA escanea el mercado constantemente.",
+                feat_2_title: "100% Seguro", feat_2_desc: "Encriptación militar y cumplimiento bancario.",
+                feat_3_title: "Instantáneo", feat_3_desc: "Sin efectivo ni desplazamientos.",
+                footer_tagline: "Tu plataforma de cambio de divisas de confianza.",
+                login_title: "Iniciar sesión", login_subtitle: "Accede a tu cuenta SarfX",
+                login_email: "Email", login_password: "Contraseña", login_remember: "Recuérdame",
+                login_forgot: "¿Olvidaste la contraseña?", login_btn: "Entrar", login_or: "O continuar con",
+                login_no_account: "¿No tienes cuenta?", login_signup: "Registrarse"
+            }
+        };
+
+        const flags = {
+            fr: "https://flagcdn.com/w40/fr.png",
+            en: "https://flagcdn.com/w40/us.png",
+            ar: "https://flagcdn.com/w40/ma.png",
+            es: "https://flagcdn.com/w40/es.png"
+        };
+
+        function changeLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('current-lang-flag').src = flags[lang];
+            document.getElementById('current-lang-code').textContent = lang.toUpperCase();
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            lucide.createIcons();
+            return false;
+        }
+
+        // Modals
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('open'), 10);
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('open');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // Show "Coming Soon" notification
+        function showComingSoon(featureName) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-24 left-1/2 transform -translate-x-1/2 z-[200] bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce-in';
+            notification.innerHTML = `
+                <div class="bg-white/20 p-2 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-bold">${featureName}</p>
+                    <p class="text-sm opacity-90">Bientôt disponible ! 🚀</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-2 p-1 hover:bg-white/20 rounded-lg transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            `;
+            document.body.appendChild(notification);
+
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translate(-50%, -20px)';
+                notification.style.transition = 'all 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        // Quick login function for demo accounts
+        function quickLogin(email, password) {
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').value = password;
+            document.getElementById('login-form').dispatchEvent(new Event('submit'));
+        }
+
+        // Login form - Submit to server
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Connexion...';
+            submitBtn.disabled = true;
+            errorDiv.classList.add('hidden');
+
+            try {
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('password', password);
+
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.redirected) {
+                    // Login successful - redirect to app
+                    window.location.href = response.url;
+                } else {
+                    // Check if we got HTML back (error page)
+                    const text = await response.text();
+                    if (text.includes('Identifiants incorrects') || text.includes('incorrect')) {
+                        errorDiv.textContent = 'Email ou mot de passe incorrect';
+                        errorDiv.classList.remove('hidden');
+                    } else if (text.includes('Erreur')) {
+                        errorDiv.textContent = 'Erreur de connexion. Veuillez réessayer.';
+                        errorDiv.classList.remove('hidden');
+                    } else {
+                        // Might be successful, try redirecting
+                        window.location.href = '/app';
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Erreur de connexion au serveur';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                lucide.createIcons();
+            }
+        });
+
+        // ATM Code animation
+        function animateATMCode() {
+            const codeEl = document.getElementById('atm-code');
+            if (codeEl) {
+                setInterval(() => {
+                    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+                    codeEl.textContent = newCode.slice(0,3) + ' ' + newCode.slice(3);
+                }, 10000);
+            }
+        }
+        animateATMCode();
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+
+<!-- Enhanced Gemini AI Chatbot Widget -->
+<style>
+/* Chatbot Widget Styles */
+.chatbot-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.chatbot-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #e05a03 0%, #a855f7 100%);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(224, 90, 3, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.chatbot-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 40px rgba(224, 90, 3, 0.5);
+}
+
+.chatbot-btn-inner {
+    position: relative;
+    width: 28px;
+    height: 28px;
+}
+
+.chatbot-icon, .chatbot-icon-close {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    transition: all 0.3s ease;
+}
+
+.chatbot-icon-close {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+.chatbot-btn.active .chatbot-icon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+}
+
+.chatbot-btn.active .chatbot-icon-close {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+.chatbot-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #22c55e;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 2px solid #0f172a;
+}
+
+.chatbot-modal {
+    display: none;
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 380px;
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 150px);
+    background: #1e293b;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile responsive chatbot */
+@media (max-width: 480px) {
+    .chatbot-widget { right: 16px; bottom: 16px; }
+    .chatbot-modal {
+        position: fixed;
+        bottom: 80px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+        max-width: none;
+        max-height: calc(100vh - 120px);
+        border-radius: 20px;
+    }
+    .chatbot-btn { width: 52px; height: 52px; }
+    .suggestions-grid { grid-template-columns: 1fr; }
+    .suggestion-btn { font-size: 13px; padding: 12px; }
+    .chatbot-messages { max-height: 280px; }
+}
+
+.chatbot-modal.open {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.chatbot-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(224, 90, 3, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chatbot-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chatbot-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e05a03 0%, #a855f7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.chatbot-avatar i { width: 20px; height: 20px; }
+
+.chatbot-title {
+    font-weight: 700;
+    color: white;
+    font-size: 15px;
+    display: block;
+}
+
+.chatbot-status {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.chatbot-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.chatbot-close-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.chatbot-close-btn i { width: 18px; height: 18px; }
+
+.chatbot-messages {
+    height: 280px;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #0f172a;
+}
+
+.chatbot-messages::-webkit-scrollbar { width: 4px; }
+.chatbot-messages::-webkit-scrollbar-track { background: transparent; }
+.chatbot-messages::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
+
+.chat-message {
+    display: flex;
+    gap: 10px;
+    animation: messageSlide 0.3s ease;
+}
+
+@keyframes messageSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-message.user-message { flex-direction: row-reverse; }
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e05a03 0%, #a855f7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.message-avatar i { width: 16px; height: 16px; }
+.user-message .message-avatar { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+
+.message-content {
+    background: #1e293b;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border-top-left-radius: 4px;
+    max-width: 85%;
+    color: #f1f5f9;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.user-message .message-content {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 4px;
+    color: white;
+}
+
+.chatbot-suggestions {
+    padding: 12px 16px;
+    background: #1e293b;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.suggestions-title {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.suggestion-btn {
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.suggestion-btn:hover {
+    background: rgba(224, 90, 3, 0.15);
+    border-color: rgba(224, 90, 3, 0.3);
+    transform: translateY(-2px);
+}
+
+.suggestion-btn i { width: 14px; height: 14px; color: #e05a03; flex-shrink: 0; }
+
+.chatbot-form {
+    padding: 16px;
+    background: #1e293b;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chatbot-input-wrapper {
+    display: flex;
+    gap: 8px;
+    background: #0f172a;
+    border-radius: 14px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: border-color 0.2s;
+}
+
+.chatbot-input-wrapper:focus-within { border-color: #e05a03; }
+
+#chatbot-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: white;
+    padding: 12px 16px;
+    font-size: 14px;
+    outline: none;
+}
+
+#chatbot-input::placeholder { color: #64748b; }
+
+.chatbot-send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #e05a03 0%, #a855f7 100%);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.chatbot-send-btn:hover { transform: scale(1.05); }
+.chatbot-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.chatbot-send-btn i { width: 18px; height: 18px; }
+
+.chatbot-powered {
+    text-align: center;
+    font-size: 11px;
+    color: #475569;
+    margin-top: 10px;
+}
+
+.chatbot-powered span {
+    background: linear-gradient(90deg, #e05a03, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 600;
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: #e05a03;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-6px); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+    .chatbot-widget { bottom: 16px; right: 16px; }
+    .chatbot-modal { width: calc(100vw - 32px); right: -8px; bottom: 72px; }
+    .chatbot-btn { width: 56px; height: 56px; }
+    .suggestions-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div id="chatbot-widget" class="chatbot-widget">
+    <!-- Floating Button -->
+    <button id="chatbot-open-btn" class="chatbot-btn">
+        <div class="chatbot-btn-inner">
+            <i data-lucide="bot" class="chatbot-icon"></i>
+            <i data-lucide="x" class="chatbot-icon-close"></i>
+        </div>
+        <span class="chatbot-badge">IA</span>
+    </button>
+
+    <!-- Chat Modal -->
+    <div id="chatbot-modal" class="chatbot-modal">
+        <!-- Header -->
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <div class="chatbot-avatar">
+                    <i data-lucide="sparkles"></i>
+                </div>
+                <div>
+                    <span class="chatbot-title">Assistant SarfX</span>
+                    <span class="chatbot-status"><span class="status-dot"></span> En ligne</span>
+                </div>
+            </div>
+            <button onclick="closeChatbot()" class="chatbot-close-btn">
+                <i data-lucide="minus"></i>
+            </button>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chatbot-messages" class="chatbot-messages">
+            <!-- Welcome Message -->
+            <div class="chat-message bot-message">
+                <div class="message-avatar">
+                    <i data-lucide="bot"></i>
+                </div>
+                <div class="message-content">
+                    <p>👋 Bonjour ! Je suis l'assistant IA de <strong>SarfX</strong>.</p>
+                    <p style="margin-top: 8px;">Comment puis-je vous aider aujourd'hui ?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="chatbot-suggestions" id="chatbot-suggestions">
+            <div class="suggestions-title">💡 Questions fréquentes</div>
+            <div class="suggestions-grid">
+                <button class="suggestion-btn" onclick="askQuestion('Quels sont vos meilleurs taux de change ?')">
+                    <i data-lucide="trending-up"></i>
+                    Meilleurs taux
+                </button>
+                <button class="suggestion-btn" onclick="askQuestion('Comment trouver un ATM près de moi ?')">
+                    <i data-lucide="map-pin"></i>
+                    Trouver un ATM
+                </button>
+                <button class="suggestion-btn" onclick="askQuestion('Comment fonctionne le convertisseur ?')">
+                    <i data-lucide="repeat"></i>
+                    Convertisseur
+                </button>
+                <button class="suggestion-btn" onclick="askQuestion('Est-ce que SarfX est sécurisé ?')">
+                    <i data-lucide="shield-check"></i>
+                    Sécurité
+                </button>
+                <button class="suggestion-btn" onclick="askQuestion('Comment créer un compte ?')">
+                    <i data-lucide="user-plus"></i>
+                    Créer un compte
+                </button>
+                <button class="suggestion-btn" onclick="askQuestion('Quelles devises supportez-vous ?')">
+                    <i data-lucide="coins"></i>
+                    Devises supportées
+                </button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <form id="chatbot-form" class="chatbot-form">
+            <div class="chatbot-input-wrapper">
+                <input id="chatbot-input" type="text" placeholder="Écrivez votre message..." autocomplete="off" required>
+                <button type="submit" class="chatbot-send-btn">
+                    <i data-lucide="send"></i>
+                </button>
+            </div>
+            <div class="chatbot-powered">
+                Propulsé par <span>Gemini AI</span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Enhanced Chatbot Widget Logic
+const chatbotBtn = document.getElementById('chatbot-open-btn');
+const chatbotModal = document.getElementById('chatbot-modal');
+const chatbotForm = document.getElementById('chatbot-form');
+const chatbotInput = document.getElementById('chatbot-input');
+const chatbotMessages = document.getElementById('chatbot-messages');
+const chatbotSuggestions = document.getElementById('chatbot-suggestions');
+
+let isChatOpen = false;
+
+function toggleChatbot() {
+    isChatOpen = !isChatOpen;
+    chatbotBtn.classList.toggle('active', isChatOpen);
+    chatbotModal.classList.toggle('open', isChatOpen);
+
+    if (isChatOpen) {
+        chatbotInput.focus();
+    }
+}
+
+function closeChatbot() {
+    isChatOpen = false;
+    chatbotBtn.classList.remove('active');
+    chatbotModal.classList.remove('open');
+}
+
+chatbotBtn.onclick = toggleChatbot;
+
+function askQuestion(question) {
+    chatbotInput.value = question;
+    chatbotForm.dispatchEvent(new Event('submit'));
+    // Hide suggestions after first question
+    chatbotSuggestions.style.display = 'none';
+}
+
+function addMessage(content, isUser = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${isUser ? 'user-message' : 'bot-message'}`;
+
+    const avatarIcon = isUser ? 'user' : 'bot';
+
+    messageDiv.innerHTML = `
+        <div class="message-avatar">
+            <i data-lucide="${avatarIcon}"></i>
+        </div>
+        <div class="message-content">${content}</div>
+    `;
+
+    chatbotMessages.appendChild(messageDiv);
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    lucide.createIcons();
+}
+
+function showTypingIndicator() {
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message bot-message';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = `
+        <div class="message-avatar">
+            <i data-lucide="bot"></i>
+        </div>
+        <div class="message-content">
+            <div class="typing-indicator">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    chatbotMessages.appendChild(typingDiv);
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    lucide.createIcons();
+}
+
+function removeTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) indicator.remove();
+}
+
+chatbotForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const question = chatbotInput.value.trim();
+    if (!question) return;
+
+    // Hide suggestions
+    chatbotSuggestions.style.display = 'none';
+
+    // Add user message
+    addMessage(question, true);
+    chatbotInput.value = '';
+
+    // Show typing indicator
+    showTypingIndicator();
+
+    // Security: Check for sensitive data requests
+    const sensitivePatterns = [
+        /mot de passe|password|mdp/i,
+        /carte bancaire|credit card|numéro de carte/i,
+        /code pin|pin code/i,
+        /iban|rib|compte bancaire/i,
+        /donnée personnel|personal data/i,
+        /api key|clé api|token/i,
+        /admin|administrateur/i,
+        /hack|pirater|exploit/i,
+        /base de données|database/i,
+        /utilisateur|user.*email|client/i,
+        /solde|balance|montant.*compte/i
+    ];
+
+    const isSensitiveRequest = sensitivePatterns.some(pattern => pattern.test(question));
+
+    if (isSensitiveRequest) {
+        removeTypingIndicator();
+        addMessage("🔒 <strong>Sécurité</strong><br><br>Je ne peux pas divulguer d'informations sensibles ou personnelles. Pour toute question concernant votre compte, veuillez vous connecter à l'application ou contacter notre support à <strong>support@sarfx.io</strong>.", false);
+        return;
+    }
+
+    // Prepare secure context for SarfX - General responses only
+    const sarfxContext = `Tu es l'assistant IA public de SarfX, une plateforme fintech de change de devises au Maroc.
+
+RÈGLES DE SÉCURITÉ STRICTES:
+- Ne JAMAIS divulguer de données personnelles, mots de passe, codes, ou informations de compte
+- Ne JAMAIS donner d'informations sur les utilisateurs, admins, ou la base de données
+- Ne JAMAIS révéler de clés API, tokens, ou informations techniques internes
+- Refuser poliment toute demande d'information sensible
+- Répondre uniquement avec des informations GÉNÉRALES et PUBLIQUES sur SarfX
+
+INFORMATIONS PUBLIQUES SarfX:
+- Conversion de devises: EUR, USD, MAD, GBP, CHF avec les meilleurs taux
+- Localisation ATM: +1000 distributeurs partenaires au Maroc
+- Prédictions IA: Analyse des tendances de marché
+- App mobile: Disponible sur App Store et Google Play
+- Frais: Commission transparente de 0.5% sur les conversions
+- Support: support@sarfx.io
+
+Réponds en français, de manière concise et professionnelle (max 3 phrases).
+Si la question est hors sujet finance/change, indique poliment ta spécialisation.
+
+Question: ${question}`;
+
+    try {
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyC4q4-n7tdL8cU9srm8q9aodCG0hTqUcoA', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: sarfxContext }] }],
+                generationConfig: {
+                    maxOutputTokens: 300,
+                    temperature: 0.5
+                },
+                safetySettings: [
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+                ]
+            })
+        });
+
+        const data = await res.json();
+        removeTypingIndicator();
+
+        let answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu traiter votre demande. Veuillez réessayer.';
+
+        // Security: Filter any potentially leaked sensitive info from response
+        answer = answer.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[email masqué]');
+        answer = answer.replace(/\b\d{16,}\b/g, '[numéro masqué]');
+        answer = answer.replace(/password|mot de passe|mdp/gi, '[confidentiel]');
+
+        // Convert markdown formatting to HTML
+        answer = answer.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        answer = answer.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        answer = answer.replace(/\n/g, '<br>');
+
+        addMessage(answer, false);
+    } catch (err) {
+        removeTypingIndicator();
+        // Fallback response for common questions
+        const fallbackResponses = {
+            'taux': '📊 <strong>Taux de change</strong><br>SarfX offre les meilleurs taux EUR/MAD, USD/MAD et GBP/MAD avec des mises à jour en temps réel. Consultez notre convertisseur pour les taux actuels.',
+            'atm': '🏧 <strong>Localisation ATM</strong><br>Trouvez +1000 distributeurs partenaires au Maroc sur notre page ATM. Accès 24/7 avec code de retrait sécurisé.',
+            'wallet': '💳 <strong>Portefeuilles</strong><br>Gérez plusieurs devises (EUR, USD, MAD, GBP) dans un seul portefeuille. Connectez-vous pour créer votre wallet.',
+            'frais': '💰 <strong>Frais transparents</strong><br>SarfX applique une commission de 0.5% sur les conversions. Aucun frais caché !',
+            'default': '👋 Je suis l\'assistant SarfX ! Je peux vous renseigner sur: les taux de change, les ATMs, les wallets et nos services. Comment puis-je vous aider ?'
+        };
+
+        const questionLower = question.toLowerCase();
+        let fallbackAnswer = fallbackResponses.default;
+
+        for (const [key, response] of Object.entries(fallbackResponses)) {
+            if (questionLower.includes(key)) {
+                fallbackAnswer = response;
+                break;
+            }
+        }
+
+        addMessage(fallbackAnswer, false);
+    }
+};
+
+// Close chatbot on outside click
+document.addEventListener('click', function(e) {
+    if (!document.getElementById('chatbot-widget').contains(e.target) && isChatOpen) {
+        closeChatbot();
+    }
+});
+
+// Close chatbot on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isChatOpen) {
+        closeChatbot();
+    }
+});
+
+// Initialize icons
+setTimeout(() => lucide.createIcons(), 100);
+</script>
+</body>
+</html>
