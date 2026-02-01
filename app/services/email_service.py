@@ -17,7 +17,7 @@ def send_verification_email(to_email, token):
         return False
 
     verify_url = url_for('auth.verify_email', token=token, _external=True)
-    
+
     subject = "SarfX - Vérifiez votre compte"
     body = f"""Bienvenue sur SarfX !
 
@@ -62,7 +62,7 @@ def send_password_reset_email(to_email, token):
         return False
 
     reset_url = url_for('auth.reset_password', token=token, _external=True)
-    
+
     subject = "SarfX - Réinitialisation de votre mot de passe"
     body = f"""Bonjour,
 

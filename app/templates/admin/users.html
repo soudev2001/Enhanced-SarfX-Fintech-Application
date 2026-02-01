@@ -452,7 +452,7 @@ function updateBulkActions() {
 function toggleVerified(userId, currentStatus) {
     fetch(`/admin/users/${userId}/toggle-verified`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         }
@@ -480,7 +480,7 @@ function bulkVerify() {
 
     fetch('/admin/users/bulk-verify', {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         },
@@ -505,7 +505,7 @@ function bulkDelete() {
 
     fetch('/admin/users/bulk-delete', {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         },
@@ -529,7 +529,7 @@ function deleteUser(userId, email) {
 
     fetch(`/admin/users/${userId}/delete`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         }
@@ -701,7 +701,7 @@ function confirmChangeRole() {
 
     fetch(`/admin/api/user/${currentRoleUserId}/role`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         },
