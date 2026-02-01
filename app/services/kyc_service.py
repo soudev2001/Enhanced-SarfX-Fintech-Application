@@ -39,7 +39,14 @@ class KYCService:
     """Service de gestion KYC"""
 
     def __init__(self):
-        self.db = get_db()
+        self._db = None
+
+    @property
+    def db(self):
+        """Obtient une connexion DB fraîche à chaque accès"""
+        if self._db is not None:
+            return self._db
+        return get_db()
 
     def get_user_kyc_status(self, user_id: str) -> Dict[str, Any]:
         """Récupère le statut KYC complet d'un utilisateur"""
@@ -547,12 +554,6 @@ class KYCService:
             return {}
 
 
-# Instance singleton
-_kyc_service = None
-
 def get_kyc_service() -> KYCService:
-    """Récupère l'instance du service KYC"""
-    global _kyc_service
-    if _kyc_service is None:
-        _kyc_service = KYCService()
-    return _kyc_service
+    """Récupère une nouvelle instance du service KYC"""
+    return KYCService()

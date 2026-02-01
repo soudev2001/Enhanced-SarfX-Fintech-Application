@@ -57,7 +57,14 @@ class NotificationService:
     """Service de gestion des notifications"""
 
     def __init__(self, db=None):
-        self.db = db or _get_db()
+        self._db = db
+
+    @property
+    def db(self):
+        """Obtient une connexion DB fraîche à chaque accès"""
+        if self._db is not None:
+            return self._db
+        return _get_db()
 
     def create_notification(
         self,
@@ -510,12 +517,6 @@ class NotificationService:
         )
 
 
-# Instance singleton
-_notification_service = None
-
 def get_notification_service() -> NotificationService:
-    """Récupère l'instance du service de notifications"""
-    global _notification_service
-    if _notification_service is None:
-        _notification_service = NotificationService()
-    return _notification_service
+    """Récupère une nouvelle instance du service de notifications"""
+    return NotificationService()

@@ -413,7 +413,7 @@ def rate_alerts():
     user_id = session['user_id']
 
     if request.method == 'GET':
-        alerts = list(db.rate_alerts.find({"user_id": user_id})) if db else []
+        alerts = list(db.rate_alerts.find({"user_id": user_id})) if db is not None else []
         for a in alerts:
             a['_id'] = str(a['_id'])
         return jsonify({'success': True, 'alerts': alerts})
@@ -705,7 +705,7 @@ def wallet_deposit():
 
     # Check if admin or demo mode
     db = get_db()
-    user = db.users.find_one({"_id": safe_object_id(session['user_id'])}) if db else None
+    user = db.users.find_one({"_id": safe_object_id(session['user_id'])}) if db is not None else None
     is_admin = user and user.get('role') in ['admin', 'superadmin']
 
     # In production, this would be triggered by payment webhook
@@ -2453,7 +2453,7 @@ def export_transactions_csv():
 
     db = get_db()
     user_id = session.get('user_id')
-    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db is not None else None
 
     # Paramètres
     is_admin = user and user.get('role') == 'admin'
@@ -2494,7 +2494,7 @@ def export_users_csv():
 
     db = get_db()
     user_id = session.get('user_id')
-    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db is not None else None
 
     if not user or user.get('role') != 'admin':
         return jsonify({"error": "Non autorisé"}), 403
@@ -2523,7 +2523,7 @@ def export_wallets_csv():
 
     db = get_db()
     user_id = session.get('user_id')
-    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db is not None else None
 
     is_admin = user and user.get('role') == 'admin'
     filter_user_id = None if is_admin else user_id
@@ -2571,7 +2571,7 @@ def export_transactions_pdf():
 
     db = get_db()
     user_id = session.get('user_id')
-    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db is not None else None
 
     is_admin = user and user.get('role') == 'admin'
     filter_user_id = None if is_admin else user_id
@@ -2919,7 +2919,7 @@ def set_language():
     user_id = session.get('user_id')
     if user_id:
         db = get_db()
-        if db:
+        if db is not None:
             db.users.update_one(
                 {"_id": safe_object_id(user_id)},
                 {"$set": {"language": lang}}

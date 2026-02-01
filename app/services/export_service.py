@@ -36,7 +36,14 @@ class ExportService:
     """Service d'export de rapports"""
 
     def __init__(self, db=None):
-        self.db = db or _get_db()
+        self._db = db
+
+    @property
+    def db(self):
+        """Obtient une connexion DB fraîche à chaque accès pour éviter MongoClient after close"""
+        if self._db is not None:
+            return self._db
+        return _get_db()
 
     # =====================================================
     # EXPORT CSV
@@ -739,13 +746,6 @@ class ExportService:
 """
 
 
-# Instance globale
-_export_service = None
-
-
 def get_export_service() -> ExportService:
-    """Retourne une instance du service d'export"""
-    global _export_service
-    if _export_service is None:
-        _export_service = ExportService()
-    return _export_service
+    """Retourne une nouvelle instance du service d'export pour éviter les connexions périmées"""
+    return ExportService()

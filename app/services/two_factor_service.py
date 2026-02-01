@@ -47,8 +47,15 @@ class TwoFactorService:
     """Service de gestion 2FA"""
 
     def __init__(self, db=None):
-        self.db = db or _get_db()
+        self._db = db
         self.config = TWO_FACTOR_CONFIG
+
+    @property
+    def db(self):
+        """Obtient une connexion DB fraîche à chaque accès"""
+        if self._db is not None:
+            return self._db
+        return _get_db()
 
     # =====================================================
     # GÉNÉRATION SECRET & QR CODE
@@ -748,5 +755,9 @@ class TwoFactorService:
             return []
 
 
-# Instance globale
+def get_two_factor_service() -> TwoFactorService:
+    """Récupère une nouvelle instance du service 2FA"""
+    return TwoFactorService()
+
+# Instance pour compatibilité avec le code existant (utilise property pour DB fraîche)
 two_factor_service = TwoFactorService()

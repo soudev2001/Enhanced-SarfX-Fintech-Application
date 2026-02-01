@@ -45,14 +45,13 @@ class RateAlertService:
     ]
 
     def __init__(self):
-        self.db = None
+        pass
 
-    def _get_db(self):
-        """Lazy loading de la connexion DB"""
-        if self.db is None:
-            from app.services.db_service import get_db
-            self.db = get_db()
-        return self.db
+    @property
+    def db(self):
+        """Obtient une connexion DB fraîche à chaque accès"""
+        from app.services.db_service import get_db
+        return get_db()
 
     # ==================== CRUD Operations ====================
 
@@ -85,7 +84,7 @@ class RateAlertService:
         Returns:
             Dict avec success et alert_id ou error
         """
-        db = self._get_db()
+        db = self.db
         if db is None:
             return {"success": False, "error": "Database unavailable"}
 
@@ -169,7 +168,7 @@ class RateAlertService:
         limit: int = 50
     ) -> List[Dict]:
         """Récupère les alertes d'un utilisateur"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return []
 
@@ -199,7 +198,7 @@ class RateAlertService:
 
     def get_alert_by_id(self, user_id: str, alert_id: str) -> Optional[Dict]:
         """Récupère une alerte spécifique"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return None
 
@@ -224,7 +223,7 @@ class RateAlertService:
         updates: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Met à jour une alerte existante"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return {"success": False, "error": "Database unavailable"}
 
@@ -261,7 +260,7 @@ class RateAlertService:
 
     def delete_alert(self, user_id: str, alert_id: str) -> Dict[str, Any]:
         """Supprime (soft delete) une alerte"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return {"success": False, "error": "Database unavailable"}
 
@@ -290,7 +289,7 @@ class RateAlertService:
         Vérifie toutes les alertes actives et déclenche celles qui correspondent
         Cette méthode devrait être appelée périodiquement (ex: toutes les 5 minutes)
         """
-        db = self._get_db()
+        db = self.db
         if db is None:
             return {"success": False, "error": "Database unavailable"}
 
@@ -375,7 +374,7 @@ class RateAlertService:
 
     def _trigger_alert(self, alert: Dict, current_rate: float):
         """Déclenche une alerte et envoie les notifications"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return
 
@@ -417,7 +416,7 @@ class RateAlertService:
 
     def _send_alert_notifications(self, alert: Dict, current_rate: float):
         """Envoie les notifications pour une alerte déclenchée"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return
 
@@ -490,7 +489,7 @@ class RateAlertService:
 
     def get_alert_statistics(self, user_id: str) -> Dict[str, Any]:
         """Récupère les statistiques des alertes d'un utilisateur"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return {}
 
@@ -550,7 +549,7 @@ class RateAlertService:
         limit: int = 50
     ) -> List[Dict]:
         """Récupère l'historique des déclenchements"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return []
 
@@ -641,7 +640,7 @@ class RateAlertService:
 
     def get_suggested_alerts(self, user_id: str) -> List[Dict]:
         """Suggère des alertes basées sur l'activité de l'utilisateur"""
-        db = self._get_db()
+        db = self.db
         if db is None:
             return []
 
@@ -677,3 +676,8 @@ class RateAlertService:
                         })
 
         return suggestions[:5]  # Limiter à 5 suggestions
+
+
+def get_rate_alert_service() -> RateAlertService:
+    """Récupère une nouvelle instance du service Rate Alert"""
+    return RateAlertService()
