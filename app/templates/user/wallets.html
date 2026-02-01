@@ -614,6 +614,13 @@ function confirmRemoveCurrency() {
         form.method = 'POST';
         form.action = '{{ url_for("app.remove_wallet_currency") }}';
 
+        // CSRF Token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+        form.appendChild(csrfInput);
+
         const inputCurrency = document.createElement('input');
         inputCurrency.type = 'hidden';
         inputCurrency.name = 'currency';
@@ -629,6 +636,13 @@ function setAsPrimaryCurrency() {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '{{ url_for("app.set_primary_currency") }}';
+
+    // CSRF Token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+    form.appendChild(csrfInput);
 
     const inputCurrency = document.createElement('input');
     inputCurrency.type = 'hidden';
