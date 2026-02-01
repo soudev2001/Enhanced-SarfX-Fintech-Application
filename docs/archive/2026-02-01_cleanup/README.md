@@ -36,11 +36,25 @@ Objectif: conserver le cœur applicatif et déplacer les éléments de démo/art
 - WALLETS_SUMMARY.md
 - WALLETS_VISUAL_SUMMARY.md
 
+### docs/ (déplacés depuis la racine)
+- DEPLOYMENT.md
+- DEPLOYMENT_UPDATE.md
+- DEV_LOCAL_WINDOWS.md
+- GUIDE_DEMARRAGE_RAPIDE.md
+- GUIDE_QUICKSTART.md
+- GOOGLE_OAUTH_SETUP.md
+- START_APP.md
+
 ### legacy/
 - HOMEPAGE V2.txt
 - HOMEPAGE.txt
 - graph TD.mmd
 - realapp.html
+
+### legacy/credentials/
+- .oauth_credentials
+- .oauth_credentials.bat
+- google_oauth_credentials.json
 
 ### demos/
 - sarfx_demo.py
@@ -58,6 +72,37 @@ Objectif: conserver le cœur applicatif et déplacer les éléments de démo/art
 ### robot/
 - requirements-robot.txt
 - run_robot_tests.sh
+
+### scripts/seed/
+- seed_admin.py
+- seed_atms.py
+- seed_atm_data.py
+- seed_atm_data_full.py
+- seed_banks.py
+- seed_beneficiaries.py
+- seed_demo_users.py
+- seed_suppliers.py
+- seed_users.py
+- seed_database_windows.bat
+
+### scripts/ops/
+- deploy_ai_backend.sh
+- deploy_full.sh
+- quick_commands.sh
+- setup_oauth_prod.sh
+- setup_oauth_windows.bat
+- setup_windows.bat
+- start_backend_ai.bat
+- start_windows.bat
+
+### scripts/tests/
+- run_tests.sh
+- run_tests_windows.bat
+- test_atm_api.sh
+- test_backend_ai.py
+- test_backend_ai_windows.bat
+- test_wallets.py
+- requirements-test.txt
 
 ### utilities/
 - fix_502.sh
