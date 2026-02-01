@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash, jsonify
-from functools import wraps
 from app.services.db_service import get_db
+from app.decorators import admin_required
 from werkzeug.utils import secure_filename
 import os
 from bson import ObjectId
@@ -10,25 +10,6 @@ admin_banks_bp = Blueprint('admin_banks', __name__, url_prefix='/admin/banks')
 
 UPLOAD_FOLDER = 'app/static/images/banks'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'svg'}
-
-def admin_required(f):
-    """Décorateur pour protéger les routes admin"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('auth.login'))
-
-        db = get_db()
-        from app.services.db_service import safe_object_id
-        user_id = safe_object_id(session['user_id'])
-        user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
-
-        if not user or user.get('role') != 'admin':
-            flash('Accès refusé. Admin uniquement.', 'error')
-            return redirect(url_for('app.home'))
-
-        return f(*args, **kwargs)
-    return decorated_function
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -60,7 +41,7 @@ def list_banks():
     for user in bank_respos:
         user['_id'] = str(user['_id'])
 
-    return render_template('admin_banks.html', banks=banks, users=bank_respos, active_tab='banks')
+    return render_template('admin/banks.html', banks=banks, users=bank_respos, active_tab='banks')
 
 @admin_banks_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
@@ -114,7 +95,7 @@ def create_bank():
         flash(f'Banque "{name}" créée avec succès!', 'success')
         return redirect(url_for('admin_banks.list_banks'))
 
-    return render_template('admin_bank_form.html', bank=None, action='create')
+    return render_template('admin/bank_form.html', bank=None, action='create')
 
 @admin_banks_bp.route('/edit/<bank_id>', methods=['GET', 'POST'])
 @admin_required
@@ -160,7 +141,7 @@ def edit_bank(bank_id):
         return redirect(url_for('admin_banks.list_banks'))
 
     bank['_id'] = str(bank['_id'])
-    return render_template('admin_bank_form.html', bank=bank, action='edit')
+    return render_template('admin/bank_form.html', bank=bank, action='edit')
 
 @admin_banks_bp.route('/delete/<bank_id>', methods=['POST'])
 @admin_required

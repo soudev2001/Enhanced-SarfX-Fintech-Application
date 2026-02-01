@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.routes.admin_routes import login_required
+from app.decorators import login_required
 from app.services.db_service import get_db, log_history
 from bson.objectid import ObjectId
 

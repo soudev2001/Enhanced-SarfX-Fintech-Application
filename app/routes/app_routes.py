@@ -1,68 +1,11 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash
-from functools import wraps
 from datetime import datetime
 import uuid
 from app.services.db_service import get_db
 from app.services.wallet_service import get_user_transactions, get_total_balance_in_usd
+from app.decorators import login_required, role_required, get_current_user, get_user_wallet
 
 app_bp = Blueprint('app', __name__)
-
-def login_required(f):
-    """Décorateur pour protéger les routes"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def role_required(*allowed_roles):
-    """Décorateur pour vérifier les rôles utilisateurs"""
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if 'user_id' not in session:
-                return redirect(url_for('auth.login'))
-
-            user = get_current_user()
-            if not user:
-                return redirect(url_for('auth.login'))
-
-            user_role = user.get('role', 'user')
-            if user_role not in allowed_roles:
-                flash('Accès non autorisé', 'error')
-                return redirect(url_for('app.home'))
-
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
-
-def get_current_user():
-    """Récupère l'utilisateur connecté"""
-    if 'user_id' not in session:
-        return None
-    db = get_db()
-    if db is None:
-        return None
-    from bson import ObjectId
-    from bson.errors import InvalidId
-    try:
-        user_id = session['user_id']
-        # Si c'est déjà un ObjectId valide
-        if isinstance(user_id, ObjectId):
-            return db.users.find_one({"_id": user_id})
-        # Tenter de convertir en ObjectId
-        return db.users.find_one({"_id": ObjectId(user_id)})
-    except (InvalidId, TypeError):
-        # Si l'ID n'est pas valide, chercher par email ou string ID
-        return db.users.find_one({"email": session.get('email')}) or None
-
-def get_user_wallet(user_id):
-    """Récupère le portefeuille de l'utilisateur"""
-    db = get_db()
-    if db is None:
-        return None
-    return db.wallets.find_one({"user_id": str(user_id)})
 
 
 

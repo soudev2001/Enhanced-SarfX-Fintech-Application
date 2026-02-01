@@ -149,7 +149,7 @@ def login():
         db = get_db()
         if db is None:
             flash("Erreur de connexion à la base de données", "error")
-            return render_template('app_login.html')
+            return render_template('auth/login.html')
 
         user = db.users.find_one({"email": email})
 
@@ -157,7 +157,7 @@ def login():
             # Check if this is a Google-only account
             if user.get('auth_provider') == 'google' and not user.get('password'):
                 flash("Ce compte utilise Google. Cliquez sur 'Se connecter avec Google'.", "info")
-                return render_template('app_login.html')
+                return render_template('auth/login.html')
 
             if user.get('password') and check_password_hash(user['password'], password):
                 session.permanent = True
@@ -170,7 +170,7 @@ def login():
 
         flash("Identifiants incorrects", "error")
 
-    return render_template('app_login.html')
+    return render_template('auth/login.html')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -210,7 +210,7 @@ def register():
             flash("Compte créé. Vérifiez vos emails.", "success")
             return redirect(url_for('auth.login'))
 
-    return render_template('app_login.html', mode='register')
+    return render_template('auth/login.html', mode='register')
 
 @auth_bp.route('/logout')
 def logout():

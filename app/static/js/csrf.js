@@ -1,62 +1,115 @@
 /**
  * Global CSRF Protection for SarfX Application
- * This script automatically adds CSRF token to all fetch requests
+ * Automatically injects CSRF token into all fetch() and XMLHttpRequest requests
  */
 (function() {
     'use strict';
 
     // Get CSRF token from meta tag
     function getCSRFToken() {
-        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        var metaTag = document.querySelector('meta[name="csrf-token"]');
         return metaTag ? metaTag.getAttribute('content') : '';
     }
 
-    // Store original fetch
-    const originalFetch = window.fetch;
+    // Expose helper for manual use
+    window.SarfXCSRF = {
+        getToken: getCSRFToken,
+        getHeader: function() {
+            return { 'X-CSRFToken': getCSRFToken() };
+        }
+    };
 
-    // Override fetch to add CSRF token
-    window.fetch = function(url, options = {}) {
-        const csrfToken = getCSRFToken();
+    var MODIFYING_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
-        // Only add CSRF token for same-origin requests that modify data
-        const method = (options.method || 'GET').toUpperCase();
-        const modifyingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+    function isModifyingMethod(method) {
+        return MODIFYING_METHODS.indexOf((method || 'GET').toUpperCase()) !== -1;
+    }
 
-        if (csrfToken && modifyingMethods.includes(method)) {
-            // Ensure headers exist as an object
-            if (!options.headers) {
-                options.headers = {};
+    function isSameOrigin(url) {
+        if (!url) return true;
+        if (typeof url === 'string') {
+            if (url.charAt(0) === '/' || url.indexOf('./') === 0 || url.indexOf('../') === 0) return true;
+            try {
+                var parsed = new URL(url, window.location.origin);
+                return parsed.origin === window.location.origin;
+            } catch (e) {
+                return true;
             }
+        }
+        // Request object
+        if (url instanceof Request) {
+            try {
+                var reqUrl = new URL(url.url);
+                return reqUrl.origin === window.location.origin;
+            } catch (e) {
+                return true;
+            }
+        }
+        return true;
+    }
 
+    // === FETCH OVERRIDE ===
+    var originalFetch = window.fetch;
+
+    window.fetch = function(input, init) {
+        init = init || {};
+        var method = 'GET';
+        var url = input;
+
+        // Handle Request objects
+        if (input instanceof Request) {
+            method = input.method || 'GET';
+            url = input.url;
+        }
+        if (init.method) {
+            method = init.method;
+        }
+
+        method = method.toUpperCase();
+        var csrfToken = getCSRFToken();
+
+        if (csrfToken && isModifyingMethod(method) && isSameOrigin(url)) {
+            if (!init.headers) {
+                init.headers = {};
+            }
             // Convert Headers object to plain object if needed
-            if (options.headers instanceof Headers) {
-                const plainHeaders = {};
-                options.headers.forEach((value, key) => {
-                    plainHeaders[key] = value;
+            if (init.headers instanceof Headers) {
+                var plain = {};
+                init.headers.forEach(function(value, key) {
+                    plain[key] = value;
                 });
-                options.headers = plainHeaders;
+                init.headers = plain;
             }
-
             // Add CSRF token if not already present
-            if (!options.headers['X-CSRFToken']) {
-                options.headers['X-CSRFToken'] = csrfToken;
+            if (!init.headers['X-CSRFToken'] && !init.headers['x-csrftoken']) {
+                init.headers['X-CSRFToken'] = csrfToken;
+            }
+        }
 
-    XMLHttpRequest.prototype.open = function(method, url, ...args) {
-        this._csrfMethod = method.toUpperCase();
-        return originalXHROpen.call(this, method, url, ...args);
+        return originalFetch.call(this, input, init);
+    };
+
+    // === XMLHttpRequest OVERRIDE ===
+    var originalXHROpen = XMLHttpRequest.prototype.open;
+    var originalXHRSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+        this._csrfMethod = (method || 'GET').toUpperCase();
+        this._csrfUrl = url;
+        return originalXHROpen.apply(this, arguments);
     };
 
     XMLHttpRequest.prototype.send = function(data) {
-        const csrfToken = getCSRFToken();
-        const modifyingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
-
-        if (csrfToken && modifyingMethods.includes(this._csrfMethod)) {
-            this.setRequestHeader('X-CSRFToken', csrfToken);
+        var csrfToken = getCSRFToken();
+        if (csrfToken && isModifyingMethod(this._csrfMethod) && isSameOrigin(this._csrfUrl)) {
+            try {
+                this.setRequestHeader('X-CSRFToken', csrfToken);
+            } catch (e) {
+                // setRequestHeader may throw if called at wrong state
+            }
         }
-
-        return originalXHRSend.call(this, data);
+        return originalXHRSend.apply(this, arguments);
     };
 
-    // Log CSRF protection status
-    console.log('🔒 CSRF Protection initialized');
+    console.log('[SarfX] CSRF Protection initialized');
 })();

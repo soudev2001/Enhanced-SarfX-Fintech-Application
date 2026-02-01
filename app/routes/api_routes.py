@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, session
-from functools import wraps
-from app.services.db_service import get_db
+from app.services.db_service import get_db, safe_object_id
+from app.decorators import login_required_api
 from app.config import Config
 from datetime import datetime
 from bson import ObjectId
@@ -12,24 +12,12 @@ import time
 api_bp = Blueprint('api', __name__)
 
 
-def safe_object_id(id_value):
-    """Safely convert a value to ObjectId"""
-    if id_value is None:
-        return None
-    if isinstance(id_value, ObjectId):
-        return id_value
-    try:
-        return ObjectId(str(id_value))
-    except (InvalidId, TypeError):
-        return None
-
-
 # ==================== RATE CACHE ====================
 _rate_cache = {}
-_cache_ttl = Config.RATES_CACHE_TTL  # 30 secondes par défaut
+_cache_ttl = Config.RATES_CACHE_TTL  # 30 secondes par defaut
 
 def get_cached_rate(cache_key):
-    """Récupère un taux du cache s'il est encore valide"""
+    """Recupere un taux du cache s'il est encore valide"""
     if cache_key in _rate_cache:
         cached = _rate_cache[cache_key]
         if time.time() - cached['timestamp'] < _cache_ttl:
@@ -42,15 +30,6 @@ def set_cached_rate(cache_key, data):
         'data': data,
         'timestamp': time.time()
     }
-
-def login_required_api(f):
-    """Décorateur pour protéger les routes API"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return jsonify({"error": "Non authentifié"}), 401
-        return f(*args, **kwargs)
-    return decorated_function
 
 
 # ==================== SEED DEMO USERS ====================

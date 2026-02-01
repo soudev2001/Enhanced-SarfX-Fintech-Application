@@ -91,7 +91,7 @@ def create_app():
 
     # Blueprints (Routes)
     from .routes.auth_routes import auth_bp
-    from .routes.admin_routes import admin_bp
+    from .routes.admin import admin_bp
     from .routes.supplier_routes import supplier_bp
     from .routes.app_routes import app_bp
     from .routes.api_routes import api_bp
@@ -112,15 +112,15 @@ def create_app():
     # Gestionnaires d'erreurs
     @app.errorhandler(404)
     def page_not_found(e):
-        return render_template('404.html'), 404
+        return render_template('errors/404.html'), 404
 
     @app.errorhandler(500)
     def internal_server_error(e):
-        return render_template('500.html', error=e), 500
+        return render_template('errors/500.html', error=e), 500
 
     @app.errorhandler(429)
     def ratelimit_handler(e):
-        return render_template('429.html', error="Trop de requêtes. Veuillez réessayer plus tard."), 429
+        return render_template('errors/429.html', error="Trop de requêtes. Veuillez réessayer plus tard."), 429
 
     # Custom Jinja2 filters
     @app.template_filter('get_flag')
