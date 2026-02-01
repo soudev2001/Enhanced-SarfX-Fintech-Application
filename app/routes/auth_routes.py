@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from app.services.db_service import get_db, log_history
-from app.services.email_service import send_verification_email
+from app.services.email_service import send_verification_email, send_password_reset_email
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 
 auth_bp = Blueprint('auth', __name__)
@@ -218,3 +218,139 @@ def logout():
     log_history("LOGOUT", "Déconnexion", user=user)
     session.clear()
     return redirect(url_for('auth.login'))
+
+
+# ============================================
+# EMAIL VERIFICATION ROUTE
+# ============================================
+
+@auth_bp.route('/verify/<token>')
+def verify_email(token):
+    """Verify user email with token"""
+    db = get_db()
+    if db is None:
+        flash("Erreur de connexion à la base de données", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = db.users.find_one({"token": token})
+    
+    if not user:
+        flash("Lien de vérification invalide ou expiré", "error")
+        return redirect(url_for('auth.login'))
+    
+    if user.get('verified'):
+        flash("Votre compte est déjà vérifié", "info")
+        return redirect(url_for('auth.login'))
+    
+    # Mark user as verified
+    db.users.update_one(
+        {"_id": user['_id']},
+        {
+            "$set": {"verified": True, "verified_at": datetime.utcnow()},
+            "$unset": {"token": ""}
+        }
+    )
+    
+    log_history("EMAIL_VERIFIED", f"Email vérifié: {user['email']}", user=user['email'])
+    flash("Votre email a été vérifié avec succès ! Vous pouvez maintenant vous connecter.", "success")
+    return redirect(url_for('auth.login'))
+
+
+# ============================================
+# PASSWORD RESET ROUTES
+# ============================================
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Request password reset"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        
+        if not email:
+            flash("Veuillez entrer votre adresse email", "error")
+            return render_template('auth/forgot_password.html')
+        
+        db = get_db()
+        if db is None:
+            flash("Erreur de connexion à la base de données", "error")
+            return render_template('auth/forgot_password.html')
+        
+        user = db.users.find_one({"email": email})
+        
+        # Always show success message to prevent email enumeration
+        if user:
+            # Check if it's a Google-only account
+            if user.get('auth_provider') == 'google' and not user.get('password'):
+                flash("Ce compte utilise Google. Connectez-vous avec Google.", "info")
+                return redirect(url_for('auth.login'))
+            
+            # Generate reset token
+            reset_token = str(uuid.uuid4())
+            reset_expires = datetime.utcnow() + timedelta(hours=1)
+            
+            db.users.update_one(
+                {"_id": user['_id']},
+                {"$set": {
+                    "reset_token": reset_token,
+                    "reset_token_expires": reset_expires
+                }}
+            )
+            
+            # Send email
+            try:
+                send_password_reset_email(email, reset_token)
+            except Exception as e:
+                current_app.logger.error(f"Failed to send reset email: {e}")
+            
+            log_history("PASSWORD_RESET_REQUEST", f"Demande de réinitialisation: {email}", user=email)
+        
+        flash("Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.", "success")
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/forgot_password.html')
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with token"""
+    db = get_db()
+    if db is None:
+        flash("Erreur de connexion à la base de données", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = db.users.find_one({
+        "reset_token": token,
+        "reset_token_expires": {"$gt": datetime.utcnow()}
+    })
+    
+    if not user:
+        flash("Lien de réinitialisation invalide ou expiré", "error")
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        password_confirm = request.form.get('password_confirm')
+        
+        if not password or len(password) < 6:
+            flash("Le mot de passe doit contenir au moins 6 caractères", "error")
+            return render_template('auth/reset_password.html', token=token)
+        
+        if password != password_confirm:
+            flash("Les mots de passe ne correspondent pas", "error")
+            return render_template('auth/reset_password.html', token=token)
+        
+        # Update password
+        hashed_pw = generate_password_hash(password)
+        db.users.update_one(
+            {"_id": user['_id']},
+            {
+                "$set": {"password": hashed_pw, "password_changed_at": datetime.utcnow()},
+                "$unset": {"reset_token": "", "reset_token_expires": ""}
+            }
+        )
+        
+        log_history("PASSWORD_RESET_SUCCESS", f"Mot de passe réinitialisé: {user['email']}", user=user['email'])
+        flash("Mot de passe modifié avec succès ! Vous pouvez maintenant vous connecter.", "success")
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/reset_password.html', token=token, email=user['email'])

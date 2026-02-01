@@ -394,6 +394,7 @@ function assignUserToBank(bankId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({ user_id: userId })
     })
@@ -432,6 +433,7 @@ function removeUserFromBank(bankId, userId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({ user_id: userId })
     })
@@ -463,6 +465,7 @@ function deleteBank(bankId, bankName) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
             }
         })
         .then(response => response.json())

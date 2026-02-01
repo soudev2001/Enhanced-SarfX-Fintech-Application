@@ -452,7 +452,10 @@ function updateBulkActions() {
 function toggleVerified(userId, currentStatus) {
     fetch(`/admin/users/${userId}/toggle-verified`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
     })
     .then(res => res.json())
     .then(data => {
@@ -477,7 +480,10 @@ function bulkVerify() {
 
     fetch('/admin/users/bulk-verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
         body: JSON.stringify({ user_ids: Array.from(selectedUsers) })
     })
     .then(res => res.json())
@@ -499,7 +505,10 @@ function bulkDelete() {
 
     fetch('/admin/users/bulk-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
         body: JSON.stringify({ user_ids: Array.from(selectedUsers) })
     })
     .then(res => res.json())
@@ -520,7 +529,10 @@ function deleteUser(userId, email) {
 
     fetch(`/admin/users/${userId}/delete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
     })
     .then(res => res.json())
     .then(data => {
@@ -689,7 +701,10 @@ function confirmChangeRole() {
 
     fetch(`/admin/api/user/${currentRoleUserId}/role`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
         body: JSON.stringify({ role: newRole })
     })
     .then(res => res.json())

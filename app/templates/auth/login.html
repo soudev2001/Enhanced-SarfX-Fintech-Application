@@ -93,6 +93,14 @@
                         </div>
                     </div>
 
+                    {% if request.args.get('mode') != 'register' %}
+                    <div class="text-right">
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-sm" style="color: var(--brand-secondary); text-decoration: none;">
+                            Mot de passe oublié ?
+                        </a>
+                    </div>
+                    {% endif %}
+
                     <button type="submit" class="btn btn-gradient btn-lg btn-block">
                         {{ 'Créer mon compte' if request.args.get('mode') == 'register' else 'Se connecter' }}
                         <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
