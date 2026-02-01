@@ -57,13 +57,13 @@ def delete_user(user_id):
             return redirect(url_for('admin.users'))
 
         email = user['email']
-        
+
         # CASCADE DELETE - Remove all user data
         db.users.delete_one({"_id": ObjectId(user_id)})
-        
+
         # Delete wallets
         wallets_deleted = db.wallets.delete_many({"user_id": user_id}).deleted_count
-        
+
         # Delete transactions (as sender or recipient)
         transactions_deleted = db.transactions.delete_many({
             "$or": [
@@ -72,17 +72,17 @@ def delete_user(user_id):
                 {"user_id": user_id}
             ]
         }).deleted_count
-        
+
         # Delete beneficiaries
         beneficiaries_deleted = db.beneficiaries.delete_many({"user_id": user_id}).deleted_count
-        
+
         # Delete history logs for this user
         history_deleted = db.history.delete_many({"user": email}).deleted_count
-        
-        log_history("USER_CASCADE_DELETE", 
+
+        log_history("USER_CASCADE_DELETE",
                    f"Utilisateur {email} supprime avec: {wallets_deleted} wallets, "
                    f"{transactions_deleted} transactions, {beneficiaries_deleted} beneficiaires, "
-                   f"{history_deleted} logs historique", 
+                   f"{history_deleted} logs historique",
                    user=session.get('email'))
         flash(f"Utilisateur et données associées supprimés ({wallets_deleted} wallets, {transactions_deleted} transactions)", "success")
     return redirect(url_for('admin.users'))
@@ -224,7 +224,7 @@ def bulk_delete_users():
     # Get user emails for history cleanup
     users_to_delete = list(db.users.find({"_id": {"$in": object_ids}}, {"email": 1}))
     emails = [u.get('email') for u in users_to_delete if u.get('email')]
-    
+
     # Delete users
     result = db.users.delete_many({"_id": {"$in": object_ids}})
 
@@ -232,13 +232,13 @@ def bulk_delete_users():
     total_wallets = 0
     total_transactions = 0
     total_beneficiaries = 0
-    
+
     for oid in object_ids:
         user_id_str = str(oid)
-        
+
         # Delete wallets
         total_wallets += db.wallets.delete_many({"user_id": user_id_str}).deleted_count
-        
+
         # Delete transactions
         total_transactions += db.transactions.delete_many({
             "$or": [
@@ -247,17 +247,17 @@ def bulk_delete_users():
                 {"user_id": user_id_str}
             ]
         }).deleted_count
-        
+
         # Delete beneficiaries
         total_beneficiaries += db.beneficiaries.delete_many({"user_id": user_id_str}).deleted_count
-    
+
     # Delete history logs for these users
     if emails:
         db.history.delete_many({"user": {"$in": emails}})
 
-    log_history("BULK_CASCADE_DELETE", 
+    log_history("BULK_CASCADE_DELETE",
                f"{result.deleted_count} utilisateurs supprimes avec {total_wallets} wallets, "
-               f"{total_transactions} transactions, {total_beneficiaries} beneficiaires", 
+               f"{total_transactions} transactions, {total_beneficiaries} beneficiaires",
                user=session.get('email'))
 
     return jsonify({
