@@ -27,7 +27,7 @@ def wallets():
         except Exception:
             wallet['user_email'] = 'Unknown'
 
-    return render_template('admin/wallets.html', wallets=all_wallets)
+    return render_template('admin/wallets_2026.html', wallets=all_wallets, active_tab='admin_wallets')
 
 
 @admin_bp.route('/wallets/<wallet_id>/history')
@@ -137,7 +137,7 @@ def admin_my_wallet():
     total_balance, _ = get_total_balance_in_usd(admin_id)
     transactions, _ = get_user_transactions(admin_id, limit=20)
 
-    return render_template('admin/my_wallet.html',
+    return render_template('admin/my_wallet_2026.html',
         admin=admin,
         wallet=wallet,
         total_balance=total_balance,

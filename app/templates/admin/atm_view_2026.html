@@ -1,0 +1,311 @@
+{% extends "app_base.html" %}
+
+{% block title %}Détails ATM - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.atms') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour à la liste
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: {{ bank.color if bank else 'linear-gradient(135deg, #10b981, #059669)' }};">
+                        <i data-lucide="map-pin" class="w-8 h-8"></i>
+                    </span>
+                    {{ atm.name }}
+                </h1>
+                <p class="admin-subtitle font-mono">{{ atm.atm_id }}</p>
+            </div>
+
+            <div class="admin-header-actions">
+                <span class="admin-badge {{ 'admin-badge-success' if atm.status == 'active' else 'admin-badge-danger' if atm.status == 'inactive' else 'admin-badge-warning' }}">
+                    <i data-lucide="{{ 'check-circle' if atm.status == 'active' else 'x-circle' if atm.status == 'inactive' else 'wrench' }}" class="w-3 h-3"></i>
+                    {{ atm.status | upper }}
+                </span>
+                <a href="{{ url_for('admin.edit_atm', atm_id=atm.atm_id) }}" class="admin-btn admin-btn-primary">
+                    <i data-lucide="edit" class="w-4 h-4"></i>
+                    Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Header -->
+    {% if bank %}
+    <div class="admin-card admin-bank-detail-card" style="border-left: 4px solid {{ bank.color }}">
+        <div class="admin-card-body">
+            <div class="admin-bank-detail">
+                <div class="admin-bank-detail-avatar" style="background: {{ bank.color }}">
+                    {{ bank.code[:2] | upper }}
+                </div>
+                <div class="admin-bank-detail-info">
+                    <h3>{{ bank.name }}</h3>
+                    {% if bank.name_ar %}<p class="admin-bank-detail-ar">{{ bank.name_ar }}</p>{% endif %}
+                    {% if bank.website %}
+                    <a href="{{ bank.website }}" target="_blank" class="admin-bank-detail-link">
+                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                        {{ bank.website }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="admin-detail-grid">
+        <!-- Location Card -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-green-500"></i>
+                    Localisation
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-detail-list">
+                    <div class="admin-detail-item">
+                        <i data-lucide="home" class="w-5 h-5"></i>
+                        <div>
+                            <p class="admin-detail-value">{{ atm.address }}</p>
+                            <p class="admin-detail-label">{{ atm.city }}{% if atm.district %}, {{ atm.district }}{% endif %}</p>
+                        </div>
+                    </div>
+
+                    {% if atm.location and atm.location.coordinates %}
+                    <div class="admin-detail-item">
+                        <i data-lucide="navigation" class="w-5 h-5"></i>
+                        <div>
+                            <p class="admin-detail-value font-mono">
+                                {{ "%.6f" | format(atm.location.coordinates[1]) }}, {{ "%.6f" | format(atm.location.coordinates[0]) }}
+                            </p>
+                            <a href="https://www.google.com/maps?q={{ atm.location.coordinates[1] }},{{ atm.location.coordinates[0] }}"
+                               target="_blank" class="admin-detail-link">
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                                Voir sur Google Maps
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if atm.location_type %}
+                    <div class="admin-detail-item">
+                        <i data-lucide="building" class="w-5 h-5"></i>
+                        <div>
+                            <p class="admin-detail-value">{{ atm.location_type | replace('_', ' ') | title }}</p>
+                            <p class="admin-detail-label">Type d'emplacement</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Map -->
+                {% if atm.location and atm.location.coordinates %}
+                <div class="admin-map-container mt-4">
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        frameborder="0"
+                        style="border:0; border-radius: 12px;"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox={{ atm.location.coordinates[0] - 0.01 }}%2C{{ atm.location.coordinates[1] - 0.01 }}%2C{{ atm.location.coordinates[0] + 0.01 }}%2C{{ atm.location.coordinates[1] + 0.01 }}&layer=mapnik&marker={{ atm.location.coordinates[1] }}%2C{{ atm.location.coordinates[0] }}"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Services Card -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="settings" class="w-5 h-5 text-blue-500"></i>
+                    Services Disponibles
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-services-list">
+                    {% set service_icons = {
+                        'withdrawal': ('banknote', 'Retrait', '#22c55e'),
+                        'deposit': ('wallet', 'Dépôt', '#3b82f6'),
+                        'balance': ('eye', 'Consultation', '#8b5cf6'),
+                        'transfer': ('arrow-left-right', 'Virement', '#f59e0b'),
+                        'bill_payment': ('receipt', 'Factures', '#ec4899'),
+                        'mobile_topup': ('smartphone', 'Recharge', '#06b6d4')
+                    } %}
+                    {% for svc in atm.services %}
+                    {% set svc_info = service_icons.get(svc, ('circle', svc, '#6b7280')) %}
+                    <div class="admin-service-item admin-service-active">
+                        <i data-lucide="{{ svc_info[0] }}" class="w-5 h-5" style="color: {{ svc_info[2] }}"></i>
+                        <span>{{ svc_info[1] }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Availability Card -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="clock" class="w-5 h-5 text-orange-500"></i>
+                    Disponibilité
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-availability-info">
+                    {% if atm.available_24h %}
+                    <div class="admin-availability-badge admin-availability-24h">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                        <span>Disponible 24h/24</span>
+                    </div>
+                    {% else %}
+                    <div class="admin-availability-badge">
+                        <i data-lucide="calendar" class="w-6 h-6"></i>
+                        <span>{{ atm.hours if atm.hours else 'Horaires non renseignés' }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Card -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-purple-500"></i>
+                    Équipements
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-features-list">
+                    <div class="admin-feature-item {{ 'admin-feature-active' if atm.has_wheelchair_access else '' }}">
+                        <i data-lucide="accessibility" class="w-5 h-5"></i>
+                        <span>Accès fauteuil roulant</span>
+                        <i data-lucide="{{ 'check' if atm.has_wheelchair_access else 'x' }}" class="w-4 h-4 ml-auto"></i>
+                    </div>
+                    <div class="admin-feature-item {{ 'admin-feature-active' if atm.has_nfc else '' }}">
+                        <i data-lucide="smartphone-nfc" class="w-5 h-5"></i>
+                        <span>Sans contact (NFC)</span>
+                        <i data-lucide="{{ 'check' if atm.has_nfc else 'x' }}" class="w-4 h-4 ml-auto"></i>
+                    </div>
+                    <div class="admin-feature-item {{ 'admin-feature-active' if atm.has_deposit else '' }}">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                        <span>Dépôt d'espèces</span>
+                        <i data-lucide="{{ 'check' if atm.has_deposit else 'x' }}" class="w-4 h-4 ml-auto"></i>
+                    </div>
+                    <div class="admin-feature-item {{ 'admin-feature-active' if atm.has_audio else '' }}">
+                        <i data-lucide="volume-2" class="w-5 h-5"></i>
+                        <span>Assistance audio</span>
+                        <i data-lucide="{{ 'check' if atm.has_audio else 'x' }}" class="w-4 h-4 ml-auto"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photos -->
+    {% if atm.photos %}
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="image" class="w-5 h-5 text-pink-500"></i>
+                Photos
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-photos-grid">
+                {% for photo in atm.photos %}
+                <div class="admin-photo-item">
+                    <img src="{{ photo }}" alt="Photo ATM">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Meta Info -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="info" class="w-5 h-5 text-gray-500"></i>
+                Informations Système
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-meta-grid">
+                <div class="admin-meta-item">
+                    <span class="admin-meta-label">ID ATM</span>
+                    <span class="admin-meta-value font-mono">{{ atm.atm_id }}</span>
+                </div>
+                <div class="admin-meta-item">
+                    <span class="admin-meta-label">Code Banque</span>
+                    <span class="admin-meta-value">{{ atm.bank_code }}</span>
+                </div>
+                {% if atm.source_id %}
+                <div class="admin-meta-item">
+                    <span class="admin-meta-label">Source</span>
+                    <span class="admin-meta-value font-mono">{{ atm.source_id }}</span>
+                </div>
+                {% endif %}
+                {% if atm.created_at %}
+                <div class="admin-meta-item">
+                    <span class="admin-meta-label">Créé le</span>
+                    <span class="admin-meta-value">{{ atm.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                {% endif %}
+                {% if atm.updated_at %}
+                <div class="admin-meta-item">
+                    <span class="admin-meta-label">Modifié le</span>
+                    <span class="admin-meta-value">{{ atm.updated_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="admin-form-actions">
+        <form action="{{ url_for('admin.delete_atm', atm_id=atm.atm_id) }}" method="POST"
+              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet ATM ?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="admin-btn admin-btn-outline-danger">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Supprimer
+            </button>
+        </form>
+        <a href="{{ url_for('admin.edit_atm', atm_id=atm.atm_id) }}" class="admin-btn admin-btn-primary">
+            <i data-lucide="edit" class="w-4 h-4"></i>
+            Modifier
+        </a>
+    </div>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Init Lucide
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
+</script>
+{% endblock %}

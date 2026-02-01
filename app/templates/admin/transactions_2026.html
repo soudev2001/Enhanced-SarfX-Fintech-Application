@@ -1,0 +1,236 @@
+{% extends "app_base.html" %}
+
+{% block title %}Transactions - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #f43f5e, #ec4899);">
+                        <i data-lucide="receipt" class="w-8 h-8"></i>
+                    </span>
+                    Gestion des Transactions
+                </h1>
+                <p class="admin-subtitle">
+                    <strong id="tx-count">{{ transactions | length }}</strong> transactions enregistrées
+                </p>
+            </div>
+
+            <div class="admin-header-actions">
+                <a href="{{ url_for('admin.export_transactions') }}" class="admin-btn admin-btn-outline-primary">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.1)); color: #3b82f6;">
+                <i data-lucide="receipt" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total</p>
+                <p class="admin-stat-value">{{ transactions | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Complétées</p>
+                <p class="admin-stat-value">{{ transactions | selectattr('status', 'equalto', 'completed') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">En attente</p>
+                <p class="admin-stat-value">{{ transactions | selectattr('status', 'equalto', 'pending') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(248, 113, 113, 0.1)); color: #ef4444;">
+                <i data-lucide="x-circle" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Échouées</p>
+                <p class="admin-stat-value">{{ transactions | selectattr('status', 'equalto', 'failed') | list | length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-search-filters">
+                <div class="admin-search-box" style="flex: 1; min-width: 250px;">
+                    <i data-lucide="search" class="admin-search-icon"></i>
+                    <input type="text"
+                           id="search-input"
+                           placeholder="Rechercher par email, ID..."
+                           class="admin-search-input"
+                           onkeyup="filterTransactions()">
+                </div>
+
+                <div class="admin-filter-pills">
+                    <button class="admin-filter-pill active" data-filter="all" onclick="filterByStatus('all')">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        Toutes
+                    </button>
+                    <button class="admin-filter-pill" data-filter="completed" onclick="filterByStatus('completed')">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        Complétées
+                    </button>
+                    <button class="admin-filter-pill" data-filter="pending" onclick="filterByStatus('pending')">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        En attente
+                    </button>
+                    <button class="admin-filter-pill" data-filter="failed" onclick="filterByStatus('failed')">
+                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                        Échouées
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="list" class="w-5 h-5 text-primary"></i>
+                Liste des Transactions
+            </h3>
+        </div>
+        <div class="admin-card-body" style="padding: 0;">
+            <div class="admin-transactions-list" id="transactions-container">
+                {% for tx in transactions %}
+                <div class="admin-transaction-item tx-card"
+                     data-email="{{ (tx.user_email or '') | lower }}"
+                     data-id="{{ (tx.transaction_id or tx._id|string or '') | lower }}"
+                     data-status="{{ tx.status or 'pending' }}">
+
+                    <div class="admin-transaction-main">
+                        <div class="admin-transaction-icon {{ 'receive' if tx.type == 'receive' else 'send' }}">
+                            <i data-lucide="{{ 'arrow-down-left' if tx.type == 'receive' else 'arrow-up-right' }}" class="w-5 h-5"></i>
+                        </div>
+
+                        <div class="admin-transaction-info">
+                            <p class="admin-transaction-user">{{ tx.user_email or 'Unknown' }}</p>
+                            <p class="admin-transaction-id">{{ (tx.transaction_id or tx._id|string)[:20] }}...</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-transaction-amount">
+                        <p class="admin-transaction-from">{{ "{:,.2f}".format(tx.amount or 0) }} {{ tx.from_currency or '?' }}</p>
+                        <p class="admin-transaction-to">
+                            <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            {{ "{:,.2f}".format(tx.final_amount or 0) }} {{ tx.to_currency or '?' }}
+                        </p>
+                    </div>
+
+                    <div class="admin-transaction-meta">
+                        <span class="admin-badge admin-badge-{{ 'success' if tx.status == 'completed' else ('warning' if tx.status == 'pending' else 'error') }}">
+                            {{ (tx.status or 'pending') | upper }}
+                        </span>
+                        <span class="admin-transaction-date">
+                            {{ tx.created_at.strftime('%d/%m/%Y %H:%M') if tx.created_at else '--' }}
+                        </span>
+                    </div>
+
+                    <div class="admin-transaction-actions">
+                        <form action="{{ url_for('admin.update_transaction_status', tx_id=(tx.transaction_id or tx._id|string)) }}" method="POST" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="status" onchange="this.form.submit()" class="admin-select-mini">
+                                <option value="pending" {{ 'selected' if tx.status == 'pending' else '' }}>En attente</option>
+                                <option value="completed" {{ 'selected' if tx.status == 'completed' else '' }}>Complétée</option>
+                                <option value="failed" {{ 'selected' if tx.status == 'failed' else '' }}>Échouée</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="admin-empty-state" style="padding: 60px 20px;">
+                    <i data-lucide="inbox" class="w-16 h-16"></i>
+                    <p>Aucune transaction trouvée</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentStatusFilter = 'all';
+
+function filterTransactions() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.tx-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const email = card.dataset.email || '';
+        const id = card.dataset.id || '';
+        const status = card.dataset.status || '';
+
+        let show = true;
+        if (search && !email.includes(search) && !id.includes(search)) show = false;
+        if (currentStatusFilter !== 'all' && status !== currentStatusFilter) show = false;
+
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+
+    document.getElementById('tx-count').textContent = visibleCount;
+}
+
+function filterByStatus(status) {
+    currentStatusFilter = status;
+
+    document.querySelectorAll('.admin-filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === status);
+    });
+
+    filterTransactions();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

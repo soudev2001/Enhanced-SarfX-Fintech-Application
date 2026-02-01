@@ -1,40 +1,92 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="{{ current_lang|default('fr') }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
-    <title>{% block title %}SarfX - Le Futur du Change{% endblock %}</title>
+    <title>{% block title %}SarfX - {{ t('app.tagline')|default('Le Futur du Change') }}{% endblock %}</title>
 
-    <!-- Favicon -->
+    <!-- SEO & Open Graph -->
+    <meta name="description" content="SarfX - {{ t('app.description')|default('Application de transfert international et suivi des taux de change') }}">
+    <meta name="keywords" content="transfert argent, change devise, Maroc, dirham, euro, taux change">
+    <meta name="author" content="SarfX">
+    <meta property="og:title" content="SarfX - Transfert International">
+    <meta property="og:description" content="Transférez et suivez les taux de change en temps réel">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
+
+    <!-- Favicon & App Icons -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/icons/icon-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/icons/icon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/icons/icon-16x16.png') }}">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
     <!-- Design System CSS (Local - No CDN) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/redesign-2026.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+    <!-- RTL Support -->
+    {% if is_rtl %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
 
     <!-- Icons (Lucide) & Charts -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-    <!-- PWA Meta -->
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#ff6f00" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#ff6f00" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SarfX">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="SarfX">
     <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-TileColor" content="#ff6f00">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    <!-- Splash Screens for iOS -->
+    <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash/splash-640x1136.png') }}" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash/splash-750x1334.png') }}" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash/splash-1242x2208.png') }}" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash/splash-1125x2436.png') }}" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
 
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
+    <!-- i18n: Pass current language to JavaScript -->
+    <script>
+        window.SARFX_LANG = "{{ current_lang|default('fr') }}";
+        window.SARFX_IS_RTL = {{ 'true' if is_rtl else 'false' }};
+    </script>
+
     {% block head %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col overflow-x-hidden relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
+
+    <!-- PWA Install Banner (hidden by default) -->
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+        <div class="pwa-install-content">
+            <img src="{{ url_for('static', filename='images/favicon.svg') }}" alt="SarfX" class="pwa-install-icon">
+            <div class="pwa-install-text">
+                <strong>Installer SarfX</strong>
+                <span>Accédez rapidement depuis votre écran d'accueil</span>
+            </div>
+        </div>
+        <div class="pwa-install-actions">
+            <button onclick="dismissInstallBanner()" class="pwa-install-dismiss">Plus tard</button>
+            <button onclick="installPWA()" class="pwa-install-btn">Installer</button>
+        </div>
+    </div>
 
     <!-- Notifications System -->
     <div id="notification-container" class="toast-container"></div>
@@ -101,7 +153,11 @@
             </a>
             <a href="{{ url_for('app.rate_history') }}" class="wise-nav-item {{ 'active' if active_tab == 'rate_history' else '' }}">
                 <i data-lucide="trending-up" class="wise-nav-icon"></i>
-                <span>Historique Taux</span>
+                <span>{{ t('rates.history')|default('Historique Taux') }}</span>
+            </a>
+            <a href="{{ url_for('app.rate_alerts') }}" class="wise-nav-item {{ 'active' if active_tab == 'rate_alerts' else '' }}">
+                <i data-lucide="bell-ring" class="wise-nav-icon"></i>
+                <span>{{ t('rates.alert')|default('Alertes Taux') }}</span>
             </a>
             <a href="{{ url_for('app.ai_forecast') }}" class="wise-nav-item {{ 'active' if active_tab == 'ai' else '' }}">
                 <i data-lucide="brain-circuit" class="wise-nav-icon"></i>
@@ -183,10 +239,120 @@
 
     <!-- MAIN CONTENT AREA -->
     <main id="main-content" class="wise-main-content">
+        <!-- Top Actions Bar -->
+        <div class="wise-top-actions" style="position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 100;">
+            <!-- Language Selector -->
+            <div class="language-selector" id="language-selector">
+                <button class="language-btn" id="language-btn" onclick="toggleLanguageMenu()" title="{{ t('settings.language')|default('Langue') }}">
+                    <span class="lang-flag">{{ available_languages[current_lang].flag if available_languages else '🇫🇷' }}</span>
+                    <span class="lang-code">{{ current_lang|upper }}</span>
+                    <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+                </button>
+                <div class="language-menu" id="language-menu">
+                    {% for code, info in (available_languages or {}).items() %}
+                    <button class="language-option {{ 'active' if code == current_lang else '' }}" data-lang="{{ code }}" onclick="setLanguage('{{ code }}')">
+                        <span class="lang-flag">{{ info.flag }}</span>
+                        <span class="lang-name">{{ info.name }}</span>
+                        {% if code == current_lang %}
+                        <i data-lucide="check" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
+                        {% endif %}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Notification Bell -->
+            <button class="notification-bell" id="notification-bell" title="Notifications">
+                <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                <span id="notification-badge" class="hidden">0</span>
+            </button>
+
+            <!-- Global Search Button -->
+            <button class="wise-search-fab" id="global-search-btn" onclick="openGlobalSearch()" style="position: static;">
+                <i data-lucide="search" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
         <div class="wise-content-inner">
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <!-- Global Search Modal -->
+    <div class="wise-search-overlay" id="global-search-overlay" onclick="closeGlobalSearch()"></div>
+    <div class="wise-search-modal" id="global-search-modal">
+        <div class="wise-search-header">
+            <div class="wise-search-input-container">
+                <i data-lucide="search" class="wise-search-icon"></i>
+                <input type="text"
+                       id="global-search-input"
+                       class="wise-search-input"
+                       placeholder="Rechercher transactions, bénéficiaires, wallets..."
+                       autocomplete="off"
+                       oninput="handleGlobalSearch(this.value)">
+                <kbd class="wise-search-kbd">ESC</kbd>
+            </div>
+        </div>
+        <div class="wise-search-results" id="global-search-results">
+            <!-- Quick Actions -->
+            <div class="wise-search-section" id="quick-actions-section">
+                <h4 class="wise-search-section-title">Actions rapides</h4>
+                <div class="wise-search-quick-grid">
+                    <a href="{{ url_for('app.converter') }}" class="wise-search-quick-item">
+                        <div class="wise-search-quick-icon" style="background: rgba(34, 197, 94, 0.15);">
+                            <i data-lucide="repeat" style="width: 18px; height: 18px; color: #22c55e;"></i>
+                        </div>
+                        <span>Convertir</span>
+                    </a>
+                    <a href="{{ url_for('app.wallets') }}" class="wise-search-quick-item">
+                        <div class="wise-search-quick-icon" style="background: rgba(59, 130, 246, 0.15);">
+                            <i data-lucide="wallet" style="width: 18px; height: 18px; color: #3b82f6;"></i>
+                        </div>
+                        <span>Wallets</span>
+                    </a>
+                    <a href="{{ url_for('app.beneficiaries') }}" class="wise-search-quick-item">
+                        <div class="wise-search-quick-icon" style="background: rgba(168, 85, 247, 0.15);">
+                            <i data-lucide="users" style="width: 18px; height: 18px; color: #a855f7;"></i>
+                        </div>
+                        <span>Bénéficiaires</span>
+                    </a>
+                    <a href="{{ url_for('app.atms') }}" class="wise-search-quick-item">
+                        <div class="wise-search-quick-icon" style="background: rgba(239, 68, 68, 0.15);">
+                            <i data-lucide="map-pin" style="width: 18px; height: 18px; color: #ef4444;"></i>
+                        </div>
+                        <span>ATMs</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            <div class="wise-search-section" id="search-results-section" style="display: none;">
+                <h4 class="wise-search-section-title">Résultats</h4>
+                <div class="wise-search-results-list" id="search-results-list">
+                    <!-- Results will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Recent Searches -->
+            <div class="wise-search-section" id="recent-searches-section">
+                <h4 class="wise-search-section-title">Recherches récentes</h4>
+                <div class="wise-search-recent" id="recent-searches-list">
+                    <div class="wise-search-empty">
+                        <i data-lucide="clock" style="width: 24px; height: 24px; color: var(--text-tertiary);"></i>
+                        <p>Aucune recherche récente</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wise-search-footer">
+            <span>
+                <kbd>↑</kbd> <kbd>↓</kbd> pour naviguer
+            </span>
+            <span>
+                <kbd>↵</kbd> pour sélectionner
+            </span>
+        </div>
+    </div>
 
     <!-- MOBILE BOTTOM NAVIGATION (visible <1024px) -->
     <nav class="wise-bottom-nav" id="mobile-nav">
@@ -370,6 +536,223 @@
             });
         }
 
+        // ===== GLOBAL SEARCH FUNCTIONALITY =====
+        let searchTimeout = null;
+        let selectedIndex = -1;
+        let searchResults = [];
+
+        function openGlobalSearch() {
+            const overlay = document.getElementById('global-search-overlay');
+            const modal = document.getElementById('global-search-modal');
+            const input = document.getElementById('global-search-input');
+
+            overlay.classList.add('active');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+
+            lucide.createIcons();
+        }
+
+        function closeGlobalSearch() {
+            const overlay = document.getElementById('global-search-overlay');
+            const modal = document.getElementById('global-search-modal');
+            const input = document.getElementById('global-search-input');
+
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            input.value = '';
+            selectedIndex = -1;
+
+            // Reset UI
+            document.getElementById('quick-actions-section').style.display = 'block';
+            document.getElementById('recent-searches-section').style.display = 'block';
+            document.getElementById('search-results-section').style.display = 'none';
+        }
+
+        function handleGlobalSearch(query) {
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                document.getElementById('quick-actions-section').style.display = 'block';
+                document.getElementById('recent-searches-section').style.display = 'block';
+                document.getElementById('search-results-section').style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        }
+
+        async function performSearch(query) {
+            const resultsList = document.getElementById('search-results-list');
+            const resultsSection = document.getElementById('search-results-section');
+
+            // Show loading state
+            resultsList.innerHTML = `
+                <div class="wise-search-loading">
+                    <div class="animate-spin">
+                        <i data-lucide="loader-2" style="width: 24px; height: 24px; color: var(--brand-primary);"></i>
+                    </div>
+                    <span>Recherche en cours...</span>
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+            document.getElementById('quick-actions-section').style.display = 'none';
+            document.getElementById('recent-searches-section').style.display = 'none';
+
+            lucide.createIcons();
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                searchResults = data.results || [];
+                selectedIndex = -1;
+
+                if (searchResults.length === 0) {
+                    resultsList.innerHTML = `
+                        <div class="wise-search-empty">
+                            <i data-lucide="search-x" style="width: 32px; height: 32px; color: var(--text-tertiary);"></i>
+                            <p>Aucun résultat pour "${query}"</p>
+                        </div>
+                    `;
+                } else {
+                    renderSearchResults(searchResults);
+                    saveRecentSearch(query);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsList.innerHTML = `
+                    <div class="wise-search-empty">
+                        <i data-lucide="alert-circle" style="width: 32px; height: 32px; color: var(--error);"></i>
+                        <p>Erreur de recherche</p>
+                    </div>
+                `;
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderSearchResults(results) {
+            const resultsList = document.getElementById('search-results-list');
+
+            let html = results.map((item, index) => `
+                <a href="${item.url}" class="wise-search-result-item ${index === selectedIndex ? 'selected' : ''}" data-index="${index}">
+                    <div class="wise-search-result-icon" style="background: ${getTypeColor(item.type)};">
+                        <i data-lucide="${getTypeIcon(item.type)}" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <div class="wise-search-result-content">
+                        <span class="wise-search-result-title">${highlightMatch(item.title, document.getElementById('global-search-input').value)}</span>
+                        <span class="wise-search-result-subtitle">${item.subtitle || ''}</span>
+                    </div>
+                    <span class="wise-search-result-type">${getTypeName(item.type)}</span>
+                </a>
+            `).join('');
+
+            resultsList.innerHTML = html;
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                'transaction': 'receipt',
+                'beneficiary': 'user',
+                'wallet': 'wallet',
+                'page': 'file-text',
+                'atm': 'map-pin'
+            };
+            return icons[type] || 'search';
+        }
+
+        function getTypeColor(type) {
+            const colors = {
+                'transaction': 'rgba(34, 197, 94, 0.15)',
+                'beneficiary': 'rgba(168, 85, 247, 0.15)',
+                'wallet': 'rgba(59, 130, 246, 0.15)',
+                'page': 'rgba(100, 116, 139, 0.15)',
+                'atm': 'rgba(239, 68, 68, 0.15)'
+            };
+            return colors[type] || 'rgba(100, 116, 139, 0.15)';
+        }
+
+        function getTypeName(type) {
+            const names = {
+                'transaction': 'Transaction',
+                'beneficiary': 'Bénéficiaire',
+                'wallet': 'Wallet',
+                'page': 'Page',
+                'atm': 'ATM'
+            };
+            return names[type] || type;
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+
+        function saveRecentSearch(query) {
+            let recent = JSON.parse(localStorage.getItem('sarfx_recent_searches') || '[]');
+            recent = recent.filter(s => s !== query);
+            recent.unshift(query);
+            recent = recent.slice(0, 5);
+            localStorage.setItem('sarfx_recent_searches', JSON.stringify(recent));
+        }
+
+        function loadRecentSearches() {
+            const recent = JSON.parse(localStorage.getItem('sarfx_recent_searches') || '[]');
+            const container = document.getElementById('recent-searches-list');
+
+            if (recent.length === 0) return;
+
+            container.innerHTML = recent.map(query => `
+                <button class="wise-search-recent-item" onclick="document.getElementById('global-search-input').value='${query}'; handleGlobalSearch('${query}');">
+                    <i data-lucide="clock" style="width: 14px; height: 14px; color: var(--text-tertiary);"></i>
+                    <span>${query}</span>
+                </button>
+            `).join('');
+        }
+
+        // Keyboard shortcuts for search
+        document.addEventListener('keydown', (e) => {
+            // CMD/CTRL + K to open search
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                openGlobalSearch();
+            }
+
+            // ESC to close
+            if (e.key === 'Escape') {
+                closeGlobalSearch();
+            }
+
+            // Arrow navigation in results
+            const modal = document.getElementById('global-search-modal');
+            if (modal.classList.contains('active') && searchResults.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, searchResults.length - 1);
+                    renderSearchResults(searchResults);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    renderSearchResults(searchResults);
+                } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                    e.preventDefault();
+                    window.location.href = searchResults[selectedIndex].url;
+                }
+            }
+        });
+
+        // Load recent searches on page load
+        document.addEventListener('DOMContentLoaded', loadRecentSearches);
+
         // Mobile Sidebar Toggle
         (function() {
             const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -432,7 +815,486 @@
     <!-- Notifications System -->
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 
+    <!-- Push Notifications Manager -->
+    <script src="{{ url_for('static', filename='js/notifications-push.js') }}"></script>
+
     <!-- Chatbot SarfX avec API Gemini -->
     <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+
+    <!-- PWA Installation & Service Worker -->
+    <script>
+        // PWA Install prompt
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-banner');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+
+            // Check if already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                return;
+            }
+
+            // Check if dismissed recently
+            const dismissedAt = localStorage.getItem('pwa-install-dismissed');
+            if (dismissedAt) {
+                const daysSinceDismissed = (Date.now() - parseInt(dismissedAt)) / (1000 * 60 * 60 * 24);
+                if (daysSinceDismissed < 7) return; // Don't show for 7 days
+            }
+
+            // Show install banner after 30 seconds
+            setTimeout(() => {
+                if (installBanner) {
+                    installBanner.style.display = 'flex';
+                    installBanner.classList.add('animate-slide-up');
+                }
+            }, 30000);
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('SarfX PWA installed');
+            if (installBanner) installBanner.style.display = 'none';
+            deferredPrompt = null;
+
+            // Track installation
+            if (typeof gtag === 'function') {
+                gtag('event', 'pwa_install', { 'event_category': 'engagement' });
+            }
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) {
+                console.log('No install prompt available');
+                return;
+            }
+
+            // Show the install prompt
+            deferredPrompt.prompt();
+
+            // Wait for the user to respond to the prompt
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
+                deferredPrompt = null;
+                if (installBanner) installBanner.style.display = 'none';
+            });
+        }
+
+        function dismissInstallBanner() {
+            if (installBanner) {
+                installBanner.classList.add('animate-slide-down');
+                setTimeout(() => {
+                    installBanner.style.display = 'none';
+                }, 300);
+            }
+            localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/js/sw.js', { scope: '/' })
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration.scope);
+
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New content is available
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+
+        function showUpdateNotification() {
+            const updateBanner = document.createElement('div');
+            updateBanner.className = 'pwa-update-banner';
+            updateBanner.innerHTML = `
+                <span>Une nouvelle version est disponible</span>
+                <button onclick="window.location.reload()">Mettre à jour</button>
+            `;
+            document.body.appendChild(updateBanner);
+        }
+
+        // Online/Offline detection
+        function updateOnlineStatus() {
+            const statusEl = document.querySelector('.connection-indicator');
+            if (statusEl) {
+                statusEl.className = navigator.onLine ? 'connection-indicator online' : 'connection-indicator offline';
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+    </script>
+
+    <style>
+        /* PWA Install Banner */
+        .pwa-install-banner {
+            position: fixed;
+            bottom: 80px;
+            left: 16px;
+            right: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .pwa-install-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pwa-install-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+        }
+
+        .pwa-install-text {
+            flex: 1;
+        }
+
+        .pwa-install-text strong {
+            display: block;
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .pwa-install-text span {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .pwa-install-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pwa-install-dismiss {
+            flex: 1;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .pwa-install-btn {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, #ff6f00, #ff8f00);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* PWA Update Banner */
+        .pwa-update-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10000;
+            font-size: 14px;
+        }
+
+        .pwa-update-banner button {
+            padding: 6px 16px;
+            background: white;
+            color: #3b82f6;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(100%); opacity: 0; }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .animate-slide-down {
+            animation: slideDown 0.3s ease-out forwards;
+        }
+
+        @media (min-width: 768px) {
+            .pwa-install-banner {
+                bottom: 24px;
+                left: auto;
+                right: 24px;
+            }
+        }
+
+        /* Language Selector Styles */
+        .language-selector {
+            position: relative;
+        }
+
+        .language-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .language-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--color-primary);
+        }
+
+        .lang-flag {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .lang-code {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .language-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 160px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .language-menu.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .language-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            text-align: left;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .language-option:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .language-option.active {
+            background: rgba(255, 111, 0, 0.1);
+        }
+
+        .lang-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .wise-sidebar {
+            left: auto;
+            right: 0;
+        }
+
+        [dir="rtl"] .wise-main-content {
+            margin-left: 0;
+            margin-right: 280px;
+        }
+
+        [dir="rtl"] .wise-top-actions {
+            right: auto;
+            left: 16px;
+        }
+
+        [dir="rtl"] .language-menu {
+            right: auto;
+            left: 0;
+        }
+
+        @media (max-width: 1024px) {
+            [dir="rtl"] .wise-main-content {
+                margin-right: 0;
+            }
+
+            [dir="rtl"] .wise-sidebar.open {
+                transform: translateX(0);
+            }
+
+            [dir="rtl"] .wise-sidebar {
+                transform: translateX(100%);
+            }
+        }
+    </style>
+
+    <!-- Language Selector JavaScript -->
+    <script>
+        // Language Menu Toggle
+        function toggleLanguageMenu() {
+            const menu = document.getElementById('language-menu');
+            menu.classList.toggle('open');
+        }
+
+        // Close language menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const selector = document.getElementById('language-selector');
+            if (selector && !selector.contains(e.target)) {
+                const menu = document.getElementById('language-menu');
+                if (menu) menu.classList.remove('open');
+            }
+        });
+
+        // Set Language
+        async function setLanguage(lang) {
+            try {
+                const response = await fetch('/api/language/set', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
+                    },
+                    body: JSON.stringify({ language: lang })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show notification
+                    if (typeof showNotification === 'function') {
+                        showNotification(data.message, 'success');
+                    }
+
+                    // Reload page to apply new language
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    if (typeof showNotification === 'function') {
+                        showNotification(data.error || 'Erreur lors du changement de langue', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Language change error:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Erreur de connexion', 'error');
+                }
+            }
+
+            // Close menu
+            const menu = document.getElementById('language-menu');
+            if (menu) menu.classList.remove('open');
+        }
+
+        // i18n Helper for JavaScript
+        window.SarfXi18n = {
+            translations: {},
+            lang: window.SARFX_LANG || 'fr',
+            isRTL: window.SARFX_IS_RTL || false,
+
+            async loadTranslations() {
+                try {
+                    const response = await fetch(`/api/language/translations?lang=${this.lang}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        this.translations = data.translations;
+                    }
+                } catch (error) {
+                    console.error('Failed to load translations:', error);
+                }
+            },
+
+            t(key, params = {}) {
+                const keys = key.split('.');
+                let value = this.translations;
+
+                for (const k of keys) {
+                    if (value && typeof value === 'object' && k in value) {
+                        value = value[k];
+                    } else {
+                        return key; // Return key if not found
+                    }
+                }
+
+                // Replace placeholders like {count}
+                if (typeof value === 'string' && Object.keys(params).length > 0) {
+                    Object.entries(params).forEach(([param, val]) => {
+                        value = value.replace(new RegExp(`\\{${param}\\}`, 'g'), val);
+                    });
+                }
+
+                return value;
+            }
+        };
+
+        // Load translations on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            window.SarfXi18n.loadTranslations();
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,38 @@
+<!-- Admin Bottom Navigation - 2026 Design -->
+<nav class="admin-bottom-nav">
+    <a href="{{ url_for('admin.dashboard') }}"
+       class="admin-nav-item {{ 'active' if active_tab == 'admin_dashboard' else '' }}">
+        <i data-lucide="layout-dashboard" class="admin-nav-icon"></i>
+        <span>Dashboard</span>
+    </a>
+
+    <a href="{{ url_for('admin.users') }}"
+       class="admin-nav-item {{ 'active' if active_tab == 'admin_users' else '' }}">
+        <i data-lucide="users" class="admin-nav-icon"></i>
+        <span>Utilisateurs</span>
+    </a>
+
+    <a href="{{ url_for('admin.transactions') }}"
+       class="admin-nav-item {{ 'active' if active_tab == 'admin_transactions' else '' }}">
+        <i data-lucide="receipt" class="admin-nav-icon"></i>
+        <span>Transactions</span>
+    </a>
+
+    <a href="{{ url_for('admin.wallets') }}"
+       class="admin-nav-item {{ 'active' if active_tab == 'admin_wallets' else '' }}">
+        <i data-lucide="wallet" class="admin-nav-icon"></i>
+        <span>Wallets</span>
+    </a>
+
+    <a href="{{ url_for('admin_banks.list_banks') }}"
+       class="admin-nav-item {{ 'active' if active_tab == 'admin_banks' else '' }}">
+        <i data-lucide="building-2" class="admin-nav-icon"></i>
+        <span>Banques</span>
+    </a>
+
+    <a href="{{ url_for('admin.atms') }}"
+       class="admin-nav-item {{ 'active' if active_tab == 'admin_atms' else '' }}">
+        <i data-lucide="map-pin" class="admin-nav-icon"></i>
+        <span>ATMs</span>
+    </a>
+</nav>

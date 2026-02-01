@@ -1,9 +1,9 @@
 {% extends "app_base.html" %}
 
 {% block content %}
-<div class="wise-settings">
+<div class="wise-settings animate-fade-in">
     <!-- Page Header -->
-    <div class="wise-page-header">
+    <div class="wise-page-header animate-fade-in-up stagger-1">
         <nav class="wise-breadcrumb">
             <a href="{{ url_for('app.home') }}">
                 <i data-lucide="home" style="width: 14px; height: 14px;"></i>
@@ -16,24 +16,117 @@
         <p class="wise-page-subtitle">Personnalisez votre expérience SarfX</p>
     </div>
 
-    <!-- Theme Toggle -->
-    <div class="wise-section wise-setting-row">
-        <div class="wise-setting-info">
+    <!-- Appearance Section -->
+    <div class="wise-section animate-fade-in-up stagger-2">
+        <h3 class="wise-section-title" style="margin-bottom: 20px;">
             <div class="wise-setting-icon" style="background: rgba(99, 102, 241, 0.15);">
-                <i data-lucide="moon" style="width: 20px; height: 20px; color: #818cf8;"></i>
+                <i data-lucide="palette" style="width: 18px; height: 18px; color: #818cf8;"></i>
             </div>
-            <div>
-                <span class="wise-setting-title">Mode Sombre</span>
-                <p class="wise-setting-subtitle">Réduire la fatigue oculaire</p>
+            Apparence
+        </h3>
+
+        <!-- Theme Toggle Row -->
+        <div class="wise-setting-row hover-lift" style="margin-bottom: 16px;">
+            <div class="wise-setting-info">
+                <div class="wise-setting-icon-mini" id="theme-icon-container" style="background: var(--bg-tertiary);">
+                    <i data-lucide="moon" id="theme-icon-moon" style="width: 18px; height: 18px; color: #818cf8;" class="theme-icon"></i>
+                    <i data-lucide="sun" id="theme-icon-sun" style="width: 18px; height: 18px; color: #f59e0b; display: none;" class="theme-icon"></i>
+                </div>
+                <div>
+                    <span class="wise-setting-title">Mode Sombre</span>
+                    <p class="wise-setting-subtitle">Réduire la fatigue oculaire</p>
+                </div>
+            </div>
+            <button onclick="toggleThemeEnhanced()" class="wise-toggle-enhanced" id="theme-toggle-btn">
+                <div class="wise-toggle-track">
+                    <div class="wise-toggle-thumb" id="theme-toggle-thumb">
+                        <i data-lucide="moon" class="toggle-icon-dark" style="width: 12px; height: 12px;"></i>
+                        <i data-lucide="sun" class="toggle-icon-light" style="width: 12px; height: 12px;"></i>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Color Accent (Preview) -->
+        <div class="wise-setting-row hover-lift" style="opacity: 0.7;">
+            <div class="wise-setting-info">
+                <div class="wise-setting-icon-mini" style="background: rgba(255, 111, 0, 0.15);">
+                    <i data-lucide="droplet" style="width: 18px; height: 18px; color: var(--brand-primary);"></i>
+                </div>
+                <div>
+                    <span class="wise-setting-title">Couleur d'accentuation</span>
+                    <p class="wise-setting-subtitle">Bientôt disponible</p>
+                </div>
+            </div>
+            <div class="wise-color-preview">
+                <span class="wise-color-dot" style="background: #ff6f00;"></span>
             </div>
         </div>
-        <button onclick="toggleTheme()" class="wise-toggle" id="theme-toggle-btn">
-            <div class="wise-toggle-dot" id="theme-toggle-dot"></div>
-        </button>
+    </div>
+
+    <!-- Notifications Section -->
+    <div class="wise-section animate-fade-in-up stagger-3">
+        <h3 class="wise-section-title" style="margin-bottom: 20px;">
+            <div class="wise-setting-icon" style="background: rgba(234, 179, 8, 0.15);">
+                <i data-lucide="bell" style="width: 18px; height: 18px; color: #eab308;"></i>
+            </div>
+            Notifications
+        </h3>
+
+        <div class="wise-setting-row hover-lift" style="margin-bottom: 12px;">
+            <div class="wise-setting-info">
+                <div class="wise-setting-icon-mini" style="background: rgba(34, 197, 94, 0.15);">
+                    <i data-lucide="mail" style="width: 16px; height: 16px; color: #22c55e;"></i>
+                </div>
+                <div>
+                    <span class="wise-setting-title">Notifications Email</span>
+                    <p class="wise-setting-subtitle">Transactions et alertes</p>
+                </div>
+            </div>
+            <button class="wise-toggle-enhanced active" onclick="toggleNotification(this, 'email')">
+                <div class="wise-toggle-track">
+                    <div class="wise-toggle-thumb"></div>
+                </div>
+            </button>
+        </div>
+
+        <div class="wise-setting-row hover-lift" style="margin-bottom: 12px;">
+            <div class="wise-setting-info">
+                <div class="wise-setting-icon-mini" style="background: rgba(59, 130, 246, 0.15);">
+                    <i data-lucide="smartphone" style="width: 16px; height: 16px; color: #3b82f6;"></i>
+                </div>
+                <div>
+                    <span class="wise-setting-title">Notifications Push</span>
+                    <p class="wise-setting-subtitle">Alertes en temps réel</p>
+                </div>
+            </div>
+            <button class="wise-toggle-enhanced" onclick="toggleNotification(this, 'push')">
+                <div class="wise-toggle-track">
+                    <div class="wise-toggle-thumb"></div>
+                </div>
+            </button>
+        </div>
+
+        <div class="wise-setting-row hover-lift">
+            <div class="wise-setting-info">
+                <div class="wise-setting-icon-mini" style="background: rgba(168, 85, 247, 0.15);">
+                    <i data-lucide="trending-up" style="width: 16px; height: 16px; color: #a855f7;"></i>
+                </div>
+                <div>
+                    <span class="wise-setting-title">Alertes de taux</span>
+                    <p class="wise-setting-subtitle">Variations importantes</p>
+                </div>
+            </div>
+            <button class="wise-toggle-enhanced active" onclick="toggleNotification(this, 'rates')">
+                <div class="wise-toggle-track">
+                    <div class="wise-toggle-thumb"></div>
+                </div>
+            </button>
+        </div>
     </div>
 
     <!-- Account Settings -->
-    <div class="wise-section">
+    <div class="wise-section animate-fade-in-up stagger-4">
         <h3 class="wise-section-title" style="margin-bottom: 16px;">
             <div class="wise-setting-icon" style="background: rgba(159, 232, 112, 0.15);">
                 <i data-lucide="user-cog" style="width: 18px; height: 18px; color: rgb(255 214 187);"></i>
@@ -42,21 +135,21 @@
         </h3>
 
         <div class="wise-account-list">
-            <div class="wise-account-item">
+            <div class="wise-account-item hover-scale-small">
                 <span class="wise-account-label">
                     <i data-lucide="mail" style="width: 16px; height: 16px;"></i>
                     Email
                 </span>
                 <span class="wise-account-value">{{ user.email if user else '--' }}</span>
             </div>
-            <div class="wise-account-item">
+            <div class="wise-account-item hover-scale-small">
                 <span class="wise-account-label">
                     <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
                     Rôle
                 </span>
                 <span class="wise-account-value">{{ user.role | default('user') | capitalize }}</span>
             </div>
-            <div class="wise-account-item">
+            <div class="wise-account-item hover-scale-small">
                 <span class="wise-account-label">
                     <i data-lucide="activity" style="width: 16px; height: 16px;"></i>
                     Statut
@@ -66,6 +159,49 @@
                     {{ 'Vérifié' if user and user.verified else 'Non vérifié' }}
                 </span>
             </div>
+        </div>
+    </div>
+
+    <!-- Security Section -->
+    <div class="wise-section animate-fade-in-up stagger-5">
+        <h3 class="wise-section-title" style="margin-bottom: 16px;">
+            <div class="wise-setting-icon" style="background: rgba(239, 68, 68, 0.15);">
+                <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #ef4444;"></i>
+            </div>
+            Sécurité
+        </h3>
+
+        <div class="wise-security-grid">
+            <a href="#" class="wise-security-card hover-lift" onclick="openChangePasswordModal()">
+                <div class="wise-security-icon">
+                    <i data-lucide="key" style="width: 20px; height: 20px; color: #f59e0b;"></i>
+                </div>
+                <div class="wise-security-content">
+                    <span class="wise-security-title">Mot de passe</span>
+                    <span class="wise-security-subtitle">Changer votre mot de passe</span>
+                </div>
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+            </a>
+            <a href="#" class="wise-security-card hover-lift" onclick="open2FAModal()">
+                <div class="wise-security-icon">
+                    <i data-lucide="shield" style="width: 20px; height: 20px; color: #22c55e;"></i>
+                </div>
+                <div class="wise-security-content">
+                    <span class="wise-security-title">Authentification 2FA</span>
+                    <span class="wise-security-subtitle">Non configurée</span>
+                </div>
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+            </a>
+            <a href="#" class="wise-security-card hover-lift">
+                <div class="wise-security-icon">
+                    <i data-lucide="smartphone" style="width: 20px; height: 20px; color: #3b82f6;"></i>
+                </div>
+                <div class="wise-security-content">
+                    <span class="wise-security-title">Appareils connectés</span>
+                    <span class="wise-security-subtitle">1 appareil actif</span>
+                </div>
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+            </a>
         </div>
     </div>
 
@@ -574,6 +710,1514 @@
 .wise-logout-btn:hover {
     background: rgba(239, 68, 68, 0.1);
     border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Enhanced Toggle Switch */
+.wise-toggle-enhanced {
+    width: 56px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.wise-toggle-track {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-light);
+    border-radius: 100px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wise-toggle-enhanced:hover .wise-toggle-track {
+    border-color: var(--border-medium);
+}
+
+.wise-toggle-thumb {
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-toggle-enhanced.active .wise-toggle-track {
+    background: linear-gradient(135deg, var(--brand-primary), #ff8c42);
+    border-color: transparent;
+}
+
+.wise-toggle-enhanced.active .wise-toggle-thumb {
+    transform: translateX(26px);
+}
+
+.toggle-icon-dark,
+.toggle-icon-light {
+    position: absolute;
+    transition: opacity 0.2s ease;
+}
+
+.toggle-icon-light {
+    opacity: 1;
+    color: #f59e0b;
+}
+
+.toggle-icon-dark {
+    opacity: 0;
+    color: #6366f1;
+}
+
+.wise-toggle-enhanced.active .toggle-icon-light {
+    opacity: 0;
+}
+
+.wise-toggle-enhanced.active .toggle-icon-dark {
+    opacity: 1;
+}
+
+/* Setting Icon Mini */
+.wise-setting-icon-mini {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Color Preview */
+.wise-color-preview {
+    display: flex;
+    gap: 8px;
+}
+
+.wise-color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Security Grid */
+.wise-security-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wise-security-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wise-security-card:hover {
+    border-color: var(--brand-primary);
+    background: var(--surface);
+}
+
+.wise-security-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wise-security-content {
+    flex: 1;
+}
+
+.wise-security-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.wise-security-subtitle {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* Theme Icon Animation */
+.theme-icon {
+    transition: all 0.3s ease;
+}
+
+#theme-icon-container {
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+[data-theme="dark"] #theme-icon-moon {
+    display: none !important;
+}
+
+[data-theme="dark"] #theme-icon-sun {
+    display: block !important;
+}
+
+[data-theme="dark"] #theme-icon-container {
+    background: rgba(245, 158, 11, 0.15) !important;
+}
+</style>
+
+<script>
+// Enhanced Theme Toggle
+function toggleThemeEnhanced() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    // Update toggle button state
+    const toggleBtn = document.getElementById('theme-toggle-btn');
+    if (toggleBtn) {
+        if (newTheme === 'dark') {
+            toggleBtn.classList.add('active');
+        } else {
+            toggleBtn.classList.remove('active');
+        }
+    }
+
+    // Reinitialize lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Show toast notification
+    showToast(newTheme === 'dark' ? 'Mode sombre activé' : 'Mode clair activé', 'success');
+}
+
+// Initialize toggle state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const toggleBtn = document.getElementById('theme-toggle-btn');
+
+    if (savedTheme === 'dark' && toggleBtn) {
+        toggleBtn.classList.add('active');
+    }
+});
+
+// Toggle Notification Settings
+function toggleNotification(button, type) {
+    button.classList.toggle('active');
+    const isActive = button.classList.contains('active');
+
+    // Save preference (you can implement API call here)
+    console.log(`Notification ${type}: ${isActive ? 'enabled' : 'disabled'}`);
+
+    showToast(isActive ? 'Notifications activées' : 'Notifications désactivées', 'info');
+}
+
+// Change Password Modal
+function openChangePasswordModal() {
+    showToast('Fonctionnalité bientôt disponible', 'info');
+}
+
+// ==================== 2FA MANAGEMENT ====================
+
+let twoFactorState = {
+    enabled: false,
+    setupInProgress: false,
+    secret: null,
+    qrCode: null,
+    backupCodes: []
+};
+
+// Check 2FA Status on load
+async function check2FAStatus() {
+    try {
+        const response = await fetch('/api/2fa/status');
+        const data = await response.json();
+
+        if (data.success && data.status) {
+            twoFactorState.enabled = data.status.enabled;
+            update2FAStatusUI(data.status);
+        }
+    } catch (error) {
+        console.error('Error checking 2FA status:', error);
+    }
+}
+
+function update2FAStatusUI(status) {
+    const statusEl = document.querySelector('.wise-security-card[onclick="open2FAModal()"] .wise-security-subtitle');
+    if (statusEl) {
+        if (status.enabled) {
+            statusEl.textContent = `Activée • ${status.backup_codes_remaining} codes restants`;
+            statusEl.style.color = '#22c55e';
+        } else {
+            statusEl.textContent = 'Non configurée';
+            statusEl.style.color = '';
+        }
+    }
+}
+
+// Open 2FA Modal
+function open2FAModal() {
+    const modal = document.getElementById('twofa-modal');
+    if (!modal) {
+        create2FAModal();
+    }
+
+    document.getElementById('twofa-modal').classList.add('active');
+
+    // Show appropriate view
+    if (twoFactorState.enabled) {
+        show2FAManageView();
+    } else if (twoFactorState.setupInProgress) {
+        show2FAVerifyView();
+    } else {
+        show2FASetupView();
+    }
+}
+
+function close2FAModal() {
+    const modal = document.getElementById('twofa-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    // Reset setup state if not completed
+    if (!twoFactorState.enabled) {
+        twoFactorState.setupInProgress = false;
+        twoFactorState.secret = null;
+        twoFactorState.qrCode = null;
+    }
+}
+
+function create2FAModal() {
+    const modal = document.createElement('div');
+    modal.id = 'twofa-modal';
+    modal.className = 'wise-modal-overlay';
+    modal.innerHTML = `
+        <div class="wise-modal-container wise-modal-2fa">
+            <div class="wise-modal-header">
+                <div class="wise-modal-title-row">
+                    <div class="wise-modal-icon" style="background: rgba(34, 197, 94, 0.15);">
+                        <i data-lucide="shield-check" style="width: 24px; height: 24px; color: #22c55e;"></i>
+                    </div>
+                    <div>
+                        <h2 class="wise-modal-title">Authentification 2FA</h2>
+                        <p class="wise-modal-subtitle">Renforcez la sécurité de votre compte</p>
+                    </div>
+                </div>
+                <button class="wise-modal-close" onclick="close2FAModal()">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+
+            <div class="wise-modal-body">
+                <!-- Setup View -->
+                <div id="twofa-setup-view" class="twofa-view">
+                    <div class="twofa-info-box">
+                        <i data-lucide="info" style="width: 20px; height: 20px; color: #3b82f6;"></i>
+                        <div>
+                            <strong>Qu'est-ce que la 2FA ?</strong>
+                            <p>L'authentification à deux facteurs ajoute une couche de sécurité supplémentaire. Vous aurez besoin de votre mot de passe ET d'un code généré par une application.</p>
+                        </div>
+                    </div>
+
+                    <div class="twofa-apps-section">
+                        <h4>Applications recommandées :</h4>
+                        <div class="twofa-apps-grid">
+                            <div class="twofa-app">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234285f4'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E" alt="Google" style="width: 24px; height: 24px;">
+                                <span>Google Authenticator</span>
+                            </div>
+                            <div class="twofa-app">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f7931a'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E" alt="Authy" style="width: 24px; height: 24px;">
+                                <span>Authy</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="wise-btn wise-btn-primary" style="width: 100%;" onclick="start2FASetup()">
+                        <i data-lucide="shield-plus" style="width: 18px; height: 18px;"></i>
+                        Activer la 2FA
+                    </button>
+                </div>
+
+                <!-- QR Code View -->
+                <div id="twofa-qr-view" class="twofa-view" style="display: none;">
+                    <div class="twofa-steps">
+                        <div class="twofa-step active">
+                            <span class="step-number">1</span>
+                            <span>Scanner</span>
+                        </div>
+                        <div class="twofa-step">
+                            <span class="step-number">2</span>
+                            <span>Vérifier</span>
+                        </div>
+                        <div class="twofa-step">
+                            <span class="step-number">3</span>
+                            <span>Sauvegarder</span>
+                        </div>
+                    </div>
+
+                    <div class="twofa-qr-container">
+                        <div id="twofa-qr-code" class="twofa-qr-box">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+
+                    <div class="twofa-manual-entry">
+                        <p>Ou entrez ce code manuellement :</p>
+                        <div class="twofa-secret-box">
+                            <code id="twofa-secret-display">----</code>
+                            <button onclick="copySecret()" class="twofa-copy-btn">
+                                <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="wise-btn wise-btn-primary" style="width: 100%;" onclick="show2FAVerifyView()">
+                        Continuer
+                        <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </div>
+
+                <!-- Verify View -->
+                <div id="twofa-verify-view" class="twofa-view" style="display: none;">
+                    <div class="twofa-steps">
+                        <div class="twofa-step completed">
+                            <span class="step-number"><i data-lucide="check" style="width: 14px; height: 14px;"></i></span>
+                            <span>Scanner</span>
+                        </div>
+                        <div class="twofa-step active">
+                            <span class="step-number">2</span>
+                            <span>Vérifier</span>
+                        </div>
+                        <div class="twofa-step">
+                            <span class="step-number">3</span>
+                            <span>Sauvegarder</span>
+                        </div>
+                    </div>
+
+                    <div class="twofa-verify-section">
+                        <p>Entrez le code à 6 chiffres affiché dans votre application :</p>
+
+                        <div class="twofa-code-inputs" id="twofa-code-inputs">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="0" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="1" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="2" autocomplete="off">
+                            <span class="twofa-code-separator">-</span>
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="3" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="4" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="5" autocomplete="off">
+                        </div>
+
+                        <p id="twofa-verify-error" class="twofa-error" style="display: none;"></p>
+                    </div>
+
+                    <button class="wise-btn wise-btn-primary" style="width: 100%;" onclick="verify2FACode()" id="verify-2fa-btn">
+                        <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                        Vérifier et activer
+                    </button>
+                </div>
+
+                <!-- Backup Codes View -->
+                <div id="twofa-backup-view" class="twofa-view" style="display: none;">
+                    <div class="twofa-steps">
+                        <div class="twofa-step completed">
+                            <span class="step-number"><i data-lucide="check" style="width: 14px; height: 14px;"></i></span>
+                            <span>Scanner</span>
+                        </div>
+                        <div class="twofa-step completed">
+                            <span class="step-number"><i data-lucide="check" style="width: 14px; height: 14px;"></i></span>
+                            <span>Vérifier</span>
+                        </div>
+                        <div class="twofa-step active">
+                            <span class="step-number">3</span>
+                            <span>Sauvegarder</span>
+                        </div>
+                    </div>
+
+                    <div class="twofa-success-icon">
+                        <i data-lucide="shield-check" style="width: 48px; height: 48px; color: #22c55e;"></i>
+                    </div>
+
+                    <h3 style="text-align: center; margin-bottom: 8px;">2FA Activée avec succès !</h3>
+                    <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">
+                        Sauvegardez ces codes de secours dans un endroit sûr.
+                    </p>
+
+                    <div class="twofa-backup-codes" id="twofa-backup-codes-list">
+                        <!-- Codes will be inserted here -->
+                    </div>
+
+                    <div class="twofa-backup-actions">
+                        <button class="wise-btn wise-btn-outline" onclick="downloadBackupCodes()">
+                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                            Télécharger
+                        </button>
+                        <button class="wise-btn wise-btn-outline" onclick="copyBackupCodes()">
+                            <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
+                            Copier
+                        </button>
+                    </div>
+
+                    <div class="twofa-warning-box">
+                        <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #f59e0b;"></i>
+                        <p>Chaque code ne peut être utilisé qu'une seule fois. Gardez-les en sécurité !</p>
+                    </div>
+
+                    <button class="wise-btn wise-btn-primary" style="width: 100%; margin-top: 16px;" onclick="finish2FASetup()">
+                        <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                        J'ai sauvegardé mes codes
+                    </button>
+                </div>
+
+                <!-- Manage View (when 2FA is enabled) -->
+                <div id="twofa-manage-view" class="twofa-view" style="display: none;">
+                    <div class="twofa-status-card success">
+                        <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
+                        <div>
+                            <strong>2FA Activée</strong>
+                            <p>Votre compte est protégé</p>
+                        </div>
+                    </div>
+
+                    <div class="twofa-manage-options">
+                        <button class="twofa-option-btn" onclick="show2FADevices()">
+                            <i data-lucide="smartphone" style="width: 20px; height: 20px;"></i>
+                            <div>
+                                <strong>Appareils de confiance</strong>
+                                <span id="trusted-devices-count">0 appareil(s)</span>
+                            </div>
+                            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+                        </button>
+
+                        <button class="twofa-option-btn" onclick="regenerateBackupCodesModal()">
+                            <i data-lucide="key" style="width: 20px; height: 20px;"></i>
+                            <div>
+                                <strong>Codes de secours</strong>
+                                <span id="backup-codes-count">0 restant(s)</span>
+                            </div>
+                            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+                        </button>
+
+                        <button class="twofa-option-btn danger" onclick="show2FADisableView()">
+                            <i data-lucide="shield-off" style="width: 20px; height: 20px;"></i>
+                            <div>
+                                <strong>Désactiver la 2FA</strong>
+                                <span>Réduira la sécurité de votre compte</span>
+                            </div>
+                            <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Disable View -->
+                <div id="twofa-disable-view" class="twofa-view" style="display: none;">
+                    <div class="twofa-warning-banner">
+                        <i data-lucide="alert-triangle" style="width: 24px; height: 24px; color: #ef4444;"></i>
+                        <div>
+                            <strong>Attention</strong>
+                            <p>Désactiver la 2FA réduira significativement la sécurité de votre compte.</p>
+                        </div>
+                    </div>
+
+                    <div class="twofa-verify-section">
+                        <p>Pour désactiver, entrez un code de votre application :</p>
+
+                        <div class="twofa-code-inputs" id="twofa-disable-inputs">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="0" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="1" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="2" autocomplete="off">
+                            <span class="twofa-code-separator">-</span>
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="3" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="4" autocomplete="off">
+                            <input type="text" maxlength="1" class="twofa-code-digit" data-index="5" autocomplete="off">
+                        </div>
+
+                        <p id="twofa-disable-error" class="twofa-error" style="display: none;"></p>
+                    </div>
+
+                    <div class="twofa-disable-actions">
+                        <button class="wise-btn wise-btn-outline" onclick="show2FAManageView()">
+                            Annuler
+                        </button>
+                        <button class="wise-btn wise-btn-danger" onclick="disable2FA()" id="disable-2fa-btn">
+                            Désactiver
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Initialize lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Setup code inputs
+    setup2FACodeInputs('twofa-code-inputs');
+    setup2FACodeInputs('twofa-disable-inputs');
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            close2FAModal();
+        }
+    });
+}
+
+function setup2FACodeInputs(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const inputs = container.querySelectorAll('.twofa-code-digit');
+
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            const value = e.target.value;
+
+            // Only allow digits
+            if (!/^\d*$/.test(value)) {
+                e.target.value = '';
+                return;
+            }
+
+            if (value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+
+            // Auto-submit when all filled
+            const allFilled = Array.from(inputs).every(i => i.value.length === 1);
+            if (allFilled) {
+                if (containerId === 'twofa-code-inputs') {
+                    verify2FACode();
+                } else if (containerId === 'twofa-disable-inputs') {
+                    disable2FA();
+                }
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !input.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+
+        // Handle paste
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+
+            pastedData.split('').forEach((char, i) => {
+                if (inputs[i]) {
+                    inputs[i].value = char;
+                }
+            });
+
+            if (pastedData.length === 6) {
+                inputs[5].focus();
+            }
+        });
+    });
+}
+
+function getCodeFromInputs(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return '';
+
+    const inputs = container.querySelectorAll('.twofa-code-digit');
+    return Array.from(inputs).map(i => i.value).join('');
+}
+
+function clearCodeInputs(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const inputs = container.querySelectorAll('.twofa-code-digit');
+    inputs.forEach(i => i.value = '');
+    if (inputs[0]) inputs[0].focus();
+}
+
+// View transitions
+function hideAllViews() {
+    document.querySelectorAll('.twofa-view').forEach(v => v.style.display = 'none');
+}
+
+function show2FASetupView() {
+    hideAllViews();
+    document.getElementById('twofa-setup-view').style.display = 'block';
+}
+
+function show2FAQRView() {
+    hideAllViews();
+    document.getElementById('twofa-qr-view').style.display = 'block';
+}
+
+function show2FAVerifyView() {
+    hideAllViews();
+    document.getElementById('twofa-verify-view').style.display = 'block';
+    clearCodeInputs('twofa-code-inputs');
+    const firstInput = document.querySelector('#twofa-code-inputs .twofa-code-digit');
+    if (firstInput) setTimeout(() => firstInput.focus(), 100);
+}
+
+function show2FABackupView() {
+    hideAllViews();
+    document.getElementById('twofa-backup-view').style.display = 'block';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function show2FAManageView() {
+    hideAllViews();
+    document.getElementById('twofa-manage-view').style.display = 'block';
+    load2FAManageData();
+}
+
+function show2FADisableView() {
+    hideAllViews();
+    document.getElementById('twofa-disable-view').style.display = 'block';
+    clearCodeInputs('twofa-disable-inputs');
+}
+
+// API calls
+async function start2FASetup() {
+    try {
+        const response = await fetch('/api/2fa/setup', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.success) {
+            twoFactorState.setupInProgress = true;
+            twoFactorState.secret = data.secret;
+            twoFactorState.qrCode = data.qr_code;
+
+            // Display QR code
+            const qrContainer = document.getElementById('twofa-qr-code');
+            if (data.qr_code) {
+                qrContainer.innerHTML = `<img src="data:image/png;base64,${data.qr_code}" alt="QR Code" style="width: 180px; height: 180px;">`;
+            } else {
+                qrContainer.innerHTML = '<p style="text-align: center; padding: 40px;">QR code non disponible.<br>Utilisez le code manuel.</p>';
+            }
+
+            // Display secret
+            document.getElementById('twofa-secret-display').textContent = data.secret;
+
+            show2FAQRView();
+        } else {
+            showToast(data.error || 'Erreur lors du setup', 'error');
+        }
+    } catch (error) {
+        console.error('2FA setup error:', error);
+        showToast('Erreur de connexion', 'error');
+    }
+}
+
+async function verify2FACode() {
+    const code = getCodeFromInputs('twofa-code-inputs');
+    if (code.length !== 6) {
+        document.getElementById('twofa-verify-error').textContent = 'Veuillez entrer un code à 6 chiffres';
+        document.getElementById('twofa-verify-error').style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('verify-2fa-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner-small"></span> Vérification...';
+
+    try {
+        const response = await fetch('/api/2fa/enable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            twoFactorState.enabled = true;
+            twoFactorState.setupInProgress = false;
+            twoFactorState.backupCodes = data.backup_codes || [];
+
+            // Display backup codes
+            displayBackupCodes(data.backup_codes);
+
+            show2FABackupView();
+            update2FAStatusUI({ enabled: true, backup_codes_remaining: data.backup_codes?.length || 0 });
+        } else {
+            document.getElementById('twofa-verify-error').textContent = data.error || 'Code invalide';
+            document.getElementById('twofa-verify-error').style.display = 'block';
+            clearCodeInputs('twofa-code-inputs');
+        }
+    } catch (error) {
+        console.error('2FA verify error:', error);
+        showToast('Erreur de connexion', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="check" style="width: 18px; height: 18px;"></i> Vérifier et activer';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}
+
+function displayBackupCodes(codes) {
+    const container = document.getElementById('twofa-backup-codes-list');
+    if (!container || !codes) return;
+
+    container.innerHTML = codes.map(code => `
+        <div class="twofa-backup-code">${code}</div>
+    `).join('');
+}
+
+async function disable2FA() {
+    const code = getCodeFromInputs('twofa-disable-inputs');
+    if (code.length !== 6) {
+        document.getElementById('twofa-disable-error').textContent = 'Veuillez entrer un code à 6 chiffres';
+        document.getElementById('twofa-disable-error').style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('disable-2fa-btn');
+    btn.disabled = true;
+    btn.textContent = 'Désactivation...';
+
+    try {
+        const response = await fetch('/api/2fa/disable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            twoFactorState.enabled = false;
+            showToast('2FA désactivée avec succès', 'success');
+            update2FAStatusUI({ enabled: false });
+            close2FAModal();
+        } else {
+            document.getElementById('twofa-disable-error').textContent = data.error || 'Code invalide';
+            document.getElementById('twofa-disable-error').style.display = 'block';
+            clearCodeInputs('twofa-disable-inputs');
+        }
+    } catch (error) {
+        console.error('2FA disable error:', error);
+        showToast('Erreur de connexion', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Désactiver';
+    }
+}
+
+async function load2FAManageData() {
+    try {
+        const response = await fetch('/api/2fa/status');
+        const data = await response.json();
+
+        if (data.success && data.status) {
+            document.getElementById('trusted-devices-count').textContent =
+                `${data.status.trusted_devices_count || 0} appareil(s)`;
+            document.getElementById('backup-codes-count').textContent =
+                `${data.status.backup_codes_remaining || 0} restant(s)`;
+        }
+    } catch (error) {
+        console.error('Error loading 2FA data:', error);
+    }
+}
+
+function finish2FASetup() {
+    showToast('2FA configurée avec succès !', 'success');
+    close2FAModal();
+}
+
+function copySecret() {
+    const secret = twoFactorState.secret;
+    if (secret) {
+        navigator.clipboard.writeText(secret);
+        showToast('Code copié !', 'success');
+    }
+}
+
+function copyBackupCodes() {
+    const codes = twoFactorState.backupCodes;
+    if (codes && codes.length) {
+        navigator.clipboard.writeText(codes.join('\n'));
+        showToast('Codes copiés !', 'success');
+    }
+}
+
+function downloadBackupCodes() {
+    const codes = twoFactorState.backupCodes;
+    if (codes && codes.length) {
+        const content = `SarfX - Codes de secours 2FA\n${'='.repeat(30)}\n\nDate: ${new Date().toLocaleDateString()}\n\n${codes.join('\n')}\n\n⚠️ Gardez ces codes en sécurité. Chaque code ne peut être utilisé qu'une seule fois.`;
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sarfx-backup-codes.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showToast('Codes téléchargés !', 'success');
+    }
+}
+
+function show2FADevices() {
+    showToast('Gestion des appareils bientôt disponible', 'info');
+}
+
+function regenerateBackupCodesModal() {
+    showToast('Régénération des codes bientôt disponible', 'info');
+}
+
+// Initialize 2FA status check
+document.addEventListener('DOMContentLoaded', function() {
+    check2FAStatus();
+});
+
+// Toast Notification
+function showToast(message, type = 'info') {
+    // Remove existing toast
+    const existingToast = document.querySelector('.wise-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `wise-toast wise-toast-${type} animate-slide-right`;
+    toast.innerHTML = `
+        <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" style="width: 18px; height: 18px;"></i>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+
+<style>
+/* Toast Styles */
+.wise-toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.wise-toast.hide {
+    animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+}
+
+.wise-toast-success {
+    border-left: 3px solid #22c55e;
+}
+
+.wise-toast-success i {
+    color: #22c55e;
+}
+
+.wise-toast-error {
+    border-left: 3px solid #ef4444;
+}
+
+.wise-toast-error i {
+    color: #ef4444;
+}
+
+.wise-toast-info {
+    border-left: 3px solid #3b82f6;
+}
+
+.wise-toast-info i {
+    color: #3b82f6;
+}
+
+.wise-toast span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .wise-toast {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ==================== 2FA MODAL STYLES ==================== */
+
+.wise-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.wise-modal-overlay.active {
+    display: flex;
+}
+
+.wise-modal-container {
+    background: var(--surface);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.wise-modal-header {
+    padding: 20px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.wise-modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.wise-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wise-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.wise-modal-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 4px 0 0 0;
+}
+
+.wise-modal-close {
+    background: var(--bg-tertiary);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.wise-modal-close:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.wise-modal-body {
+    padding: 20px;
+}
+
+/* 2FA Info Box */
+.twofa-info-box {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.twofa-info-box strong {
+    display: block;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.twofa-info-box p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* 2FA Apps Section */
+.twofa-apps-section {
+    margin-bottom: 20px;
+}
+
+.twofa-apps-section h4 {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.twofa-apps-grid {
+    display: flex;
+    gap: 12px;
+}
+
+.twofa-app {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+/* 2FA Steps */
+.twofa-steps {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.twofa-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.5;
+}
+
+.twofa-step.active,
+.twofa-step.completed {
+    opacity: 1;
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.twofa-step.active .step-number {
+    background: var(--brand-primary);
+    color: white;
+}
+
+.twofa-step.completed .step-number {
+    background: #22c55e;
+    color: white;
+}
+
+.twofa-step span:last-child {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* QR Code */
+.twofa-qr-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.twofa-qr-box {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 212px;
+    min-height: 212px;
+}
+
+/* Manual Entry */
+.twofa-manual-entry {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.twofa-manual-entry p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.twofa-secret-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+.twofa-secret-box code {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 14px;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.twofa-copy-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.twofa-copy-btn:hover {
+    color: var(--brand-primary);
+    background: rgba(255, 111, 0, 0.1);
+}
+
+/* Code Inputs */
+.twofa-verify-section {
+    margin-bottom: 20px;
+}
+
+.twofa-verify-section > p {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.twofa-code-inputs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.twofa-code-digit {
+    width: 44px;
+    height: 52px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.twofa-code-digit:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    background: var(--surface);
+}
+
+.twofa-code-separator {
+    font-size: 20px;
+    color: var(--text-tertiary);
+}
+
+.twofa-error {
+    text-align: center;
+    font-size: 13px;
+    color: #ef4444;
+}
+
+/* Backup Codes */
+.twofa-success-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.twofa-backup-codes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.twofa-backup-code {
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 13px;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.twofa-backup-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.twofa-backup-actions .wise-btn {
+    flex: 1;
+}
+
+.twofa-warning-box {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 10px;
+}
+
+.twofa-warning-box p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Manage View */
+.twofa-status-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.twofa-status-card.success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.twofa-status-card strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.twofa-status-card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+}
+
+.twofa-manage-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.twofa-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.twofa-option-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+.twofa-option-btn i:first-child {
+    color: var(--text-secondary);
+}
+
+.twofa-option-btn div {
+    flex: 1;
+}
+
+.twofa-option-btn strong {
+    display: block;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.twofa-option-btn span {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.twofa-option-btn i:last-child {
+    color: var(--text-tertiary);
+}
+
+.twofa-option-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.twofa-option-btn.danger i:first-child {
+    color: #ef4444;
+}
+
+/* Disable View */
+.twofa-warning-banner {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.twofa-warning-banner strong {
+    display: block;
+    color: #ef4444;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.twofa-warning-banner p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.twofa-disable-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.twofa-disable-actions .wise-btn {
+    flex: 1;
+}
+
+.wise-btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+}
+
+.wise-btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Loading Spinners */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner-small {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+[data-theme="dark"] .twofa-qr-box {
+    background: #ffffff;
 }
 </style>
 {% endblock %}

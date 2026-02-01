@@ -1,0 +1,335 @@
+{% extends "app_base.html" %}
+
+{% block title %}Portefeuilles - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    .currency-flag {
+        font-size: 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+                        <i data-lucide="wallet" class="w-8 h-8"></i>
+                    </span>
+                    Gestion des Portefeuilles
+                </h1>
+                <p class="admin-subtitle">
+                    <strong id="wallet-count">{{ wallets | length }}</strong> portefeuilles actifs
+                </p>
+            </div>
+
+            <div class="admin-header-actions">
+                <button onclick="showStatsModal()" class="admin-btn admin-btn-outline-secondary">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    Statistiques
+                </button>
+                <button onclick="exportWallets()" class="admin-btn admin-btn-outline-primary">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="wallet" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total Wallets</p>
+                <p class="admin-stat-value">{{ wallets | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Actifs</p>
+                <p class="admin-stat-value">{{ wallets | selectattr('is_active', 'defined') | selectattr('is_active') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-info">
+                <i data-lucide="banknote" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Devises</p>
+                <p class="admin-stat-value">8</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon admin-stat-icon-primary">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Ajustements</p>
+                <p class="admin-stat-value" id="adjustmentsCount">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-search-filters">
+                <div class="admin-search-box" style="flex: 1; min-width: 250px;">
+                    <i data-lucide="search" class="admin-search-icon"></i>
+                    <input type="text"
+                           id="search-input"
+                           placeholder="Rechercher par email..."
+                           class="admin-search-input"
+                           onkeyup="filterWallets()">
+                </div>
+
+                <div class="admin-filter-pills">
+                    <button class="admin-filter-pill active" data-filter="all" onclick="filterByCurrency('all')">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        Toutes
+                    </button>
+                    <button class="admin-filter-pill" data-filter="USD" onclick="filterByCurrency('USD')">
+                        🇺🇸 USD
+                    </button>
+                    <button class="admin-filter-pill" data-filter="EUR" onclick="filterByCurrency('EUR')">
+                        🇪🇺 EUR
+                    </button>
+                    <button class="admin-filter-pill" data-filter="GBP" onclick="filterByCurrency('GBP')">
+                        🇬🇧 GBP
+                    </button>
+                    <button class="admin-filter-pill" data-filter="MAD" onclick="filterByCurrency('MAD')">
+                        🇲🇦 MAD
+                    </button>
+                    <button class="admin-filter-pill" data-filter="CHF" onclick="filterByCurrency('CHF')">
+                        🇨🇭 CHF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallets Grid -->
+    <div class="admin-wallets-grid" id="wallets-container">
+        {% for wallet in wallets %}
+        <div class="admin-wallet-card admin-card wallet-card"
+             data-email="{{ wallet.get('user_email', '')|lower }}"
+             data-wallet-id="{{ wallet.get('wallet_id', '') }}">
+
+            <!-- Wallet Header -->
+            <div class="admin-wallet-header">
+                <div class="admin-wallet-user">
+                    <div class="admin-wallet-avatar">
+                        {{ wallet.get('user_email', 'U')[0]|upper }}
+                    </div>
+                    <div class="admin-wallet-info">
+                        <p class="admin-wallet-email">{{ wallet.get('user_email', 'Inconnu') }}</p>
+                        <p class="admin-wallet-id">{{ wallet.get('wallet_id', '')[:16] }}...</p>
+                    </div>
+                </div>
+                <div class="admin-wallet-actions">
+                    <button onclick="showWalletHistory('{{ wallet.get('wallet_id', '') }}', '{{ wallet.get('user_email', '') }}')"
+                            class="admin-btn-icon-sm" title="Historique">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                    </button>
+                    <span class="admin-status-indicator admin-status-{{ 'online' if wallet.get('is_active', True) else 'offline' }}">
+                        {{ 'Actif' if wallet.get('is_active', True) else 'Inactif' }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Wallet Balances -->
+            <div class="admin-wallet-balances">
+                {% for currency, balance in wallet.get('balances', {}).items() %}
+                <div class="admin-balance-item balance-card" data-currency="{{ currency }}" data-balance="{{ balance }}">
+                    <span class="admin-balance-currency">
+                        {% if currency == 'USD' %}🇺🇸
+                        {% elif currency == 'EUR' %}🇪🇺
+                        {% elif currency == 'GBP' %}🇬🇧
+                        {% elif currency == 'MAD' %}🇲🇦
+                        {% elif currency == 'CHF' %}🇨🇭
+                        {% elif currency == 'CAD' %}🇨🇦
+                        {% elif currency == 'AED' %}🇦🇪
+                        {% elif currency == 'SAR' %}🇸🇦
+                        {% else %}💱
+                        {% endif %}
+                        {{ currency }}
+                    </span>
+                    <span class="admin-balance-value">{{ "{:,.2f}".format(balance) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Wallet Footer -->
+            <div class="admin-wallet-footer">
+                <button onclick="openAdjustModal('{{ wallet.get('wallet_id', '') }}', '{{ wallet.get('user_email', '') }}')"
+                        class="admin-btn admin-btn-sm admin-btn-outline-primary">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    Ajuster
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="admin-empty-state" style="grid-column: 1 / -1;">
+            <i data-lucide="wallet" class="w-16 h-16"></i>
+            <p>Aucun portefeuille trouvé</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Adjust Balance Modal -->
+<div id="adjustModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeAdjustModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">
+                <i data-lucide="sliders" class="w-5 h-5"></i>
+                Ajuster le solde
+            </h3>
+            <button onclick="closeAdjustModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <form id="adjustForm" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="wallet_id" id="adjust-wallet-id">
+
+                <div class="admin-form-group">
+                    <label class="admin-form-label">Utilisateur</label>
+                    <p id="adjust-user-email" class="admin-form-value"></p>
+                </div>
+
+                <div class="admin-form-group">
+                    <label class="admin-form-label">Devise</label>
+                    <select name="currency" id="adjust-currency" class="admin-select" required>
+                        <option value="MAD">🇲🇦 MAD</option>
+                        <option value="EUR">🇪🇺 EUR</option>
+                        <option value="USD">🇺🇸 USD</option>
+                        <option value="GBP">🇬🇧 GBP</option>
+                        <option value="CHF">🇨🇭 CHF</option>
+                        <option value="CAD">🇨🇦 CAD</option>
+                    </select>
+                </div>
+
+                <div class="admin-form-group">
+                    <label class="admin-form-label">Montant</label>
+                    <input type="number" name="amount" step="0.01" class="admin-input" placeholder="Ex: 100.00 ou -50.00" required>
+                    <p class="admin-form-hint">Utilisez des valeurs négatives pour déduire</p>
+                </div>
+
+                <div class="admin-form-group">
+                    <label class="admin-form-label">Raison</label>
+                    <input type="text" name="reason" class="admin-input" placeholder="Raison de l'ajustement" required>
+                </div>
+
+                <div class="admin-form-actions">
+                    <button type="button" onclick="closeAdjustModal()" class="admin-btn admin-btn-outline-secondary">
+                        Annuler
+                    </button>
+                    <button type="submit" class="admin-btn admin-btn-success">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        Appliquer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+<script>
+let currentCurrencyFilter = 'all';
+
+function filterWallets() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.wallet-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const email = card.dataset.email || '';
+        let show = !search || email.includes(search);
+
+        if (show && currentCurrencyFilter !== 'all') {
+            const balanceCards = card.querySelectorAll('.balance-card');
+            let hasCurrency = false;
+            balanceCards.forEach(bc => {
+                if (bc.dataset.currency === currentCurrencyFilter) {
+                    hasCurrency = true;
+                }
+            });
+            show = hasCurrency;
+        }
+
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+
+    document.getElementById('wallet-count').textContent = visibleCount;
+}
+
+function filterByCurrency(currency) {
+    currentCurrencyFilter = currency;
+
+    document.querySelectorAll('.admin-filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === currency);
+    });
+
+    filterWallets();
+}
+
+function openAdjustModal(walletId, userEmail) {
+    document.getElementById('adjust-wallet-id').value = walletId;
+    document.getElementById('adjust-user-email').textContent = userEmail;
+    document.getElementById('adjustForm').action = '/admin/wallets/' + walletId + '/adjust';
+    document.getElementById('adjustModal').classList.remove('hidden');
+}
+
+function closeAdjustModal() {
+    document.getElementById('adjustModal').classList.add('hidden');
+}
+
+function showWalletHistory(walletId, userEmail) {
+    // Implement wallet history modal
+    alert('Historique de ' + userEmail);
+}
+
+function showStatsModal() {
+    alert('Statistiques des portefeuilles');
+}
+
+function exportWallets() {
+    window.location.href = '/admin/wallets/export';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

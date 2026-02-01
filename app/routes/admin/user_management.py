@@ -11,7 +11,7 @@ from datetime import datetime
 def users():
     db = get_db()
     all_users = list(db.users.find().sort("email", 1))
-    return render_template('admin/users.html', users=all_users)
+    return render_template('admin/users_2026.html', users=all_users, active_tab='admin_users')
 
 
 @admin_bp.route('/users/<user_id>/toggle', methods=['POST'])
@@ -269,4 +269,89 @@ def bulk_delete_users():
             "transactions": total_transactions,
             "beneficiaries": total_beneficiaries
         }
+    })
+
+
+# ==================== KYC & TAGS MANAGEMENT ====================
+
+@admin_bp.route('/users/<user_id>/kyc', methods=['POST'])
+@admin_required
+def update_user_kyc(user_id):
+    """Update KYC status for a user"""
+    db = get_db()
+    data = request.get_json() or {}
+
+    status = data.get('status', 'none')
+    note = data.get('note', '')
+
+    update_data = {
+        "kyc_status": status,
+        "kyc_updated_at": datetime.utcnow(),
+        "kyc_updated_by": session.get('email')
+    }
+
+    if note:
+        update_data["kyc_note"] = note
+
+    result = db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": update_data}
+    )
+
+    if result.modified_count > 0:
+        log_history("USER_KYC_UPDATE", f"KYC mis à jour: {status}", user=session.get('email'))
+        return jsonify({"success": True, "message": "Statut KYC mis à jour"})
+
+    return jsonify({"success": False, "message": "Erreur lors de la mise à jour"}), 400
+
+
+@admin_bp.route('/users/<user_id>/tags', methods=['POST'])
+@admin_required
+def update_user_tags(user_id):
+    """Update tags for a user"""
+    db = get_db()
+    data = request.get_json() or {}
+
+    tags = data.get('tags', [])
+
+    result = db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {
+            "tags": tags,
+            "tags_updated_at": datetime.utcnow(),
+            "tags_updated_by": session.get('email')
+        }}
+    )
+
+    if result.modified_count > 0 or result.matched_count > 0:
+        log_history("USER_TAGS_UPDATE", f"Tags mis à jour: {', '.join(tags)}", user=session.get('email'))
+        return jsonify({"success": True, "message": "Tags mis à jour"})
+
+    return jsonify({"success": False, "message": "Erreur lors de la mise à jour"}), 400
+
+
+@admin_bp.route('/users/<user_id>/toggle-status', methods=['POST'])
+@admin_required
+def toggle_user_status(user_id):
+    """Toggle user active status"""
+    db = get_db()
+    user = db.users.find_one({"_id": ObjectId(user_id)})
+
+    if not user:
+        return jsonify({"success": False, "message": "Utilisateur non trouvé"}), 404
+
+    new_status = not user.get('is_active', True)
+
+    db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"is_active": new_status}}
+    )
+
+    log_history("USER_TOGGLE", f"Utilisateur {user['email']} {'activé' if new_status else 'désactivé'}",
+               user=session.get('email'))
+
+    return jsonify({
+        "success": True,
+        "message": f"Utilisateur {'activé' if new_status else 'désactivé'}",
+        "is_active": new_status
     })

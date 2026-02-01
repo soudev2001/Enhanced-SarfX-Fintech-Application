@@ -1,0 +1,460 @@
+/**
+ * SarfX RTL (Right-to-Left) Support
+ * For Arabic language support
+ */
+
+/* ==================== Base RTL Rules ==================== */
+
+[dir="rtl"] {
+    /* Flip text alignment */
+    text-align: right;
+}
+
+[dir="rtl"] body {
+    font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+}
+
+/* ==================== Layout ==================== */
+
+/* Sidebar */
+[dir="rtl"] .wise-sidebar {
+    left: auto;
+    right: 0;
+    border-left: 1px solid var(--border-color);
+    border-right: none;
+}
+
+[dir="rtl"] .wise-main-content {
+    margin-left: 0;
+    margin-right: 280px;
+}
+
+/* Nav items */
+[dir="rtl"] .wise-nav-item {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+[dir="rtl"] .wise-nav-icon {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+/* ==================== Buttons & Actions ==================== */
+
+[dir="rtl"] .btn i,
+[dir="rtl"] .button i,
+[dir="rtl"] button i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+[dir="rtl"] .btn-icon-left i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+[dir="rtl"] .btn-icon-right i {
+    margin-left: 0;
+    margin-right: 8px;
+}
+
+/* ==================== Forms ==================== */
+
+[dir="rtl"] .form-group label,
+[dir="rtl"] .form-label {
+    text-align: right;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+    text-align: right;
+}
+
+[dir="rtl"] input[type="number"] {
+    /* Numbers should still be LTR */
+    direction: ltr;
+    text-align: right;
+}
+
+[dir="rtl"] .input-icon-left {
+    left: auto;
+    right: 12px;
+}
+
+[dir="rtl"] .input-icon-right {
+    right: auto;
+    left: 12px;
+}
+
+[dir="rtl"] .input-with-icon-left {
+    padding-left: 12px;
+    padding-right: 40px;
+}
+
+[dir="rtl"] .input-with-icon-right {
+    padding-right: 12px;
+    padding-left: 40px;
+}
+
+/* ==================== Cards ==================== */
+
+[dir="rtl"] .card-header,
+[dir="rtl"] .card-body,
+[dir="rtl"] .card-footer {
+    text-align: right;
+}
+
+[dir="rtl"] .card-header-actions {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* ==================== Tables ==================== */
+
+[dir="rtl"] table {
+    direction: rtl;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+    text-align: right;
+}
+
+[dir="rtl"] th:first-child,
+[dir="rtl"] td:first-child {
+    text-align: right;
+}
+
+[dir="rtl"] th:last-child,
+[dir="rtl"] td:last-child {
+    text-align: left;
+}
+
+/* ==================== Lists ==================== */
+
+[dir="rtl"] ul,
+[dir="rtl"] ol {
+    padding-right: 20px;
+    padding-left: 0;
+}
+
+[dir="rtl"] .list-item-icon {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+/* ==================== Modals ==================== */
+
+[dir="rtl"] .modal-close {
+    right: auto;
+    left: 16px;
+}
+
+[dir="rtl"] .modal-header {
+    text-align: right;
+}
+
+/* ==================== Dropdowns ==================== */
+
+[dir="rtl"] .dropdown-menu {
+    left: 0;
+    right: auto;
+}
+
+[dir="rtl"] .dropdown-item {
+    text-align: right;
+}
+
+[dir="rtl"] .dropdown-item i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+/* ==================== Badges ==================== */
+
+[dir="rtl"] .badge-with-icon i {
+    margin-right: 0;
+    margin-left: 4px;
+}
+
+/* ==================== Alerts ==================== */
+
+[dir="rtl"] .alert {
+    text-align: right;
+}
+
+[dir="rtl"] .alert-icon {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+/* ==================== Toasts ==================== */
+
+[dir="rtl"] .toast-container {
+    right: auto;
+    left: 20px;
+}
+
+[dir="rtl"] .toast {
+    flex-direction: row-reverse;
+}
+
+/* ==================== Top Actions Bar ==================== */
+
+[dir="rtl"] .wise-top-actions {
+    right: auto;
+    left: 16px;
+    flex-direction: row-reverse;
+}
+
+/* ==================== Transaction Items ==================== */
+
+[dir="rtl"] .transaction-item {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .transaction-icon {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+[dir="rtl"] .transaction-amount {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* ==================== Wallet Cards ==================== */
+
+[dir="rtl"] .wallet-card {
+    text-align: right;
+}
+
+[dir="rtl"] .wallet-balance {
+    text-align: right;
+}
+
+[dir="rtl"] .wallet-actions {
+    flex-direction: row-reverse;
+}
+
+/* ==================== Currency Converter ==================== */
+
+[dir="rtl"] .converter-swap-btn {
+    transform: rotate(180deg);
+}
+
+/* ==================== Stats Grid ==================== */
+
+[dir="rtl"] .stat-card {
+    text-align: right;
+}
+
+[dir="rtl"] .stat-icon {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+/* ==================== Beneficiary Cards ==================== */
+
+[dir="rtl"] .beneficiary-item {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .beneficiary-avatar {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+/* ==================== Search ==================== */
+
+[dir="rtl"] .search-input {
+    padding-right: 40px;
+    padding-left: 12px;
+}
+
+[dir="rtl"] .search-icon {
+    left: auto;
+    right: 12px;
+}
+
+/* ==================== Pagination ==================== */
+
+[dir="rtl"] .pagination {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .pagination-prev i,
+[dir="rtl"] .pagination-next i {
+    transform: rotate(180deg);
+}
+
+/* ==================== Breadcrumbs ==================== */
+
+[dir="rtl"] .breadcrumbs {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .breadcrumb-separator {
+    transform: rotate(180deg);
+}
+
+/* ==================== Tabs ==================== */
+
+[dir="rtl"] .tabs {
+    flex-direction: row-reverse;
+}
+
+/* ==================== Steps / Progress ==================== */
+
+[dir="rtl"] .steps {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .step-connector {
+    transform: rotate(180deg);
+}
+
+/* ==================== Charts ==================== */
+
+[dir="rtl"] .apexcharts-legend {
+    direction: rtl;
+}
+
+/* ==================== Mobile Responsive RTL ==================== */
+
+@media (max-width: 1024px) {
+    [dir="rtl"] .wise-main-content {
+        margin-right: 0;
+    }
+
+    [dir="rtl"] .wise-sidebar {
+        transform: translateX(100%);
+    }
+
+    [dir="rtl"] .wise-sidebar.open {
+        transform: translateX(0);
+    }
+
+    [dir="rtl"] .mobile-sidebar-toggle {
+        left: auto;
+        right: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    [dir="rtl"] .wise-top-actions {
+        left: 8px;
+    }
+
+    [dir="rtl"] .card-actions {
+        flex-direction: column;
+    }
+}
+
+/* ==================== Animations RTL ==================== */
+
+[dir="rtl"] .slide-in-left {
+    animation: slideInRight 0.3s ease-out;
+}
+
+[dir="rtl"] .slide-in-right {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ==================== Flexbox RTL Helpers ==================== */
+
+[dir="rtl"] .flex-row {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .justify-start {
+    justify-content: flex-end;
+}
+
+[dir="rtl"] .justify-end {
+    justify-content: flex-start;
+}
+
+[dir="rtl"] .mr-auto {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+[dir="rtl"] .ml-auto {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* ==================== Spacing RTL Helpers ==================== */
+
+[dir="rtl"] .ml-1, [dir="rtl"] .ml-2, [dir="rtl"] .ml-3, [dir="rtl"] .ml-4, [dir="rtl"] .ml-5 {
+    margin-left: 0;
+}
+
+[dir="rtl"] .mr-1, [dir="rtl"] .mr-2, [dir="rtl"] .mr-3, [dir="rtl"] .mr-4, [dir="rtl"] .mr-5 {
+    margin-right: 0;
+}
+
+[dir="rtl"] .ml-1 { margin-right: 0.25rem; }
+[dir="rtl"] .ml-2 { margin-right: 0.5rem; }
+[dir="rtl"] .ml-3 { margin-right: 0.75rem; }
+[dir="rtl"] .ml-4 { margin-right: 1rem; }
+[dir="rtl"] .ml-5 { margin-right: 1.25rem; }
+
+[dir="rtl"] .mr-1 { margin-left: 0.25rem; }
+[dir="rtl"] .mr-2 { margin-left: 0.5rem; }
+[dir="rtl"] .mr-3 { margin-left: 0.75rem; }
+[dir="rtl"] .mr-4 { margin-left: 1rem; }
+[dir="rtl"] .mr-5 { margin-left: 1.25rem; }
+
+[dir="rtl"] .pl-1, [dir="rtl"] .pl-2, [dir="rtl"] .pl-3, [dir="rtl"] .pl-4, [dir="rtl"] .pl-5 {
+    padding-left: 0;
+}
+
+[dir="rtl"] .pr-1, [dir="rtl"] .pr-2, [dir="rtl"] .pr-3, [dir="rtl"] .pr-4, [dir="rtl"] .pr-5 {
+    padding-right: 0;
+}
+
+[dir="rtl"] .pl-1 { padding-right: 0.25rem; }
+[dir="rtl"] .pl-2 { padding-right: 0.5rem; }
+[dir="rtl"] .pl-3 { padding-right: 0.75rem; }
+[dir="rtl"] .pl-4 { padding-right: 1rem; }
+[dir="rtl"] .pl-5 { padding-right: 1.25rem; }
+
+[dir="rtl"] .pr-1 { padding-left: 0.25rem; }
+[dir="rtl"] .pr-2 { padding-left: 0.5rem; }
+[dir="rtl"] .pr-3 { padding-left: 0.75rem; }
+[dir="rtl"] .pr-4 { padding-left: 1rem; }
+[dir="rtl"] .pr-5 { padding-left: 1.25rem; }
+
+/* ==================== Print RTL ==================== */
+
+@media print {
+    [dir="rtl"] body {
+        direction: rtl;
+    }
+}

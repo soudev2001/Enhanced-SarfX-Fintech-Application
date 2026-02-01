@@ -1,0 +1,425 @@
+{% extends "app_base.html" %}
+
+{% block title %}Démonstration Vidéo - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    .demo-card-hover {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .demo-card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    @keyframes recording-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .recording-indicator {
+        animation: recording-pulse 1.5s infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #ef4444, #ec4899);">
+                        <i data-lucide="video" class="w-8 h-8"></i>
+                    </span>
+                    Démonstrations Vidéo
+                </h1>
+                <p class="admin-subtitle">🎬 Tests automatisés avec enregistrement vidéo</p>
+            </div>
+
+            <div class="admin-header-actions">
+                <button onclick="refreshAllStatuses()" class="admin-btn admin-btn-ghost">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Actualiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execution Mode Card -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-demo-mode-selector">
+                <div class="admin-demo-mode-label">
+                    <i data-lucide="monitor" class="w-5 h-5 text-primary"></i>
+                    <span>Mode d'exécution</span>
+                </div>
+                <div class="admin-demo-mode-options">
+                    <label class="admin-demo-mode-option">
+                        <input type="radio" name="execMode" value="server-headless" checked>
+                        <span class="admin-demo-mode-btn">
+                            <i data-lucide="eye-off" class="w-4 h-4"></i>
+                            Serveur (headless)
+                        </span>
+                    </label>
+                    <label class="admin-demo-mode-option">
+                        <input type="radio" name="execMode" value="server-visible">
+                        <span class="admin-demo-mode-btn">
+                            <i data-lucide="monitor" class="w-4 h-4"></i>
+                            Serveur (visible)
+                        </span>
+                    </label>
+                    <label class="admin-demo-mode-option">
+                        <input type="radio" name="execMode" value="local">
+                        <span class="admin-demo-mode-btn">
+                            <i data-lucide="laptop" class="w-4 h-4"></i>
+                            Local (ma machine)
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local Instructions (hidden by default) -->
+    <div id="local-instructions" class="admin-card admin-card-warning" style="display: none;">
+        <div class="admin-card-body">
+            <div class="admin-info-header">
+                <i data-lucide="download" class="w-5 h-5 text-warning"></i>
+                <h4>Exécution sur votre machine</h4>
+            </div>
+            <p class="text-sm text-muted mb-4">Pour voir le robot en action sur votre écran :</p>
+            <div class="admin-steps-list">
+                <div class="admin-step-item">
+                    <span class="admin-step-number">1</span>
+                    <span>Installez Python 3.8+ et Playwright : <code class="admin-code-inline">pip install playwright && playwright install chromium</code></span>
+                </div>
+                <div class="admin-step-item">
+                    <span class="admin-step-number">2</span>
+                    <span>Téléchargez le script ci-dessous</span>
+                </div>
+                <div class="admin-step-item">
+                    <span class="admin-step-number">3</span>
+                    <span>Exécutez : <code class="admin-code-inline">python sarfx_demo.py --role admin --visible</code></span>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4">
+                <a href="/admin/demo/download-script" class="admin-btn admin-btn-warning">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Télécharger sarfx_demo.py
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Cards Grid -->
+    <div class="admin-demo-grid">
+        <!-- Admin Demo -->
+        <div class="admin-card demo-card-hover admin-demo-card" id="demo-card-admin">
+            <div class="admin-card-body">
+                <div class="admin-demo-icon" style="background: linear-gradient(135deg, #ef4444, #ec4899);">
+                    <span>👑</span>
+                </div>
+                <h3 class="admin-demo-title">Admin Demo</h3>
+                <p class="admin-demo-desc">Dashboard, Utilisateurs, Banques, ATMs, Transactions</p>
+
+                <div class="admin-demo-status" id="status-admin">
+                    <span class="admin-status-badge admin-status-ready">
+                        <i data-lucide="circle" class="w-2 h-2"></i>
+                        Prêt
+                    </span>
+                </div>
+
+                <button onclick="startPlaywrightDemo('admin')" id="btn-admin"
+                        class="admin-btn admin-btn-lg w-full" style="background: linear-gradient(135deg, #ef4444, #ec4899);">
+                    <i data-lucide="play" class="w-5 h-5"></i>
+                    Lancer Admin Demo
+                </button>
+
+                <div class="admin-demo-video" id="video-admin" style="display: none;">
+                    <video controls class="w-full rounded-lg"></video>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Demo -->
+        <div class="admin-card demo-card-hover admin-demo-card" id="demo-card-bank">
+            <div class="admin-card-body">
+                <div class="admin-demo-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                    <span>🏦</span>
+                </div>
+                <h3 class="admin-demo-title">Bank Respo Demo</h3>
+                <p class="admin-demo-desc">Config Banque, ATMs Banque, Convertisseur, Wallets</p>
+
+                <div class="admin-demo-status" id="status-bank">
+                    <span class="admin-status-badge admin-status-ready">
+                        <i data-lucide="circle" class="w-2 h-2"></i>
+                        Prêt
+                    </span>
+                </div>
+
+                <button onclick="startPlaywrightDemo('bank')" id="btn-bank"
+                        class="admin-btn admin-btn-lg w-full" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                    <i data-lucide="play" class="w-5 h-5"></i>
+                    Lancer Bank Demo
+                </button>
+
+                <div class="admin-demo-video" id="video-bank" style="display: none;">
+                    <video controls class="w-full rounded-lg"></video>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Demo -->
+        <div class="admin-card demo-card-hover admin-demo-card" id="demo-card-user">
+            <div class="admin-card-body">
+                <div class="admin-demo-icon" style="background: linear-gradient(135deg, #22c55e, #10b981);">
+                    <span>👤</span>
+                </div>
+                <h3 class="admin-demo-title">User Demo</h3>
+                <p class="admin-demo-desc">Wallets, Convertisseur, ATMs, Transactions, IA</p>
+
+                <div class="admin-demo-status" id="status-user">
+                    <span class="admin-status-badge admin-status-ready">
+                        <i data-lucide="circle" class="w-2 h-2"></i>
+                        Prêt
+                    </span>
+                </div>
+
+                <button onclick="startPlaywrightDemo('user')" id="btn-user"
+                        class="admin-btn admin-btn-lg w-full" style="background: linear-gradient(135deg, #22c55e, #10b981);">
+                    <i data-lucide="play" class="w-5 h-5"></i>
+                    Lancer User Demo
+                </button>
+
+                <div class="admin-demo-video" id="video-user" style="display: none;">
+                    <video controls class="w-full rounded-lg"></video>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Actions -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-demo-actions">
+                <button onclick="startAllDemos()" class="admin-btn admin-btn-primary">
+                    <i data-lucide="play-circle" class="w-4 h-4"></i>
+                    Lancer les 3 Démos
+                </button>
+                <button onclick="loadAllVideos()" class="admin-btn admin-btn-ghost">
+                    <i data-lucide="video" class="w-4 h-4"></i>
+                    Voir Vidéos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Videos Gallery -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="film" class="w-5 h-5 text-pink-500"></i>
+                Vidéos Enregistrées
+            </h3>
+            <button onclick="loadVideos()" class="admin-btn admin-btn-ghost admin-btn-sm">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                Actualiser
+            </button>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-videos-grid" id="videos-gallery">
+                <div class="admin-videos-empty">
+                    <i data-lucide="video-off" class="w-12 h-12"></i>
+                    <p>Aucune vidéo enregistrée</p>
+                    <p class="text-xs">Lancez une démonstration pour générer des vidéos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Section -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="terminal" class="w-5 h-5 text-cyan-500"></i>
+                Logs d'exécution
+            </h3>
+            <button onclick="clearLogs()" class="admin-btn admin-btn-ghost admin-btn-sm">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Effacer
+            </button>
+        </div>
+        <div class="admin-card-body" style="padding: 0;">
+            <div class="admin-logs-container" id="logs-container">
+                <div class="admin-log-entry admin-log-info">
+                    <span class="admin-log-time">{{ now().strftime('%H:%M:%S') if now else '--:--:--' }}</span>
+                    <span class="admin-log-message">Système prêt. Sélectionnez un mode et lancez une démonstration.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Mode selection
+document.querySelectorAll('input[name="execMode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const instructions = document.getElementById('local-instructions');
+        instructions.style.display = this.value === 'local' ? 'block' : 'none';
+        addLog('info', `Mode changé: ${this.value}`);
+    });
+});
+
+function startPlaywrightDemo(role) {
+    const mode = document.querySelector('input[name="execMode"]:checked').value;
+    const statusEl = document.getElementById(`status-${role}`);
+    const btn = document.getElementById(`btn-${role}`);
+
+    // Update status
+    statusEl.innerHTML = `
+        <span class="admin-status-badge admin-status-running recording-indicator">
+            <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>
+            En cours...
+        </span>
+    `;
+    lucide.createIcons();
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Exécution...';
+    lucide.createIcons();
+
+    addLog('info', `Démarrage démo ${role} en mode ${mode}...`);
+
+    // Simulate demo execution
+    fetch(`/admin/demo/run/${role}?mode=${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            statusEl.innerHTML = `
+                <span class="admin-status-badge admin-status-success">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i>
+                    Terminé
+                </span>
+            `;
+            addLog('success', `Démo ${role} terminée avec succès!`);
+            if (data.video_url) {
+                showVideo(role, data.video_url);
+            }
+        } else {
+            statusEl.innerHTML = `
+                <span class="admin-status-badge admin-status-error">
+                    <i data-lucide="x-circle" class="w-3 h-3"></i>
+                    Erreur
+                </span>
+            `;
+            addLog('error', `Erreur démo ${role}: ${data.error}`);
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-5 h-5"></i> Relancer`;
+        lucide.createIcons();
+    })
+    .catch(err => {
+        addLog('error', `Erreur: ${err.message}`);
+        btn.disabled = false;
+    });
+}
+
+function startAllDemos() {
+    addLog('info', 'Lancement de toutes les démos...');
+    ['admin', 'bank', 'user'].forEach((role, i) => {
+        setTimeout(() => startPlaywrightDemo(role), i * 2000);
+    });
+}
+
+function showVideo(role, url) {
+    const container = document.getElementById(`video-${role}`);
+    const video = container.querySelector('video');
+    video.src = url;
+    container.style.display = 'block';
+}
+
+function loadAllVideos() {
+    addLog('info', 'Chargement des vidéos...');
+    loadVideos();
+}
+
+function loadVideos() {
+    fetch('/admin/demo/videos')
+    .then(r => r.json())
+    .then(data => {
+        const gallery = document.getElementById('videos-gallery');
+        if (data.videos && data.videos.length > 0) {
+            gallery.innerHTML = data.videos.map(v => `
+                <div class="admin-video-card">
+                    <video src="${v.url}" controls class="w-full rounded-lg"></video>
+                    <p class="text-xs text-muted mt-2">${v.name} - ${v.date}</p>
+                </div>
+            `).join('');
+        }
+    });
+}
+
+function refreshAllStatuses() {
+    ['admin', 'bank', 'user'].forEach(role => {
+        const statusEl = document.getElementById(`status-${role}`);
+        statusEl.innerHTML = `
+            <span class="admin-status-badge admin-status-ready">
+                <i data-lucide="circle" class="w-2 h-2"></i>
+                Prêt
+            </span>
+        `;
+    });
+    lucide.createIcons();
+    addLog('info', 'Statuts actualisés');
+}
+
+function addLog(type, message) {
+    const container = document.getElementById('logs-container');
+    const time = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = `admin-log-entry admin-log-${type}`;
+    entry.innerHTML = `
+        <span class="admin-log-time">${time}</span>
+        <span class="admin-log-message">${message}</span>
+    `;
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
+}
+
+function clearLogs() {
+    const container = document.getElementById('logs-container');
+    container.innerHTML = '';
+    addLog('info', 'Logs effacés');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

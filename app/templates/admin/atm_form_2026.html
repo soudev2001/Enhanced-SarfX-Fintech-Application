@@ -1,0 +1,385 @@
+{% extends "app_base.html" %}
+
+{% block title %}{{ 'Modifier' if atm else 'Ajouter' }} ATM - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    .bank-radio:checked + .bank-option {
+        border-color: var(--bank-color) !important;
+        box-shadow: 0 0 20px color-mix(in srgb, var(--bank-color) 30%, transparent);
+    }
+
+    .location-radio:checked + .location-option {
+        border-color: var(--admin-primary) !important;
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .location-radio:checked + .location-option i {
+        color: var(--admin-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.atms') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour à la liste
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i data-lucide="{{ 'edit' if atm else 'plus' }}" class="w-8 h-8"></i>
+                    </span>
+                    {{ 'Modifier' if atm else 'Ajouter' }} un ATM
+                </h1>
+                {% if atm %}
+                <p class="admin-subtitle font-mono">{{ atm.atm_id }}</p>
+                {% else %}
+                <p class="admin-subtitle">Remplissez les informations du nouvel ATM</p>
+                {% endif %}
+            </div>
+
+            {% if atm %}
+            <div class="admin-header-actions">
+                <span class="admin-badge {{ 'admin-badge-success' if atm.status == 'active' else 'admin-badge-danger' }}">
+                    {{ atm.status | upper }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="admin-form-grid" id="atm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Bank Selection -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="building-2" class="w-5 h-5 text-primary"></i>
+                    Banque
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-bank-selection-grid">
+                    {% for bank in banks %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="bank_code" value="{{ bank.code }}"
+                               {{ 'checked' if (atm and atm.bank_code == bank.code) or (not atm and loop.first) else '' }}
+                               class="hidden bank-radio" required>
+                        <div class="admin-bank-option bank-option" style="--bank-color: {{ bank.color }}">
+                            <div class="admin-bank-option-avatar" style="background: {{ bank.color }}">
+                                {{ bank.code[:2] | upper }}
+                            </div>
+                            <span class="admin-bank-option-name">{{ bank.name.split()[0] }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Basic Info -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-500"></i>
+                    Informations générales
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-form-fields">
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Nom de l'ATM *</label>
+                        <input type="text" name="name" value="{{ atm.name if atm else '' }}" required
+                               placeholder="Ex: ATM Attijariwafa Morocco Mall"
+                               class="admin-input">
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Adresse *</label>
+                        <input type="text" name="address" value="{{ atm.address if atm else '' }}" required
+                               placeholder="Ex: Boulevard Zerktouni, Twin Center"
+                               class="admin-input">
+                    </div>
+                    <div class="admin-form-row">
+                        <div class="admin-form-group">
+                            <label class="admin-form-label">Ville *</label>
+                            <select name="city" required class="admin-select">
+                                <option value="">Sélectionner...</option>
+                                {% for city in cities %}
+                                <option value="{{ city }}" {{ 'selected' if atm and atm.city == city else '' }}>{{ city }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="admin-form-group">
+                            <label class="admin-form-label">Quartier/District</label>
+                            <input type="text" name="district" value="{{ atm.district if atm else '' }}"
+                                   placeholder="Ex: Maarif"
+                                   class="admin-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-green-500"></i>
+                    Géolocalisation
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-form-row">
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Latitude *</label>
+                        <input type="number" name="latitude" id="latitude" step="0.000001"
+                               value="{{ atm.location.coordinates[1] if atm and atm.location else '' }}" required
+                               placeholder="33.591370"
+                               class="admin-input">
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Longitude *</label>
+                        <input type="number" name="longitude" id="longitude" step="0.000001"
+                               value="{{ atm.location.coordinates[0] if atm and atm.location else '' }}" required
+                               placeholder="-7.626690"
+                               class="admin-input">
+                    </div>
+                </div>
+                <button type="button" onclick="getCurrentLocation()" class="admin-btn admin-btn-outline-primary admin-btn-sm mt-3">
+                    <i data-lucide="locate" class="w-4 h-4"></i>
+                    Utiliser ma position actuelle
+                </button>
+                <div id="map-preview" class="admin-map-preview mt-4">
+                    <i data-lucide="map" class="w-8 h-8"></i>
+                    <span>Carte de prévisualisation</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Type -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="building" class="w-5 h-5 text-purple-500"></i>
+                    Type d'emplacement
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-location-type-grid">
+                    {% set location_types = [
+                        ('branch', 'Agence', 'building-2'),
+                        ('mall', 'Centre Commercial', 'shopping-bag'),
+                        ('supermarket', 'Supermarché', 'shopping-cart'),
+                        ('station', 'Station Service', 'fuel'),
+                        ('hospital', 'Hôpital', 'heart-pulse'),
+                        ('university', 'Université', 'graduation-cap'),
+                        ('airport', 'Aéroport', 'plane'),
+                        ('standalone', 'Kiosque', 'box')
+                    ] %}
+                    {% for type_code, type_name, icon in location_types %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="location_type" value="{{ type_code }}"
+                               {{ 'checked' if (atm and atm.location_type == type_code) or (not atm and type_code == 'branch') else '' }}
+                               class="hidden location-radio">
+                        <div class="admin-location-option location-option">
+                            <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
+                            <span>{{ type_name }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Services -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="settings" class="w-5 h-5 text-orange-500"></i>
+                    Services disponibles
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-services-checkbox-grid">
+                    {% set services = [
+                        ('withdrawal', 'Retrait', 'banknote', '#22c55e'),
+                        ('deposit', 'Dépôt', 'wallet', '#3b82f6'),
+                        ('balance', 'Solde', 'eye', '#8b5cf6'),
+                        ('transfer', 'Virement', 'arrow-left-right', '#f59e0b'),
+                        ('bill_payment', 'Factures', 'receipt', '#ec4899'),
+                        ('mobile_topup', 'Recharge Mobile', 'smartphone', '#06b6d4')
+                    ] %}
+                    {% for svc_code, svc_name, icon, color in services %}
+                    <label class="admin-service-checkbox">
+                        <input type="checkbox" name="services" value="{{ svc_code }}"
+                               {{ 'checked' if atm and svc_code in atm.services else '' }}
+                               {{ 'checked' if not atm and svc_code in ['withdrawal', 'balance'] else '' }}>
+                        <div class="admin-service-checkbox-content">
+                            <i data-lucide="{{ icon }}" class="w-5 h-5" style="color: {{ color }}"></i>
+                            <span>{{ svc_name }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="clock" class="w-5 h-5 text-cyan-500"></i>
+                    Disponibilité
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <label class="admin-switch-label">
+                    <input type="checkbox" name="available_24h" id="available_24h"
+                           {{ 'checked' if (atm and atm.available_24h) or not atm else '' }}
+                           onchange="toggle24h()"
+                           class="admin-switch-input">
+                    <span class="admin-switch-slider"></span>
+                    <span>Disponible 24h/24</span>
+                </label>
+
+                <div id="hours-section" class="admin-hours-section {{ 'hidden' if (atm and atm.available_24h) or not atm else '' }}">
+                    <div class="admin-form-row">
+                        <div class="admin-form-group">
+                            <label class="admin-form-label">Ouverture</label>
+                            <input type="time" name="open_time" value="{{ atm.hours.open if atm and atm.hours else '08:00' }}"
+                                   class="admin-input">
+                        </div>
+                        <div class="admin-form-group">
+                            <label class="admin-form-label">Fermeture</label>
+                            <input type="time" name="close_time" value="{{ atm.hours.close if atm and atm.hours else '18:00' }}"
+                                   class="admin-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-yellow-500"></i>
+                    Caractéristiques
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-features-grid">
+                    <label class="admin-feature-checkbox">
+                        <input type="checkbox" name="has_wheelchair_access"
+                               {{ 'checked' if atm and atm.has_wheelchair_access else '' }}>
+                        <i data-lucide="accessibility" class="w-5 h-5"></i>
+                        <span>Accès fauteuil roulant</span>
+                    </label>
+                    <label class="admin-feature-checkbox">
+                        <input type="checkbox" name="has_nfc"
+                               {{ 'checked' if atm and atm.has_nfc else '' }}>
+                        <i data-lucide="smartphone-nfc" class="w-5 h-5"></i>
+                        <span>Sans contact (NFC)</span>
+                    </label>
+                    <label class="admin-feature-checkbox">
+                        <input type="checkbox" name="has_deposit"
+                               {{ 'checked' if atm and atm.has_deposit else '' }}>
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                        <span>Dépôt d'espèces</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="toggle-left" class="w-5 h-5 text-green-500"></i>
+                    Statut
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-status-options">
+                    <label class="admin-status-option">
+                        <input type="radio" name="status" value="active"
+                               {{ 'checked' if (atm and atm.status == 'active') or not atm else '' }}>
+                        <div class="admin-status-option-content admin-status-active">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            <span>Actif</span>
+                        </div>
+                    </label>
+                    <label class="admin-status-option">
+                        <input type="radio" name="status" value="maintenance"
+                               {{ 'checked' if atm and atm.status == 'maintenance' else '' }}>
+                        <div class="admin-status-option-content admin-status-maintenance">
+                            <i data-lucide="wrench" class="w-5 h-5"></i>
+                            <span>Maintenance</span>
+                        </div>
+                    </label>
+                    <label class="admin-status-option">
+                        <input type="radio" name="status" value="inactive"
+                               {{ 'checked' if atm and atm.status == 'inactive' else '' }}>
+                        <div class="admin-status-option-content admin-status-inactive">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                            <span>Inactif</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="admin-form-actions">
+            <a href="{{ url_for('admin.atms') }}" class="admin-btn admin-btn-outline-secondary">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                Annuler
+            </a>
+            <button type="submit" class="admin-btn admin-btn-primary">
+                <i data-lucide="{{ 'save' if atm else 'plus' }}" class="w-4 h-4"></i>
+                {{ 'Enregistrer' if atm else 'Ajouter l\'ATM' }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggle24h() {
+    const checkbox = document.getElementById('available_24h');
+    const section = document.getElementById('hours-section');
+    section.classList.toggle('hidden', checkbox.checked);
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+        });
+    }
+}
+
+// Init Lucide
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
+</script>
+{% endblock %}

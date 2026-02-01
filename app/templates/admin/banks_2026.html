@@ -1,0 +1,274 @@
+{% extends "app_base.html" %}
+
+{% block title %}Banques Partenaires - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    .admin-bank-logo {
+        width: 56px;
+        height: 56px;
+        padding: 8px;
+        background: white;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .admin-bank-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">
+                        <i data-lucide="building-2" class="w-8 h-8"></i>
+                    </span>
+                    Banques Partenaires
+                </h1>
+                <p class="admin-subtitle">
+                    <strong>{{ banks | length }}</strong> banques enregistrées
+                </p>
+            </div>
+
+            <div class="admin-header-actions">
+                <a href="{{ url_for('admin_banks.create_bank') }}" class="admin-btn admin-btn-success">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Ajouter une Banque
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon admin-stat-icon-primary">
+                <i data-lucide="building-2" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total Banques</p>
+                <p class="admin-stat-value">{{ banks | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Actives</p>
+                <p class="admin-stat-value">{{ banks | selectattr('is_active', 'defined') | selectattr('is_active') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-info">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Responsables</p>
+                <p class="admin-stat-value">{{ users | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="landmark" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">ATMs Liés</p>
+                <p class="admin-stat-value">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-search-filters">
+                <div class="admin-search-box" style="flex: 1; min-width: 250px;">
+                    <i data-lucide="search" class="admin-search-icon"></i>
+                    <input type="text"
+                           id="search-input"
+                           placeholder="Rechercher une banque..."
+                           class="admin-search-input"
+                           onkeyup="filterBanks()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banks Grid -->
+    <div class="admin-banks-grid" id="banks-container">
+        {% for bank in banks %}
+        <div class="admin-bank-card admin-card bank-card"
+             data-name="{{ bank.name | lower }}"
+             data-code="{{ bank.code | lower }}">
+
+            <!-- Bank Header -->
+            <div class="admin-bank-header">
+                <div class="admin-bank-logo">
+                    {% if bank.logo_url %}
+                    <img src="{{ bank.logo_url }}" alt="{{ bank.name }}">
+                    {% else %}
+                    <i data-lucide="building-2" class="w-8 h-8 text-blue-500"></i>
+                    {% endif %}
+                </div>
+                <div class="admin-bank-info">
+                    <h3 class="admin-bank-name">{{ bank.name }}</h3>
+                    <p class="admin-bank-code">Code: {{ bank.code }}</p>
+                </div>
+                <span class="admin-status-indicator admin-status-{{ 'online' if bank.is_active else 'offline' }}">
+                    {{ 'Actif' if bank.is_active else 'Inactif' }}
+                </span>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="admin-bank-details">
+                {% if bank.responsible_emails %}
+                <div class="admin-bank-responsibles">
+                    <p class="admin-bank-label">Responsables:</p>
+                    <div class="admin-bank-emails">
+                        {% for email in bank.responsible_emails[:3] %}
+                        <span class="admin-badge admin-badge-secondary">{{ email }}</span>
+                        {% endfor %}
+                        {% if bank.responsible_emails | length > 3 %}
+                        <span class="admin-badge admin-badge-info">+{{ bank.responsible_emails | length - 3 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Bank Actions -->
+            <div class="admin-bank-actions">
+                <a href="{{ url_for('admin_banks.edit_bank', bank_id=bank._id) }}" class="admin-btn admin-btn-sm admin-btn-outline-secondary">
+                    <i data-lucide="edit" class="w-4 h-4"></i>
+                    Modifier
+                </a>
+                <button onclick="toggleBankStatus('{{ bank._id }}', {{ 'true' if bank.is_active else 'false' }})"
+                        class="admin-btn admin-btn-sm admin-btn-outline-{{ 'warning' if bank.is_active else 'success' }}">
+                    <i data-lucide="{{ 'pause' if bank.is_active else 'play' }}" class="w-4 h-4"></i>
+                    {{ 'Désactiver' if bank.is_active else 'Activer' }}
+                </button>
+                <button onclick="confirmDelete('{{ bank._id }}', '{{ bank.name }}')"
+                        class="admin-btn admin-btn-sm admin-btn-outline-danger">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="admin-empty-state" style="grid-column: 1 / -1;">
+            <i data-lucide="building-2" class="w-16 h-16"></i>
+            <p>Aucune banque enregistrée</p>
+            <a href="{{ url_for('admin_banks.create_bank') }}" class="admin-btn admin-btn-primary mt-4">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Ajouter une Banque
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeDeleteModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title" style="color: #ef4444;">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                Confirmer la suppression
+            </h3>
+            <button onclick="closeDeleteModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Êtes-vous sûr de vouloir supprimer la banque <strong id="delete-bank-name"></strong> ?
+                Cette action est irréversible.
+            </p>
+            <div class="admin-form-actions">
+                <button type="button" onclick="closeDeleteModal()" class="admin-btn admin-btn-outline-secondary">
+                    Annuler
+                </button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="admin-btn" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+<script>
+function filterBanks() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.bank-card');
+
+    cards.forEach(card => {
+        const name = card.dataset.name || '';
+        const code = card.dataset.code || '';
+        const show = !search || name.includes(search) || code.includes(search);
+        card.style.display = show ? '' : 'none';
+    });
+}
+
+function confirmDelete(bankId, bankName) {
+    document.getElementById('delete-bank-name').textContent = bankName;
+    document.getElementById('deleteForm').action = '/admin/banks/' + bankId + '/delete';
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+async function toggleBankStatus(bankId, currentStatus) {
+    try {
+        const response = await fetch(`/admin/banks/${bankId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,828 @@
+{% extends "app_base.html" %}
+
+{% block title %}Bénéficiaires - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    /* Beneficiary Card Styles */
+    .admin-beneficiary-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: var(--card-bg, #1e293b);
+        border-radius: var(--radius-xl, 16px);
+        border: 1px solid var(--admin-border, #334155);
+        transition: all 0.3s ease;
+        margin-bottom: 12px;
+    }
+    .admin-beneficiary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-color: var(--admin-primary, #6366f1);
+    }
+    .admin-beneficiary-checkbox input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    .admin-beneficiary-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ec4899, #d946ef);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: white;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+    .admin-beneficiary-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .admin-beneficiary-name-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .admin-beneficiary-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    .admin-beneficiary-email,
+    .admin-beneficiary-iban {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 4px 0 0 0;
+    }
+    .admin-beneficiary-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .admin-beneficiary-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .admin-beneficiary-owner {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+    .admin-beneficiary-date {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-tertiary);
+    }
+    .admin-beneficiary-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    /* KYC Badge Styles */
+    .admin-kyc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .admin-kyc-verified {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .admin-kyc-pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .admin-kyc-rejected {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .admin-kyc-none {
+        background: rgba(148, 163, 184, 0.15);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* Tag Styles */
+    .admin-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .admin-tag:hover {
+        transform: scale(1.05);
+    }
+    .admin-tag-trusted {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+    .admin-tag-frequent {
+        background: linear-gradient(135deg, #ec4899, #db2777);
+        color: white;
+    }
+    .admin-tag-flagged {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+    .admin-tag-family {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: white;
+    }
+    .admin-tag-business {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+    /* Modal KYC Options */
+    .admin-kyc-status-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    .admin-kyc-option {
+        cursor: pointer;
+    }
+    .admin-kyc-option input[type="radio"] {
+        display: none;
+    }
+    .admin-kyc-option-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 20px;
+        border-radius: 12px;
+        border: 2px solid var(--admin-border);
+        transition: all 0.3s;
+    }
+    .admin-kyc-option-card:hover {
+        border-color: var(--admin-primary);
+    }
+    .admin-kyc-option input:checked + .admin-kyc-option-card {
+        border-color: var(--admin-primary);
+        background: rgba(99, 102, 241, 0.1);
+    }
+    .admin-kyc-option-card.admin-kyc-verified { color: #10b981; }
+    .admin-kyc-option-card.admin-kyc-pending { color: #f59e0b; }
+    .admin-kyc-option-card.admin-kyc-rejected { color: #ef4444; }
+    .admin-kyc-option-card.admin-kyc-none { color: #94a3b8; }
+
+    /* Tag Selector */
+    .admin-tag-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .admin-tag-checkbox {
+        cursor: pointer;
+    }
+    .admin-tag-checkbox input {
+        display: none;
+    }
+    .admin-tag-label {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+    .admin-tag-checkbox input:checked + .admin-tag-label {
+        border-color: white;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    /* Bulk Actions Bar */
+    .bulk-actions-bar {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        transition: all 0.3s ease;
+        z-index: 100;
+        opacity: 0;
+    }
+    .bulk-actions-bar.visible {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #ec4899, #d946ef);">
+                        <i data-lucide="contact" class="w-8 h-8"></i>
+                    </span>
+                    Bénéficiaires
+                </h1>
+                <p class="admin-subtitle">
+                    <strong>{{ beneficiaries | length }}</strong> contacts enregistrés
+                </p>
+            </div>
+
+            <div class="admin-header-actions">
+                <button onclick="exportBeneficiaries()" class="admin-btn admin-btn-outline-primary">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Exporter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(217, 70, 239, 0.1)); color: #ec4899;">
+                <i data-lucide="contact" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total Bénéficiaires</p>
+                <p class="admin-stat-value">{{ beneficiaries | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.1)); color: #22c55e;">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">KYC Vérifié</p>
+                <p class="admin-stat-value">{{ beneficiaries | selectattr('kyc_status', 'equalto', 'verified') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1)); color: #f59e0b;">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">En attente</p>
+                <p class="admin-stat-value">{{ beneficiaries | selectattr('kyc_status', 'equalto', 'pending') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1)); color: #3b82f6;">
+                <i data-lucide="tag" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Avec Tags</p>
+                <p class="admin-stat-value">{{ beneficiaries | selectattr('tags', 'defined') | list | length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-filters-grid">
+                <div class="admin-search-box" style="grid-column: span 2;">
+                    <i data-lucide="search" class="admin-search-icon"></i>
+                    <input type="text" id="search-input"
+                           placeholder="Rechercher par nom, email, IBAN..."
+                           class="admin-search-input"
+                           onkeyup="filterBeneficiaries()">
+                </div>
+
+                <select id="filter-kyc" onchange="filterBeneficiaries()" class="admin-select">
+                    <option value="">🛡️ Statut KYC</option>
+                    <option value="verified">✅ Vérifié</option>
+                    <option value="pending">⏳ En attente</option>
+                    <option value="rejected">❌ Rejeté</option>
+                    <option value="none">📝 Non soumis</option>
+                </select>
+
+                <select id="filter-tag" onchange="filterBeneficiaries()" class="admin-select">
+                    <option value="">🏷️ Tous les tags</option>
+                    <option value="trusted">✓ Confiance</option>
+                    <option value="frequent">🔄 Fréquent</option>
+                    <option value="flagged">🚩 Signalé</option>
+                    <option value="family">👨‍👩‍👧 Famille</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beneficiaries List -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="list" class="w-5 h-5 text-pink-500"></i>
+                Liste des Bénéficiaires
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-beneficiaries-list" id="beneficiaries-list">
+                {% for ben in beneficiaries %}
+                <div class="admin-beneficiary-card"
+                     data-name="{{ ben.name | lower }}"
+                     data-email="{{ ben.email | lower if ben.email else '' }}"
+                     data-iban="{{ ben.iban | lower if ben.iban else '' }}"
+                     data-bank="{{ ben.bank_code | lower if ben.bank_code else '' }}"
+                     data-kyc="{{ ben.kyc_status | default('none') | lower }}"
+                     data-tags="{{ ben.tags | join(',') if ben.tags else '' }}"
+                     data-id="{{ ben._id }}">
+
+                    <div class="admin-beneficiary-checkbox">
+                        <input type="checkbox" class="beneficiary-checkbox" data-id="{{ ben._id }}" onchange="updateBenSelection()">
+                    </div>
+
+                    <div class="admin-beneficiary-avatar">
+                        {{ ben.name[0] | upper if ben.name else 'B' }}
+                    </div>
+
+                    <div class="admin-beneficiary-info">
+                        <div class="admin-beneficiary-name-row">
+                            <h4 class="admin-beneficiary-name">{{ ben.name | default('N/A') }}</h4>
+                            <!-- KYC Badge -->
+                            {% set kyc = ben.kyc_status | default('none') %}
+                            <span class="admin-kyc-badge admin-kyc-{{ kyc }}">
+                                {% if kyc == 'verified' %}
+                                <i data-lucide="shield-check" class="w-3 h-3"></i>
+                                {% elif kyc == 'pending' %}
+                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                {% elif kyc == 'rejected' %}
+                                <i data-lucide="shield-x" class="w-3 h-3"></i>
+                                {% else %}
+                                <i data-lucide="shield-question" class="w-3 h-3"></i>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <p class="admin-beneficiary-email">
+                            <i data-lucide="mail" class="w-3 h-3"></i>
+                            {{ ben.email | default('Pas d\'email') }}
+                        </p>
+                        {% if ben.iban %}
+                        <p class="admin-beneficiary-iban">
+                            <i data-lucide="credit-card" class="w-3 h-3"></i>
+                            {{ ben.iban[:4] }}****{{ ben.iban[-4:] }}
+                        </p>
+                        {% endif %}
+                        <!-- Tags -->
+                        {% if ben.tags %}
+                        <div class="admin-beneficiary-tags">
+                            {% for tag in ben.tags %}
+                            <span class="admin-tag admin-tag-{{ tag }}" onclick="filterByTag('{{ tag }}')">
+                                {% if tag == 'trusted' %}✓{% elif tag == 'frequent' %}🔄{% elif tag == 'flagged' %}🚩{% elif tag == 'family' %}👨‍👩‍👧{% else %}🏷️{% endif %}
+                                {{ tag | capitalize }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="admin-beneficiary-meta">
+                        {% if ben.bank_code %}
+                        <span class="admin-badge admin-badge-info">
+                            {{ ben.bank_code | upper }}
+                        </span>
+                        {% endif %}
+
+                        <div class="admin-beneficiary-owner">
+                            <i data-lucide="user" class="w-3 h-3"></i>
+                            {{ ben.owner_email | default('Unknown') }}
+                        </div>
+
+                        {% if ben.created_at %}
+                        <span class="admin-beneficiary-date">
+                            <i data-lucide="calendar" class="w-3 h-3"></i>
+                            {{ ben.created_at.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="admin-beneficiary-actions">
+                        <button onclick="openBenKycModal('{{ ben._id }}', '{{ ben.name }}')" class="admin-btn-icon" title="KYC">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="openBenTagModal('{{ ben._id }}', '{{ ben.name }}')" class="admin-btn-icon" title="Tags">
+                            <i data-lucide="tag" class="w-4 h-4"></i>
+                        </button>
+                        <form action="{{ url_for('admin.delete_beneficiary', ben_id=ben._id) }}" method="POST"
+                              onsubmit="return confirm('Supprimer ce bénéficiaire ?')" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="admin-btn-icon admin-btn-icon-danger" title="Supprimer">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i data-lucide="contact" class="w-16 h-16"></i>
+                    <h3>Aucun bénéficiaire</h3>
+                    <p>Les utilisateurs n'ont pas encore ajouté de contacts</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div class="bulk-actions-bar" id="bulk-actions">
+        <div class="admin-card" style="padding: 12px 20px; display: flex; align-items: center; gap: 16px;">
+            <span id="selected-count" class="text-sm font-medium" style="color: var(--text-primary);">0 sélectionné(s)</span>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="bulkVerifyKyc()" class="admin-btn admin-btn-success-sm">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    Vérifier KYC
+                </button>
+                <button onclick="bulkAddTag()" class="admin-btn admin-btn-primary-sm">
+                    <i data-lucide="tag" class="w-4 h-4"></i>
+                    Ajouter Tag
+                </button>
+                <button onclick="clearBenSelection()" class="admin-btn admin-btn-ghost-sm">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KYC Modal for Beneficiaries -->
+<div id="benKycModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeBenKycModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                KYC Bénéficiaire
+            </h3>
+            <button onclick="closeBenKycModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <p class="admin-modal-subtitle" id="ben-kyc-name"></p>
+
+            <div class="admin-kyc-status-grid">
+                <label class="admin-kyc-option">
+                    <input type="radio" name="ben-kyc-status" value="verified">
+                    <div class="admin-kyc-option-card admin-kyc-verified">
+                        <i data-lucide="shield-check" class="w-8 h-8"></i>
+                        <span>Vérifié</span>
+                    </div>
+                </label>
+                <label class="admin-kyc-option">
+                    <input type="radio" name="ben-kyc-status" value="pending">
+                    <div class="admin-kyc-option-card admin-kyc-pending">
+                        <i data-lucide="clock" class="w-8 h-8"></i>
+                        <span>En attente</span>
+                    </div>
+                </label>
+                <label class="admin-kyc-option">
+                    <input type="radio" name="ben-kyc-status" value="rejected">
+                    <div class="admin-kyc-option-card admin-kyc-rejected">
+                        <i data-lucide="shield-x" class="w-8 h-8"></i>
+                        <span>Rejeté</span>
+                    </div>
+                </label>
+                <label class="admin-kyc-option">
+                    <input type="radio" name="ben-kyc-status" value="none" checked>
+                    <div class="admin-kyc-option-card admin-kyc-none">
+                        <i data-lucide="shield-question" class="w-8 h-8"></i>
+                        <span>Non soumis</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button onclick="closeBenKycModal()" class="admin-btn admin-btn-outline-secondary">Annuler</button>
+            <button onclick="saveBenKycStatus()" class="admin-btn admin-btn-primary">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tag Modal for Beneficiaries -->
+<div id="benTagModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeBenTagModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">
+                <i data-lucide="tag" class="w-5 h-5"></i>
+                Tags Bénéficiaire
+            </h3>
+            <button onclick="closeBenTagModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <p class="admin-modal-subtitle" id="ben-tag-name"></p>
+
+            <div class="admin-tag-selector">
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="trusted" onchange="toggleBenTag('trusted')">
+                    <span class="admin-tag-label admin-tag-trusted">✓ Confiance</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="frequent" onchange="toggleBenTag('frequent')">
+                    <span class="admin-tag-label admin-tag-frequent">🔄 Fréquent</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="flagged" onchange="toggleBenTag('flagged')">
+                    <span class="admin-tag-label admin-tag-flagged">🚩 Signalé</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="family" onchange="toggleBenTag('family')">
+                    <span class="admin-tag-label admin-tag-family">👨‍👩‍👧 Famille</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="business" onchange="toggleBenTag('business')">
+                    <span class="admin-tag-label admin-tag-business">💼 Business</span>
+                </label>
+            </div>
+
+            <div class="admin-selected-tags mt-3" id="ben-selected-tags-display"></div>
+        </div>
+        <div class="admin-modal-footer">
+            <button onclick="closeBenTagModal()" class="admin-btn admin-btn-outline-secondary">Annuler</button>
+            <button onclick="saveBenTags()" class="admin-btn admin-btn-primary">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let selectedBeneficiaries = new Set();
+    let currentBenKycId = null;
+    let currentBenTagId = null;
+    let selectedBenTags = [];
+
+    function filterBeneficiaries() {
+        const search = document.getElementById('search-input').value.toLowerCase();
+        const kycFilter = document.getElementById('filter-kyc').value.toLowerCase();
+        const tagFilter = document.getElementById('filter-tag').value.toLowerCase();
+
+        document.querySelectorAll('.admin-beneficiary-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const email = card.dataset.email || '';
+            const iban = card.dataset.iban || '';
+            const kyc = card.dataset.kyc || '';
+            const tags = card.dataset.tags || '';
+
+            const matchSearch = name.includes(search) || email.includes(search) || iban.includes(search);
+            const matchKyc = !kycFilter || kyc === kycFilter;
+            const matchTag = !tagFilter || tags.includes(tagFilter);
+
+            card.style.display = (matchSearch && matchKyc && matchTag) ? 'flex' : 'none';
+        });
+    }
+
+    function filterByTag(tag) {
+        document.getElementById('filter-tag').value = tag;
+        filterBeneficiaries();
+    }
+
+    function exportBeneficiaries() {
+        window.location.href = '{{ url_for("admin.beneficiaries") }}?export=csv';
+    }
+
+    // Selection management
+    function updateBenSelection() {
+        selectedBeneficiaries.clear();
+        document.querySelectorAll('.beneficiary-checkbox:checked').forEach(cb => {
+            selectedBeneficiaries.add(cb.dataset.id);
+        });
+        updateBulkActionsBar();
+    }
+
+    function updateBulkActionsBar() {
+        const bar = document.getElementById('bulk-actions');
+        const count = document.getElementById('selected-count');
+
+        if (selectedBeneficiaries.size > 0) {
+            bar.classList.add('visible');
+            count.textContent = `${selectedBeneficiaries.size} sélectionné(s)`;
+        } else {
+            bar.classList.remove('visible');
+        }
+    }
+
+    function clearBenSelection() {
+        selectedBeneficiaries.clear();
+        document.querySelectorAll('.beneficiary-checkbox').forEach(cb => cb.checked = false);
+        updateBulkActionsBar();
+    }
+
+    // KYC Modal
+    function openBenKycModal(benId, name) {
+        currentBenKycId = benId;
+        document.getElementById('ben-kyc-name').textContent = name;
+        document.getElementById('benKycModal').classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    function closeBenKycModal() {
+        document.getElementById('benKycModal').classList.add('hidden');
+        currentBenKycId = null;
+    }
+
+    async function saveBenKycStatus() {
+        const status = document.querySelector('input[name="ben-kyc-status"]:checked')?.value || 'none';
+
+        try {
+            const response = await fetch(`/admin/beneficiaries/${currentBenKycId}/kyc`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ status })
+            });
+
+            if (response.ok) {
+                showToast('Statut KYC mis à jour', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Erreur lors de la mise à jour', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Erreur réseau', 'error');
+        }
+    }
+
+    // Tag Modal
+    function openBenTagModal(benId, name) {
+        currentBenTagId = benId;
+        const card = document.querySelector(`[data-id="${benId}"]`);
+        selectedBenTags = card?.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
+
+        document.getElementById('ben-tag-name').textContent = name;
+        document.getElementById('benTagModal').classList.remove('hidden');
+
+        // Set current tags
+        document.querySelectorAll('#benTagModal .admin-tag-checkbox input').forEach(cb => {
+            cb.checked = selectedBenTags.includes(cb.value);
+        });
+
+        updateBenSelectedTagsDisplay();
+        lucide.createIcons();
+    }
+
+    function closeBenTagModal() {
+        document.getElementById('benTagModal').classList.add('hidden');
+        currentBenTagId = null;
+        selectedBenTags = [];
+    }
+
+    function toggleBenTag(tag) {
+        const index = selectedBenTags.indexOf(tag);
+        if (index > -1) {
+            selectedBenTags.splice(index, 1);
+        } else {
+            selectedBenTags.push(tag);
+        }
+        updateBenSelectedTagsDisplay();
+    }
+
+    function updateBenSelectedTagsDisplay() {
+        const container = document.getElementById('ben-selected-tags-display');
+        if (selectedBenTags.length === 0) {
+            container.innerHTML = '<p class="text-muted">Aucun tag sélectionné</p>';
+            return;
+        }
+
+        const emojis = {trusted: '✓', frequent: '🔄', flagged: '🚩', family: '👨‍👩‍👧', business: '💼'};
+        container.innerHTML = selectedBenTags.map(tag => `
+            <span class="admin-tag admin-tag-${tag}">${emojis[tag] || '🏷️'} ${tag}</span>
+        `).join('');
+    }
+
+    async function saveBenTags() {
+        try {
+            const response = await fetch(`/admin/beneficiaries/${currentBenTagId}/tags`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ tags: selectedBenTags })
+            });
+
+            if (response.ok) {
+                showToast('Tags mis à jour', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Erreur lors de la mise à jour', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Erreur réseau', 'error');
+        }
+    }
+
+    // Bulk actions
+    async function bulkVerifyKyc() {
+        for (const benId of selectedBeneficiaries) {
+            await fetch(`/admin/beneficiaries/${benId}/kyc`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ status: 'verified' })
+            });
+        }
+        showToast('KYC vérifié pour tous les sélectionnés', 'success');
+        setTimeout(() => location.reload(), 1000);
+    }
+
+    function bulkAddTag() {
+        const tag = prompt('Entrez le tag à ajouter (trusted, frequent, flagged, family, business):');
+        if (!tag) return;
+
+        selectedBeneficiaries.forEach(async benId => {
+            await fetch(`/admin/beneficiaries/${benId}/tags`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ tags: [tag], append: true })
+            });
+        });
+        showToast('Tag ajouté à tous les sélectionnés', 'success');
+        setTimeout(() => location.reload(), 1500);
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `admin-toast admin-toast-${type}`;
+        toast.innerHTML = `
+            <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Lucide icons init
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+</script>
+{% endblock %}

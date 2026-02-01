@@ -11,6 +11,18 @@ def create_app():
     logging.basicConfig(level=logging.INFO)
 
     # ============================================
+    # OPENTELEMETRY TRACING
+    # ============================================
+    try:
+        from .tracing import setup_tracing
+        setup_tracing(app)
+        logging.info("🔍 OpenTelemetry tracing enabled")
+    except ImportError as e:
+        logging.warning(f"⚠️ Tracing not available (install opentelemetry packages): {e}")
+    except Exception as e:
+        logging.warning(f"⚠️ Failed to initialize tracing: {e}")
+
+    # ============================================
     # SECURITY EXTENSIONS
     # ============================================
 
@@ -148,5 +160,27 @@ def create_app():
             except (ValueError, TypeError):
                 return value
         return value
+
+    # Context processor to inject current_user in all templates
+    @app.context_processor
+    def inject_user():
+        from flask import session
+        from app.decorators import get_current_user
+        user = get_current_user()
+        return dict(current_user=user)
+
+    # Context processor for i18n
+    @app.context_processor
+    def inject_i18n():
+        from app.services.i18n_service import I18nService
+        i18n = I18nService()
+        lang = i18n.get_current_language()
+        return dict(
+            t=i18n.t,
+            tn=i18n.tn,
+            current_lang=lang,
+            is_rtl=i18n.is_rtl(lang),
+            available_languages=i18n.get_available_languages()
+        )
 
     return app

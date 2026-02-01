@@ -65,6 +65,162 @@
         {% endif %}
     </div>
 
+    <!-- KYC Verification Section -->
+    <div class="wise-section kyc-verification-section">
+        <div class="wise-section-header">
+            <h3 class="wise-section-title">
+                <i data-lucide="shield-check" class="wise-section-icon"></i>
+                Vérification KYC
+            </h3>
+        </div>
+
+        <div class="kyc-status-card">
+            {% set kyc_status = user.kyc_status | default('none') %}
+
+            <div class="kyc-status-header {{ kyc_status }}">
+                <div class="kyc-status-icon">
+                    {% if kyc_status == 'verified' %}
+                        <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
+                    {% elif kyc_status == 'pending' %}
+                        <i data-lucide="clock" style="width: 32px; height: 32px;"></i>
+                    {% elif kyc_status == 'rejected' %}
+                        <i data-lucide="shield-x" style="width: 32px; height: 32px;"></i>
+                    {% else %}
+                        <i data-lucide="shield-question" style="width: 32px; height: 32px;"></i>
+                    {% endif %}
+                </div>
+                <div class="kyc-status-info">
+                    <h4 class="kyc-status-title">
+                        {% if kyc_status == 'verified' %}
+                            Identité Vérifiée ✓
+                        {% elif kyc_status == 'pending' %}
+                            Vérification en cours
+                        {% elif kyc_status == 'rejected' %}
+                            Vérification échouée
+                        {% else %}
+                            Vérification requise
+                        {% endif %}
+                    </h4>
+                    <p class="kyc-status-desc">
+                        {% if kyc_status == 'verified' %}
+                            Vos documents ont été validés. Vous avez accès à toutes les fonctionnalités.
+                        {% elif kyc_status == 'pending' %}
+                            Vos documents sont en cours d'examen. Cela peut prendre 1-2 jours ouvrables.
+                        {% elif kyc_status == 'rejected' %}
+                            Vos documents n'ont pas pu être validés. Veuillez soumettre de nouveaux documents.
+                        {% else %}
+                            Complétez la vérification pour débloquer toutes les fonctionnalités et augmenter vos limites.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if kyc_status != 'verified' %}
+            <div class="kyc-benefits">
+                <h5>Avantages après vérification :</h5>
+                <ul class="kyc-benefits-list">
+                    <li>
+                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                        Limites de transfert augmentées jusqu'à 50 000 €
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                        Accès aux services premium
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                        Retraits vers compte bancaire
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                        Support prioritaire 24/7
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- KYC Documents Status -->
+            <div class="kyc-documents-status">
+                <h5>Documents requis :</h5>
+                <div class="kyc-doc-list">
+                    <div class="kyc-doc-item">
+                        <div class="kyc-doc-icon {{ 'verified' if user.kyc_documents and user.kyc_documents.identity else '' }}">
+                            <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div class="kyc-doc-info">
+                            <span class="kyc-doc-name">Pièce d'identité</span>
+                            <span class="kyc-doc-desc">CNI, Passeport ou Permis</span>
+                        </div>
+                        <span class="kyc-doc-badge {{ 'success' if user.kyc_documents and user.kyc_documents.identity else 'pending' }}">
+                            {% if user.kyc_documents and user.kyc_documents.identity %}
+                                <i data-lucide="check" style="width: 12px; height: 12px;"></i> Fourni
+                            {% else %}
+                                <i data-lucide="upload" style="width: 12px; height: 12px;"></i> Requis
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="kyc-doc-item">
+                        <div class="kyc-doc-icon {{ 'verified' if user.kyc_documents and user.kyc_documents.address else '' }}">
+                            <i data-lucide="home" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div class="kyc-doc-info">
+                            <span class="kyc-doc-name">Justificatif de domicile</span>
+                            <span class="kyc-doc-desc">Facture récente (-3 mois)</span>
+                        </div>
+                        <span class="kyc-doc-badge {{ 'success' if user.kyc_documents and user.kyc_documents.address else 'pending' }}">
+                            {% if user.kyc_documents and user.kyc_documents.address %}
+                                <i data-lucide="check" style="width: 12px; height: 12px;"></i> Fourni
+                            {% else %}
+                                <i data-lucide="upload" style="width: 12px; height: 12px;"></i> Requis
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="kyc-doc-item">
+                        <div class="kyc-doc-icon {{ 'verified' if user.kyc_documents and user.kyc_documents.selfie else '' }}">
+                            <i data-lucide="camera" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div class="kyc-doc-info">
+                            <span class="kyc-doc-name">Selfie de vérification</span>
+                            <span class="kyc-doc-desc">Photo avec votre pièce d'identité</span>
+                        </div>
+                        <span class="kyc-doc-badge {{ 'success' if user.kyc_documents and user.kyc_documents.selfie else 'pending' }}">
+                            {% if user.kyc_documents and user.kyc_documents.selfie %}
+                                <i data-lucide="check" style="width: 12px; height: 12px;"></i> Fourni
+                            {% else %}
+                                <i data-lucide="upload" style="width: 12px; height: 12px;"></i> Requis
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if kyc_status != 'verified' %}
+            <div class="kyc-actions">
+                <button onclick="openKycUploadModal()" class="wise-btn wise-btn-primary kyc-upload-btn">
+                    <i data-lucide="upload" style="width: 18px; height: 18px;"></i>
+                    {% if kyc_status == 'rejected' %}
+                        Soumettre de nouveaux documents
+                    {% elif kyc_status == 'pending' %}
+                        Ajouter des documents
+                    {% else %}
+                        Commencer la vérification
+                    {% endif %}
+                </button>
+            </div>
+            {% endif %}
+
+            {% if user.kyc_note %}
+            <div class="kyc-admin-note">
+                <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
+                <div>
+                    <strong>Note de l'équipe :</strong>
+                    <p>{{ user.kyc_note }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Wallet Section -->
     {% if wallet %}
     <div class="wise-wallet-card">
@@ -733,6 +889,488 @@
     color: #10b981;
     font-size: 12px;
 }
+
+/* ============================================
+   KYC VERIFICATION SECTION
+   ============================================ */
+.kyc-verification-section {
+    margin-top: 16px;
+}
+
+.kyc-status-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.kyc-status-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 14px 14px 0 0;
+}
+
+.kyc-status-header.verified {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+    border-bottom: 2px solid #10b981;
+}
+
+.kyc-status-header.pending {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+    border-bottom: 2px solid #f59e0b;
+}
+
+.kyc-status-header.rejected {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+    border-bottom: 2px solid #ef4444;
+}
+
+.kyc-status-header.none {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));
+    border-bottom: 2px solid #6366f1;
+}
+
+.kyc-status-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kyc-status-header.verified .kyc-status-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.kyc-status-header.pending .kyc-status-icon {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.kyc-status-header.rejected .kyc-status-icon {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.kyc-status-header.none .kyc-status-icon {
+    background: rgba(99, 102, 241, 0.2);
+    color: #6366f1;
+}
+
+.kyc-status-info {
+    flex: 1;
+}
+
+.kyc-status-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.kyc-status-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* KYC Benefits */
+.kyc-benefits {
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.kyc-benefits h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+}
+
+.kyc-benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.kyc-benefits-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.kyc-benefits-list li i {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+/* KYC Documents Status */
+.kyc-documents-status {
+    padding: 16px 20px;
+}
+
+.kyc-documents-status h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+}
+
+.kyc-doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kyc-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+}
+
+.kyc-doc-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kyc-doc-icon.verified {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.kyc-doc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.kyc-doc-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.kyc-doc-desc {
+    display: block;
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.kyc-doc-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.kyc-doc-badge.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.kyc-doc-badge.pending {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+/* KYC Actions */
+.kyc-actions {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-light);
+}
+
+.kyc-upload-btn {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+}
+
+/* KYC Admin Note */
+.kyc-admin-note {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(245, 158, 11, 0.1);
+    border-top: 1px solid rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.kyc-admin-note i {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.kyc-admin-note strong {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.kyc-admin-note p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+/* KYC Upload Modal */
+.kyc-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.kyc-modal.active {
+    display: flex;
+}
+
+.kyc-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.kyc-modal-content {
+    position: relative;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUpKyc 0.3s ease-out;
+}
+
+@keyframes slideUpKyc {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.kyc-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.kyc-modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.kyc-modal-close {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-secondary);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kyc-modal-body {
+    padding: 20px;
+}
+
+.kyc-upload-area {
+    border: 2px dashed var(--border-light);
+    border-radius: 14px;
+    padding: 32px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.kyc-upload-area:hover {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.kyc-upload-area.dragover {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.kyc-upload-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    color: #6366f1;
+}
+
+.kyc-upload-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.kyc-upload-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin: 0;
+}
+
+.kyc-doc-type-select {
+    margin-bottom: 16px;
+}
+
+.kyc-doc-type-select label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.kyc-doc-type-select select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    font-size: 15px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.kyc-upload-preview {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    align-items: center;
+    gap: 12px;
+}
+
+.kyc-upload-preview.has-file {
+    display: flex;
+}
+
+.kyc-upload-preview img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.kyc-preview-info {
+    flex: 1;
+}
+
+.kyc-preview-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.kyc-preview-size {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.kyc-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    border-top: 1px solid var(--border-light);
+}
+
+.kyc-btn-cancel {
+    flex: 1;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.kyc-btn-submit {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.kyc-btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.kyc-btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 480px) {
+    .kyc-benefits-list {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <script>
@@ -834,5 +1472,208 @@ function deleteCard(cardId) {
         showNotification('Erreur de connexion', 'error');
     });
 }
+
+// ============================================
+// KYC UPLOAD MODAL
+// ============================================
+let selectedKycFile = null;
+
+function openKycUploadModal() {
+    document.getElementById('kycUploadModal').classList.add('active');
+    lucide.createIcons();
+}
+
+function closeKycUploadModal() {
+    document.getElementById('kycUploadModal').classList.remove('active');
+    selectedKycFile = null;
+    document.getElementById('kycFileInput').value = '';
+    document.getElementById('kycUploadPreview').classList.remove('has-file');
+}
+
+function handleKycFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        processKycFile(file);
+    }
+}
+
+function handleKycDrop(e) {
+    e.preventDefault();
+    const dropArea = document.getElementById('kycDropArea');
+    dropArea.classList.remove('dragover');
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        processKycFile(file);
+    }
+}
+
+function handleKycDragOver(e) {
+    e.preventDefault();
+    document.getElementById('kycDropArea').classList.add('dragover');
+}
+
+function handleKycDragLeave(e) {
+    document.getElementById('kycDropArea').classList.remove('dragover');
+}
+
+function processKycFile(file) {
+    // Validate file
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Format non supporté. Utilisez JPG, PNG, WebP ou PDF.', 'error');
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        showNotification('Fichier trop volumineux. Maximum 10 Mo.', 'error');
+        return;
+    }
+
+    selectedKycFile = file;
+
+    // Update preview
+    const preview = document.getElementById('kycUploadPreview');
+    const previewImg = document.getElementById('kycPreviewImg');
+    const previewName = document.getElementById('kycPreviewName');
+    const previewSize = document.getElementById('kycPreviewSize');
+
+    previewName.textContent = file.name;
+    previewSize.textContent = formatFileSize(file.size);
+
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewImg.style.display = 'none';
+    }
+
+    preview.classList.add('has-file');
+    document.getElementById('kycSubmitBtn').disabled = false;
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+}
+
+function removeKycFile() {
+    selectedKycFile = null;
+    document.getElementById('kycFileInput').value = '';
+    document.getElementById('kycUploadPreview').classList.remove('has-file');
+    document.getElementById('kycSubmitBtn').disabled = true;
+}
+
+async function submitKycDocument() {
+    if (!selectedKycFile) {
+        showNotification('Veuillez sélectionner un fichier', 'error');
+        return;
+    }
+
+    const docType = document.getElementById('kycDocType').value;
+    const submitBtn = document.getElementById('kycSubmitBtn');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i data-lucide="loader" class="animate-spin" style="width: 18px; height: 18px;"></i> Envoi en cours...';
+    lucide.createIcons();
+
+    const formData = new FormData();
+    formData.append('file', selectedKycFile);
+    formData.append('document_type', docType);
+
+    try {
+        const response = await fetch('/api/kyc/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('Document soumis avec succès. Vérification en cours.', 'success');
+            closeKycUploadModal();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(data.error || 'Erreur lors de l\'envoi', 'error');
+        }
+    } catch (error) {
+        console.error('KYC upload error:', error);
+        showNotification('Erreur de connexion', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="upload" style="width: 18px; height: 18px;"></i> Soumettre le document';
+        lucide.createIcons();
+    }
+}
 </script>
+
+<!-- KYC Upload Modal -->
+<div id="kycUploadModal" class="kyc-modal">
+    <div class="kyc-modal-backdrop" onclick="closeKycUploadModal()"></div>
+    <div class="kyc-modal-content">
+        <div class="kyc-modal-header">
+            <h3>
+                <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+                Vérification KYC
+            </h3>
+            <button class="kyc-modal-close" onclick="closeKycUploadModal()">
+                <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+
+        <div class="kyc-modal-body">
+            <div class="kyc-doc-type-select">
+                <label for="kycDocType">Type de document</label>
+                <select id="kycDocType">
+                    <option value="identity">Pièce d'identité (CNI, Passeport, Permis)</option>
+                    <option value="address">Justificatif de domicile</option>
+                    <option value="selfie">Selfie de vérification</option>
+                </select>
+            </div>
+
+            <div id="kycDropArea"
+                 class="kyc-upload-area"
+                 onclick="document.getElementById('kycFileInput').click()"
+                 ondrop="handleKycDrop(event)"
+                 ondragover="handleKycDragOver(event)"
+                 ondragleave="handleKycDragLeave(event)">
+                <div class="kyc-upload-icon">
+                    <i data-lucide="upload-cloud" style="width: 28px; height: 28px;"></i>
+                </div>
+                <p class="kyc-upload-text">Cliquez ou déposez votre document ici</p>
+                <p class="kyc-upload-hint">JPG, PNG, WebP ou PDF • Maximum 10 Mo</p>
+            </div>
+
+            <input type="file"
+                   id="kycFileInput"
+                   accept="image/jpeg,image/png,image/webp,application/pdf"
+                   style="display: none;"
+                   onchange="handleKycFileSelect(event)">
+
+            <div id="kycUploadPreview" class="kyc-upload-preview">
+                <img id="kycPreviewImg" src="" alt="Preview">
+                <div class="kyc-preview-info">
+                    <span id="kycPreviewName" class="kyc-preview-name">document.jpg</span>
+                    <span id="kycPreviewSize" class="kyc-preview-size">2.5 Mo</span>
+                </div>
+                <button onclick="removeKycFile()" style="background: none; border: none; color: var(--error); cursor: pointer;">
+                    <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="kyc-modal-footer">
+            <button class="kyc-btn-cancel" onclick="closeKycUploadModal()">Annuler</button>
+            <button id="kycSubmitBtn" class="kyc-btn-submit" onclick="submitKycDocument()" disabled>
+                <i data-lucide="upload" style="width: 18px; height: 18px;"></i>
+                Soumettre le document
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}

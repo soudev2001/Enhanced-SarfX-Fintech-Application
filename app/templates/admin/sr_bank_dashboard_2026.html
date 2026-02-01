@@ -1,0 +1,156 @@
+{% extends "app_base.html" %}
+
+{% block title %}Admin SR Banque - SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <i data-lucide="building-2" class="w-8 h-8"></i>
+                    </span>
+                    Dashboard SR Banque
+                </h1>
+                <p class="admin-subtitle">Vue d'ensemble des opérations bancaires globales</p>
+            </div>
+
+            <div class="admin-header-actions">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn admin-btn-outline-primary">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    Admin Principal
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1)); color: #6366f1;">
+                <i data-lucide="landmark" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total Banques</p>
+                <p class="admin-stat-value">{{ stats.total_banks }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="map-pin" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total ATMs</p>
+                <p class="admin-stat-value">{{ stats.total_atms }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-info">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Utilisateurs</p>
+                <p class="admin-stat-value">{{ stats.total_users }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="receipt" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Transactions</p>
+                <p class="admin-stat-value">{{ stats.total_transactions }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Volume Card -->
+    <div class="admin-card mb-6">
+        <div class="admin-card-body">
+            <div class="admin-volume-hero">
+                <div class="admin-volume-icon">
+                    <i data-lucide="trending-up" class="w-12 h-12"></i>
+                </div>
+                <div class="admin-volume-content">
+                    <p class="admin-volume-label">Volume Total des Transactions</p>
+                    <p class="admin-volume-value">${{ "{:,.2f}".format(stats.total_volume) }}</p>
+                    <p class="admin-volume-desc">Volume total des transactions complétées</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+                Actions Rapides
+            </h2>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-quick-actions-grid">
+                <a href="{{ url_for('admin_banks.list_banks') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-indigo-500 to-purple-600">
+                        <i data-lucide="landmark" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Gérer les Banques</span>
+                    <span class="admin-quick-action-count">{{ stats.total_banks }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.atms') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-pink-500 to-rose-600">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Gérer les ATMs</span>
+                    <span class="admin-quick-action-count">{{ stats.total_atms }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.users') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-cyan-500 to-blue-600">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Gérer les Utilisateurs</span>
+                    <span class="admin-quick-action-count">{{ stats.total_users }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.transactions') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-emerald-500 to-teal-600">
+                        <i data-lucide="receipt" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Voir les Transactions</span>
+                    <span class="admin-quick-action-count">{{ stats.total_transactions }}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+</script>
+{% endblock %}

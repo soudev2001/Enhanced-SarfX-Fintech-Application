@@ -1,0 +1,1987 @@
+{% extends "app_base.html" %}
+
+{% block title %}Utilisateurs - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    /* ============================================
+       USER MANAGEMENT 2026 - DARK/LIGHT MODE
+       ============================================ */
+
+    /* === THEME VARIABLES === */
+    :root {
+        --um-bg-primary: #0f172a;
+        --um-bg-secondary: #1e293b;
+        --um-bg-card: #1e293b;
+        --um-bg-card-hover: #263445;
+        --um-border: #334155;
+        --um-border-light: #475569;
+        --um-text-primary: #f8fafc;
+        --um-text-secondary: #94a3b8;
+        --um-text-muted: #64748b;
+        --um-accent: #6366f1;
+        --um-accent-light: #818cf8;
+        --um-success: #10b981;
+        --um-warning: #f59e0b;
+        --um-danger: #ef4444;
+        --um-info: #3b82f6;
+        --um-shadow: rgba(0, 0, 0, 0.4);
+        --um-glow: rgba(99, 102, 241, 0.3);
+    }
+
+    [data-theme="light"] {
+        --um-bg-primary: #f1f5f9;
+        --um-bg-secondary: #ffffff;
+        --um-bg-card: #ffffff;
+        --um-bg-card-hover: #f8fafc;
+        --um-border: #e2e8f0;
+        --um-border-light: #cbd5e1;
+        --um-text-primary: #1e293b;
+        --um-text-secondary: #475569;
+        --um-text-muted: #94a3b8;
+        --um-shadow: rgba(0, 0, 0, 0.1);
+        --um-glow: rgba(99, 102, 241, 0.2);
+    }
+
+    body {
+        background: linear-gradient(135deg, var(--um-bg-primary) 0%, var(--um-bg-secondary) 50%, var(--um-bg-primary) 100%) !important;
+        min-height: 100vh;
+    }
+
+    /* === USER CARD GRID === */
+    .admin-users-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 20px;
+        padding: 0;
+    }
+
+    /* === USER CARD === */
+    .admin-user-card {
+        background: var(--um-bg-card);
+        border: 1px solid var(--um-border);
+        border-radius: 20px;
+        padding: 0;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .admin-user-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--um-accent), var(--um-accent-light));
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .admin-user-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 25px 50px var(--um-shadow), 0 0 30px var(--um-glow);
+        border-color: var(--um-accent);
+    }
+
+    .admin-user-card:hover::before {
+        opacity: 1;
+    }
+
+    .admin-user-card.selected {
+        border-color: var(--um-accent);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+    }
+
+    .admin-user-card.selected::before {
+        opacity: 1;
+    }
+
+    /* Card Header with KYC Status Bar */
+    .user-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+        border-bottom: 1px solid var(--um-border);
+    }
+
+    .user-card-checkbox {
+        position: relative;
+    }
+
+    .user-card-checkbox input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 2px solid var(--um-border);
+        background: transparent;
+        cursor: pointer;
+        appearance: none;
+        transition: all 0.2s;
+    }
+
+    .user-card-checkbox input[type="checkbox"]:checked {
+        background: var(--um-accent);
+        border-color: var(--um-accent);
+    }
+
+    .user-card-checkbox input[type="checkbox"]:checked::after {
+        content: '✓';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    /* KYC Status Badge Enhanced */
+    .kyc-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kyc-status-badge.verified {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+        color: var(--um-success);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .kyc-status-badge.pending {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1));
+        color: var(--um-warning);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+        animation: pulse-warning 2s infinite;
+    }
+
+    .kyc-status-badge.rejected {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.1));
+        color: var(--um-danger);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+    }
+
+    .kyc-status-badge.none {
+        background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(100, 116, 139, 0.1));
+        color: var(--um-text-muted);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+        50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.4); }
+    }
+
+    /* Card Body */
+    .user-card-body {
+        padding: 20px;
+    }
+
+    .user-profile-section {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .user-avatar-wrapper {
+        position: relative;
+    }
+
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .user-status-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid var(--um-bg-card);
+    }
+
+    .user-status-dot.active {
+        background: var(--um-success);
+        box-shadow: 0 0 10px var(--um-success);
+    }
+
+    .user-status-dot.inactive {
+        background: var(--um-text-muted);
+    }
+
+    .user-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-email {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--um-text-primary);
+        margin: 0 0 4px 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--um-text-secondary);
+        margin: 0;
+    }
+
+    .user-role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .user-role-badge.admin {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    .user-role-badge.bank_respo {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+    .user-role-badge.user {
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--um-text-secondary);
+        border: 1px solid var(--um-border);
+    }
+
+    /* Tags Section */
+    .user-tags-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 16px;
+        min-height: 28px;
+    }
+
+    .user-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .user-tag:hover {
+        transform: scale(1.08);
+    }
+
+    .user-tag.vip {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: #1e293b;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .user-tag.premium {
+        background: linear-gradient(135deg, #a855f7, #8b5cf6);
+        color: white;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .user-tag.business {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .user-tag.flagged {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .user-tag.trusted {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .user-tag.new {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        color: white;
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Card Footer Actions */
+    .user-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-top: 1px solid var(--um-border);
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="light"] .user-card-footer {
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    .user-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .user-action-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid var(--um-border);
+        background: transparent;
+        color: var(--um-text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .user-action-btn:hover {
+        background: var(--um-accent);
+        border-color: var(--um-accent);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px var(--um-glow);
+    }
+
+    .user-action-btn.danger:hover {
+        background: var(--um-danger);
+        border-color: var(--um-danger);
+        box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .user-action-btn.success:hover {
+        background: var(--um-success);
+        border-color: var(--um-success);
+        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    /* === KYC PROFILE MODAL === */
+    .kyc-profile-modal {
+        max-width: 700px;
+    }
+
+    .kyc-profile-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 24px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+        border-bottom: 1px solid var(--um-border);
+    }
+
+    .kyc-profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .kyc-profile-info h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--um-text-primary);
+        margin: 0 0 8px 0;
+    }
+
+    .kyc-profile-info p {
+        font-size: 14px;
+        color: var(--um-text-secondary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .kyc-profile-body {
+        padding: 24px;
+    }
+
+    .kyc-section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--um-text-primary);
+        margin: 0 0 16px 0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--um-border);
+    }
+
+    .kyc-section-title i {
+        color: var(--um-accent);
+    }
+
+    /* KYC Status Cards */
+    .kyc-status-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .kyc-status-card {
+        padding: 16px;
+        border-radius: 14px;
+        border: 2px solid var(--um-border);
+        background: var(--um-bg-card);
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+    }
+
+    .kyc-status-card:hover {
+        border-color: var(--um-accent);
+        transform: translateY(-3px);
+    }
+
+    .kyc-status-card.active {
+        border-color: var(--um-accent);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+        box-shadow: 0 8px 25px var(--um-glow);
+    }
+
+    .kyc-status-card input {
+        display: none;
+    }
+
+    .kyc-status-card .status-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+    }
+
+    .kyc-status-card.verified .status-icon {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--um-success);
+    }
+
+    .kyc-status-card.pending .status-icon {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--um-warning);
+    }
+
+    .kyc-status-card.rejected .status-icon {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--um-danger);
+    }
+
+    .kyc-status-card.none .status-icon {
+        background: rgba(148, 163, 184, 0.15);
+        color: var(--um-text-muted);
+    }
+
+    .kyc-status-card .status-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--um-text-primary);
+        margin: 0;
+    }
+
+    .kyc-status-card .status-desc {
+        font-size: 11px;
+        color: var(--um-text-muted);
+        margin: 4px 0 0;
+    }
+
+    /* KYC Details Grid */
+    .kyc-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .kyc-detail-item {
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        border: 1px solid var(--um-border);
+    }
+
+    [data-theme="light"] .kyc-detail-item {
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    .kyc-detail-item .label {
+        font-size: 12px;
+        color: var(--um-text-muted);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .kyc-detail-item .value {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--um-text-primary);
+    }
+
+    /* KYC Documents Section */
+    .kyc-documents {
+        margin-bottom: 24px;
+    }
+
+    .kyc-doc-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .kyc-doc-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--um-bg-card);
+        border: 1px solid var(--um-border);
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .kyc-doc-item:hover {
+        border-color: var(--um-accent);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .kyc-doc-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .kyc-doc-icon.id {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--um-info);
+    }
+
+    .kyc-doc-icon.address {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--um-success);
+    }
+
+    .kyc-doc-icon.selfie {
+        background: rgba(139, 92, 246, 0.15);
+        color: #a855f7;
+    }
+
+    .kyc-doc-info {
+        flex: 1;
+    }
+
+    .kyc-doc-info .name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--um-text-primary);
+    }
+
+    .kyc-doc-info .status {
+        font-size: 12px;
+        color: var(--um-text-muted);
+    }
+
+    .kyc-doc-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .kyc-doc-status.uploaded {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--um-success);
+    }
+
+    .kyc-doc-status.missing {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--um-danger);
+    }
+
+    .kyc-doc-status.pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--um-warning);
+    }
+
+    /* KYC Note */
+    .kyc-note-input {
+        width: 100%;
+        min-height: 100px;
+        padding: 14px 16px;
+        border: 1px solid var(--um-border);
+        border-radius: 12px;
+        background: var(--um-bg-card);
+        color: var(--um-text-primary);
+        font-size: 14px;
+        resize: vertical;
+        transition: all 0.2s;
+    }
+
+    .kyc-note-input:focus {
+        outline: none;
+        border-color: var(--um-accent);
+        box-shadow: 0 0 0 3px var(--um-glow);
+    }
+
+    .kyc-note-input::placeholder {
+        color: var(--um-text-muted);
+    }
+
+    /* === THEME TOGGLE === */
+    .theme-toggle-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        border: 1px solid var(--um-border);
+        background: var(--um-bg-card);
+        color: var(--um-text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 100;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px var(--um-shadow);
+    }
+
+    .theme-toggle-btn:hover {
+        background: var(--um-accent);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    /* === BULK ACTIONS BAR === */
+    .bulk-actions-bar {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 24px;
+        background: var(--um-bg-card);
+        border: 1px solid var(--um-border);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px var(--um-shadow);
+        z-index: 100;
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bulk-actions-bar.visible {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+
+    .bulk-count {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-right: 16px;
+        border-right: 1px solid var(--um-border);
+    }
+
+    .bulk-count-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 10px;
+        background: var(--um-accent);
+        color: white;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .bulk-count-text {
+        font-size: 14px;
+        color: var(--um-text-secondary);
+    }
+
+    .bulk-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .bulk-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 12px;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .bulk-btn.success {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--um-success);
+    }
+
+    .bulk-btn.success:hover {
+        background: var(--um-success);
+        color: white;
+    }
+
+    .bulk-btn.warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--um-warning);
+    }
+
+    .bulk-btn.warning:hover {
+        background: var(--um-warning);
+        color: white;
+    }
+
+    .bulk-btn.ghost {
+        background: transparent;
+        color: var(--um-text-muted);
+    }
+
+    .bulk-btn.ghost:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--um-text-primary);
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+        .admin-users-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .kyc-status-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .kyc-details-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
+                        <i data-lucide="users" class="w-8 h-8"></i>
+                    </span>
+                    Gestion des Utilisateurs
+                </h1>
+                <p class="admin-subtitle">
+                    <strong id="user-count">{{ users | length }}</strong> comptes enregistrés
+                </p>
+            </div>
+
+            <div class="admin-header-actions">
+                <button onclick="selectAll()" class="admin-btn admin-btn-outline-secondary" id="select-all-btn">
+                    <i data-lucide="check-square" class="w-4 h-4"></i>
+                    Tout sélectionner
+                </button>
+                <a href="{{ url_for('admin.export_users') }}" class="admin-btn admin-btn-outline-primary">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon admin-stat-icon-primary">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Total Utilisateurs</p>
+                <p class="admin-stat-value">{{ users | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">KYC Vérifié</p>
+                <p class="admin-stat-value">{{ users | selectattr('kyc_status', 'equalto', 'verified') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">KYC En attente</p>
+                <p class="admin-stat-value">{{ users | selectattr('kyc_status', 'equalto', 'pending') | list | length }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon admin-stat-icon-info">
+                <i data-lucide="tag" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Avec Tags</p>
+                <p class="admin-stat-value">{{ users | selectattr('tags', 'defined') | list | length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="admin-card">
+        <div class="admin-card-body">
+            <div class="admin-search-filters">
+                <!-- Search -->
+                <div class="admin-search-box" style="flex: 1; min-width: 250px;">
+                    <i data-lucide="search" class="admin-search-icon"></i>
+                    <input type="text"
+                           id="search-input"
+                           placeholder="Rechercher par email, nom..."
+                           class="admin-search-input"
+                           onkeyup="filterUsers()">
+                </div>
+
+                <!-- Filters -->
+                <div class="admin-filter-group">
+                    <select id="filter-role" onchange="filterUsers()" class="admin-select">
+                        <option value="">📋 Tous les rôles</option>
+                        <option value="admin">👑 Admin</option>
+                        <option value="bank_respo">🏦 Bank Respo</option>
+                        <option value="user">👤 User</option>
+                    </select>
+
+                    <select id="filter-kyc" onchange="filterUsers()" class="admin-select">
+                        <option value="">🛡️ Statut KYC</option>
+                        <option value="verified">✅ Vérifié</option>
+                        <option value="pending">⏳ En attente</option>
+                        <option value="rejected">❌ Rejeté</option>
+                        <option value="none">📝 Non soumis</option>
+                    </select>
+
+                    <select id="filter-tag" onchange="filterUsers()" class="admin-select">
+                        <option value="">🏷️ Tous les tags</option>
+                        <option value="vip">⭐ VIP</option>
+                        <option value="premium">💎 Premium</option>
+                        <option value="business">💼 Business</option>
+                        <option value="flagged">🚩 Signalé</option>
+                    </select>
+
+                    <button onclick="resetFilters()" class="admin-btn-icon" title="Réinitialiser">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Grid -->
+    <div class="admin-users-grid" id="users-container">
+        {% for user in users %}
+        <div class="admin-user-card"
+             data-email="{{ user.email | lower }}"
+             data-role="{{ user.role | lower }}"
+             data-active="{{ 'true' if user.is_active else 'false' }}"
+             data-verified="{{ 'true' if user.is_verified else 'false' }}"
+             data-kyc="{{ user.kyc_status | default('none') | lower }}"
+             data-tags="{{ user.tags | join(',') if user.tags else '' }}"
+             data-id="{{ user._id }}">
+
+            <!-- Card Header -->
+            <div class="user-card-header">
+                <div class="user-card-checkbox">
+                    <input type="checkbox" class="user-checkbox" data-id="{{ user._id }}" onchange="updateSelection()">
+                </div>
+                {% set kyc = user.kyc_status | default('none') %}
+                <span class="kyc-status-badge {{ kyc }}">
+                    {% if kyc == 'verified' %}
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Vérifié
+                    {% elif kyc == 'pending' %}
+                    <i data-lucide="clock" class="w-4 h-4"></i> En attente
+                    {% elif kyc == 'rejected' %}
+                    <i data-lucide="shield-x" class="w-4 h-4"></i> Rejeté
+                    {% else %}
+                    <i data-lucide="help-circle" class="w-4 h-4"></i> Non vérifié
+                    {% endif %}
+                </span>
+            </div>
+
+            <!-- Card Body -->
+            <div class="user-card-body">
+                <div class="user-profile-section">
+                    <div class="user-avatar-wrapper">
+                        <div class="user-avatar">
+                            {% set email_name = user.email.split('@')[0] if user.email else 'us' %}
+                            {% if '.' in email_name %}
+                                {% set parts = email_name.split('.') %}
+                                {{ parts[0][0] | upper }}{{ parts[1][0] | upper }}
+                            {% else %}
+                                {{ email_name[:2] | upper }}
+                            {% endif %}
+                        </div>
+                        <span class="user-status-dot {{ 'active' if user.is_active else 'inactive' }}"></span>
+                    </div>
+                    <div class="user-info">
+                        <p class="user-email">{{ user.email }}</p>
+                        <p class="user-meta">
+                            <span class="user-role-badge {{ user.role }}">
+                                {% if user.role == 'admin' %}👑{% elif user.role == 'bank_respo' %}🏦{% else %}👤{% endif %}
+                                {{ user.role | capitalize }}
+                            </span>
+                            <span>•</span>
+                            <span>{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tags Section -->
+                <div class="user-tags-section">
+                    {% if user.tags %}
+                        {% for tag in user.tags %}
+                        <span class="user-tag {{ tag }}" onclick="event.stopPropagation(); filterByTag('{{ tag }}')">
+                            {% if tag == 'vip' %}⭐{% elif tag == 'premium' %}💎{% elif tag == 'business' %}💼{% elif tag == 'flagged' %}🚩{% elif tag == 'trusted' %}✓{% elif tag == 'new' %}🆕{% else %}🏷️{% endif %}
+                            {{ tag | capitalize }}
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <span style="font-size: 12px; color: var(--um-text-muted);">Aucun tag</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="user-card-footer">
+                <span style="font-size: 12px; color: var(--um-text-muted);">
+                    {{ 'Actif' if user.is_active else 'Inactif' }}
+                </span>
+                <div class="user-actions">
+                    <button onclick="event.stopPropagation(); openKycProfileModal('{{ user._id }}')" class="user-action-btn" title="Profil KYC">
+                        <i data-lucide="user-check" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); openTagModal('{{ user._id }}', '{{ user.email }}')" class="user-action-btn" title="Tags">
+                        <i data-lucide="tag" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); toggleUserStatus('{{ user._id }}', {{ 'true' if user.is_active else 'false' }})"
+                            class="user-action-btn {{ 'danger' if user.is_active else 'success' }}"
+                            title="{{ 'Désactiver' if user.is_active else 'Activer' }}">
+                        <i data-lucide="{{ 'user-x' if user.is_active else 'user-check' }}" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="admin-empty-state" style="grid-column: 1 / -1;">
+            <i data-lucide="users" class="w-16 h-16"></i>
+            <p>Aucun utilisateur trouvé</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle-btn" onclick="toggleTheme()" title="Changer le thème">
+    <i data-lucide="sun" class="w-5 h-5 theme-icon-light" style="display: none;"></i>
+    <i data-lucide="moon" class="w-5 h-5 theme-icon-dark"></i>
+</button>
+
+<!-- Bulk Actions Bar -->
+<div class="bulk-actions-bar" id="bulk-actions">
+    <div class="bulk-count">
+        <span class="bulk-count-number" id="selected-count-num">0</span>
+        <span class="bulk-count-text">sélectionné(s)</span>
+    </div>
+    <div class="bulk-actions">
+        <button onclick="bulkActivate()" class="bulk-btn success">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            Activer
+        </button>
+        <button onclick="bulkDeactivate()" class="bulk-btn warning">
+            <i data-lucide="user-x" class="w-4 h-4"></i>
+            Désactiver
+        </button>
+        <button onclick="bulkVerifyKyc()" class="bulk-btn success">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            Vérifier KYC
+        </button>
+        <button onclick="clearSelection()" class="bulk-btn ghost">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+</div>
+
+<!-- KYC Profile Modal (Enhanced) -->
+<div id="kycProfileModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeKycProfileModal()"></div>
+    <div class="admin-modal-content kyc-profile-modal">
+        <div class="kyc-profile-header">
+            <div class="kyc-profile-avatar" id="kyc-profile-avatar">JD</div>
+            <div class="kyc-profile-info">
+                <h3 id="kyc-profile-email">user@example.com</h3>
+                <p>
+                    <span id="kyc-profile-created">Inscrit le 01/01/2026</span>
+                    <span style="margin: 0 8px;">•</span>
+                    <span id="kyc-profile-role" class="user-role-badge user">👤 User</span>
+                </p>
+            </div>
+            <button onclick="closeKycProfileModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="kyc-profile-body">
+            <!-- KYC Status Selection -->
+            <h4 class="kyc-section-title">
+                <i data-lucide="shield" class="w-5 h-5"></i>
+                Statut de Vérification KYC
+            </h4>
+
+            <div class="kyc-status-cards">
+                <label class="kyc-status-card verified" onclick="selectKycStatus('verified')">
+                    <input type="radio" name="kyc-profile-status" value="verified">
+                    <div class="status-icon">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <p class="status-label">Vérifié</p>
+                    <p class="status-desc">Documents validés</p>
+                </label>
+                <label class="kyc-status-card pending" onclick="selectKycStatus('pending')">
+                    <input type="radio" name="kyc-profile-status" value="pending">
+                    <div class="status-icon">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                    </div>
+                    <p class="status-label">En attente</p>
+                    <p class="status-desc">En vérification</p>
+                </label>
+                <label class="kyc-status-card rejected" onclick="selectKycStatus('rejected')">
+                    <input type="radio" name="kyc-profile-status" value="rejected">
+                    <div class="status-icon">
+                        <i data-lucide="shield-x" class="w-6 h-6"></i>
+                    </div>
+                    <p class="status-label">Rejeté</p>
+                    <p class="status-desc">Documents invalides</p>
+                </label>
+                <label class="kyc-status-card none" onclick="selectKycStatus('none')">
+                    <input type="radio" name="kyc-profile-status" value="none">
+                    <div class="status-icon">
+                        <i data-lucide="help-circle" class="w-6 h-6"></i>
+                    </div>
+                    <p class="status-label">Non soumis</p>
+                    <p class="status-desc">Aucun document</p>
+                </label>
+            </div>
+
+            <!-- User Details -->
+            <h4 class="kyc-section-title">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                Informations Utilisateur
+            </h4>
+
+            <div class="kyc-details-grid">
+                <div class="kyc-detail-item">
+                    <div class="label">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                        Email
+                    </div>
+                    <div class="value" id="kyc-detail-email">-</div>
+                </div>
+                <div class="kyc-detail-item">
+                    <div class="label">
+                        <i data-lucide="phone" class="w-4 h-4"></i>
+                        Téléphone
+                    </div>
+                    <div class="value" id="kyc-detail-phone">Non renseigné</div>
+                </div>
+                <div class="kyc-detail-item">
+                    <div class="label">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        Date d'inscription
+                    </div>
+                    <div class="value" id="kyc-detail-created">-</div>
+                </div>
+                <div class="kyc-detail-item">
+                    <div class="label">
+                        <i data-lucide="activity" class="w-4 h-4"></i>
+                        Dernière activité
+                    </div>
+                    <div class="value" id="kyc-detail-activity">-</div>
+                </div>
+            </div>
+
+            <!-- KYC Documents -->
+            <h4 class="kyc-section-title">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                Documents KYC
+            </h4>
+
+            <div class="kyc-documents">
+                <div class="kyc-doc-list">
+                    <div class="kyc-doc-item">
+                        <div class="kyc-doc-icon id">
+                            <i data-lucide="credit-card" class="w-5 h-5"></i>
+                        </div>
+                        <div class="kyc-doc-info">
+                            <div class="name">Pièce d'identité</div>
+                            <div class="status">CNI, Passeport ou Permis</div>
+                        </div>
+                        <span class="kyc-doc-status missing" id="kyc-doc-id">Non fourni</span>
+                    </div>
+                    <div class="kyc-doc-item">
+                        <div class="kyc-doc-icon address">
+                            <i data-lucide="home" class="w-5 h-5"></i>
+                        </div>
+                        <div class="kyc-doc-info">
+                            <div class="name">Justificatif de domicile</div>
+                            <div class="status">Facture ou attestation</div>
+                        </div>
+                        <span class="kyc-doc-status missing" id="kyc-doc-address">Non fourni</span>
+                    </div>
+                    <div class="kyc-doc-item">
+                        <div class="kyc-doc-icon selfie">
+                            <i data-lucide="camera" class="w-5 h-5"></i>
+                        </div>
+                        <div class="kyc-doc-info">
+                            <div class="name">Selfie de vérification</div>
+                            <div class="status">Photo avec pièce d'identité</div>
+                        </div>
+                        <span class="kyc-doc-status missing" id="kyc-doc-selfie">Non fourni</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KYC Note -->
+            <h4 class="kyc-section-title">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+                Note Administrative
+            </h4>
+            <textarea class="kyc-note-input" id="kyc-profile-note" placeholder="Ajouter une note (raison du rejet, documents manquants, informations complémentaires...)"></textarea>
+        </div>
+
+        <div class="admin-modal-footer">
+            <button onclick="closeKycProfileModal()" class="admin-btn admin-btn-outline-secondary">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                Annuler
+            </button>
+            <button onclick="saveKycProfile()" class="admin-btn admin-btn-primary">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">
+                <i data-lucide="user" class="w-5 h-5"></i>
+                Détails de l'utilisateur
+            </h3>
+            <button onclick="closeModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body" id="modal-content">
+            <!-- Content loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- KYC Modal -->
+<div id="kycModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeKycModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                Gestion KYC
+            </h3>
+            <button onclick="closeKycModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <p class="admin-modal-subtitle" id="kyc-user-email"></p>
+
+            <div class="admin-kyc-status-grid">
+                <label class="admin-kyc-option" onclick="setKycStatus('verified')">
+                    <input type="radio" name="kyc-status" value="verified">
+                    <div class="admin-kyc-option-card admin-kyc-verified">
+                        <i data-lucide="shield-check" class="w-8 h-8"></i>
+                        <span>Vérifié</span>
+                        <small>Documents validés</small>
+                    </div>
+                </label>
+                <label class="admin-kyc-option" onclick="setKycStatus('pending')">
+                    <input type="radio" name="kyc-status" value="pending">
+                    <div class="admin-kyc-option-card admin-kyc-pending">
+                        <i data-lucide="clock" class="w-8 h-8"></i>
+                        <span>En attente</span>
+                        <small>En cours de vérification</small>
+                    </div>
+                </label>
+                <label class="admin-kyc-option" onclick="setKycStatus('rejected')">
+                    <input type="radio" name="kyc-status" value="rejected">
+                    <div class="admin-kyc-option-card admin-kyc-rejected">
+                        <i data-lucide="shield-x" class="w-8 h-8"></i>
+                        <span>Rejeté</span>
+                        <small>Documents invalides</small>
+                    </div>
+                </label>
+                <label class="admin-kyc-option" onclick="setKycStatus('none')">
+                    <input type="radio" name="kyc-status" value="none">
+                    <div class="admin-kyc-option-card admin-kyc-none">
+                        <i data-lucide="shield-question" class="w-8 h-8"></i>
+                        <span>Non soumis</span>
+                        <small>Aucun document</small>
+                    </div>
+                </label>
+            </div>
+
+            <div class="admin-form-group mt-4">
+                <label class="admin-form-label">Note KYC (optionnel)</label>
+                <textarea id="kyc-note" class="admin-form-textarea" placeholder="Raison du rejet, documents manquants..."></textarea>
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button onclick="closeKycModal()" class="admin-btn admin-btn-outline-secondary">Annuler</button>
+            <button onclick="saveKycStatus()" class="admin-btn admin-btn-primary">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tag Modal -->
+<div id="tagModal" class="admin-modal hidden">
+    <div class="admin-modal-backdrop" onclick="closeTagModal()"></div>
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">
+                <i data-lucide="tag" class="w-5 h-5"></i>
+                Gérer les Tags
+            </h3>
+            <button onclick="closeTagModal()" class="admin-modal-close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <p class="admin-modal-subtitle" id="tag-user-email"></p>
+
+            <div class="admin-tag-selector">
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="vip" onchange="toggleTag('vip')">
+                    <span class="admin-tag-label admin-tag-vip">⭐ VIP</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="premium" onchange="toggleTag('premium')">
+                    <span class="admin-tag-label admin-tag-premium">💎 Premium</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="business" onchange="toggleTag('business')">
+                    <span class="admin-tag-label admin-tag-business">💼 Business</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="flagged" onchange="toggleTag('flagged')">
+                    <span class="admin-tag-label admin-tag-flagged">🚩 Signalé</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="trusted" onchange="toggleTag('trusted')">
+                    <span class="admin-tag-label admin-tag-trusted">✓ Confiance</span>
+                </label>
+                <label class="admin-tag-checkbox">
+                    <input type="checkbox" value="new" onchange="toggleTag('new')">
+                    <span class="admin-tag-label admin-tag-new">🆕 Nouveau</span>
+                </label>
+            </div>
+
+            <div class="admin-form-group mt-4">
+                <label class="admin-form-label">Tag personnalisé</label>
+                <div class="admin-input-group">
+                    <input type="text" id="custom-tag" class="admin-form-input" placeholder="Ajouter un tag...">
+                    <button onclick="addCustomTag()" class="admin-btn admin-btn-primary">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-selected-tags mt-3" id="selected-tags-display">
+                <!-- Tags sélectionnés affichés ici -->
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button onclick="closeTagModal()" class="admin-btn admin-btn-outline-secondary">Annuler</button>
+            <button onclick="saveTags()" class="admin-btn admin-btn-primary">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+<script>
+// User data for filtering
+const users = [
+    {% for user in users %}
+    {
+        id: "{{ user._id }}",
+        email: "{{ user.email }}",
+        role: "{{ user.role }}",
+        is_active: {{ 'true' if user.is_active else 'false' }},
+        is_verified: {{ 'true' if user.is_verified else 'false' }},
+        kyc_status: "{{ user.kyc_status | default('none') }}",
+        tags: {{ user.tags | tojson if user.tags else '[]' }},
+        created_at: "{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+let selectedUsers = new Set();
+let currentKycUserId = null;
+let currentTagUserId = null;
+let selectedTags = [];
+
+// Filter users
+function filterUsers() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const roleFilter = document.getElementById('filter-role').value;
+    const kycFilter = document.getElementById('filter-kyc').value;
+    const tagFilter = document.getElementById('filter-tag').value;
+
+    const cards = document.querySelectorAll('.admin-user-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const email = card.dataset.email;
+        const role = card.dataset.role;
+        const kyc = card.dataset.kyc;
+        const tags = card.dataset.tags;
+
+        let show = true;
+
+        if (search && !email.includes(search)) show = false;
+        if (roleFilter && role !== roleFilter) show = false;
+        if (kycFilter && kyc !== kycFilter) show = false;
+        if (tagFilter && !tags.includes(tagFilter)) show = false;
+
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+
+    document.getElementById('user-count').textContent = visibleCount;
+}
+
+function filterByTag(tag) {
+    document.getElementById('filter-tag').value = tag;
+    filterUsers();
+}
+
+function resetFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('filter-role').value = '';
+    document.getElementById('filter-kyc').value = '';
+    document.getElementById('filter-tag').value = '';
+    filterUsers();
+}
+
+// Selection management
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    const allSelected = selectedUsers.size === checkboxes.length;
+
+    checkboxes.forEach(cb => {
+        cb.checked = !allSelected;
+        if (!allSelected) {
+            selectedUsers.add(cb.dataset.id);
+        }
+    });
+
+    if (allSelected) {
+        selectedUsers.clear();
+    }
+
+    updateBulkActionsBar();
+}
+
+function updateSelection() {
+    selectedUsers.clear();
+    document.querySelectorAll('.user-checkbox:checked').forEach(cb => {
+        selectedUsers.add(cb.dataset.id);
+    });
+    updateBulkActionsBar();
+}
+
+function updateBulkActionsBar() {
+    const bar = document.getElementById('bulk-actions');
+    const count = document.getElementById('selected-count');
+
+    if (selectedUsers.size > 0) {
+        bar.classList.add('visible');
+        count.textContent = `${selectedUsers.size} sélectionné(s)`;
+    } else {
+        bar.classList.remove('visible');
+    }
+}
+
+function clearSelection() {
+    selectedUsers.clear();
+    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+    updateBulkActionsBar();
+}
+
+// KYC Modal
+function openKycModal(userId, email) {
+    console.log('openKycModal called:', userId, email);
+    currentKycUserId = userId;
+    const user = users.find(u => u.id === userId);
+    console.log('User found:', user);
+
+    const emailEl = document.getElementById('kyc-user-email');
+    const modalEl = document.getElementById('kycModal');
+
+    if (emailEl) emailEl.textContent = email;
+    if (modalEl) {
+        modalEl.classList.remove('hidden');
+        console.log('KYC Modal opened');
+    }
+
+    // Set current KYC status
+    const radios = document.querySelectorAll('input[name="kyc-status"]');
+    radios.forEach(r => r.checked = r.value === (user?.kyc_status || 'none'));
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeKycModal() {
+    document.getElementById('kycModal').classList.add('hidden');
+    currentKycUserId = null;
+}
+
+function setKycStatus(status) {
+    document.querySelector(`input[name="kyc-status"][value="${status}"]`).checked = true;
+}
+
+async function saveKycStatus() {
+    const status = document.querySelector('input[name="kyc-status"]:checked')?.value || 'none';
+    const note = document.getElementById('kyc-note').value;
+
+    try {
+        const response = await fetch(`/admin/users/${currentKycUserId}/kyc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ status, note })
+        });
+
+        if (response.ok) {
+            showToast('Statut KYC mis à jour', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Erreur lors de la mise à jour', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Erreur réseau', 'error');
+    }
+}
+
+// Tag Modal
+function openTagModal(userId, email) {
+    console.log('openTagModal called:', userId, email);
+    currentTagUserId = userId;
+    const user = users.find(u => u.id === userId);
+    console.log('User found for tags:', user);
+    selectedTags = [...(user?.tags || [])];
+
+    const emailEl = document.getElementById('tag-user-email');
+    const modalEl = document.getElementById('tagModal');
+
+    if (emailEl) emailEl.textContent = email;
+    if (modalEl) {
+        modalEl.classList.remove('hidden');
+        console.log('Tag Modal opened');
+    }
+
+    // Set current tags
+    document.querySelectorAll('.admin-tag-checkbox input').forEach(cb => {
+        cb.checked = selectedTags.includes(cb.value);
+    });
+
+    updateSelectedTagsDisplay();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeTagModal() {
+    document.getElementById('tagModal').classList.add('hidden');
+    currentTagUserId = null;
+    selectedTags = [];
+}
+
+function toggleTag(tag) {
+    const index = selectedTags.indexOf(tag);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+    } else {
+        selectedTags.push(tag);
+    }
+    updateSelectedTagsDisplay();
+}
+
+function addCustomTag() {
+    const input = document.getElementById('custom-tag');
+    const tag = input.value.trim().toLowerCase();
+    if (tag && !selectedTags.includes(tag)) {
+        selectedTags.push(tag);
+        updateSelectedTagsDisplay();
+    }
+    input.value = '';
+}
+
+function removeTag(tag) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+    document.querySelectorAll('.admin-tag-checkbox input').forEach(cb => {
+        if (cb.value === tag) cb.checked = false;
+    });
+    updateSelectedTagsDisplay();
+}
+
+function updateSelectedTagsDisplay() {
+    const container = document.getElementById('selected-tags-display');
+    if (selectedTags.length === 0) {
+        container.innerHTML = '<p class="text-muted">Aucun tag sélectionné</p>';
+        return;
+    }
+
+    container.innerHTML = selectedTags.map(tag => `
+        <span class="admin-tag admin-tag-${tag}" style="cursor: pointer;" onclick="removeTag('${tag}')">
+            ${getTagEmoji(tag)} ${tag}
+            <i data-lucide="x" class="w-3 h-3 ml-1"></i>
+        </span>
+    `).join('');
+    lucide.createIcons();
+}
+
+function getTagEmoji(tag) {
+    const emojis = {vip: '⭐', premium: '💎', business: '💼', flagged: '🚩', trusted: '✓', new: '🆕'};
+    return emojis[tag] || '🏷️';
+}
+
+async function saveTags() {
+    try {
+        const response = await fetch(`/admin/users/${currentTagUserId}/tags`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ tags: selectedTags })
+        });
+
+        if (response.ok) {
+            showToast('Tags mis à jour', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Erreur lors de la mise à jour', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Erreur réseau', 'error');
+    }
+}
+
+// User details modal
+function showUserDetails(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    const modal = document.getElementById('userModal');
+    const content = document.getElementById('modal-content');
+
+    content.innerHTML = `
+        <div class="admin-user-detail-grid">
+            <div class="admin-user-detail-avatar">
+                ${user.email.substring(0, 2).toUpperCase()}
+            </div>
+            <div class="admin-user-detail-info">
+                <h4>${user.email}</h4>
+                <p>Créé le ${user.created_at}</p>
+            </div>
+        </div>
+
+        <div class="admin-user-detail-stats">
+            <div class="admin-user-detail-stat">
+                <span class="label">Rôle</span>
+                <span class="value admin-badge admin-badge-${user.role === 'admin' ? 'error' : 'secondary'}">${user.role}</span>
+            </div>
+            <div class="admin-user-detail-stat">
+                <span class="label">Statut</span>
+                <span class="value admin-badge admin-badge-${user.is_active ? 'success' : 'warning'}">${user.is_active ? 'Actif' : 'Inactif'}</span>
+            </div>
+            <div class="admin-user-detail-stat">
+                <span class="label">KYC</span>
+                <span class="value admin-kyc-badge admin-kyc-${user.kyc_status}">${getKycLabel(user.kyc_status)}</span>
+            </div>
+        </div>
+
+        ${user.tags.length > 0 ? `
+        <div class="admin-user-detail-tags">
+            <span class="label">Tags:</span>
+            ${user.tags.map(t => `<span class="admin-tag admin-tag-${t}">${getTagEmoji(t)} ${t}</span>`).join('')}
+        </div>
+        ` : ''}
+
+        <div class="admin-user-detail-actions">
+            <button onclick="toggleUserStatus('${user.id}', ${user.is_active})" class="admin-btn admin-btn-${user.is_active ? 'warning' : 'success'}">
+                <i data-lucide="${user.is_active ? 'user-x' : 'user-check'}" class="w-4 h-4"></i>
+                ${user.is_active ? 'Désactiver' : 'Activer'}
+            </button>
+            <button onclick="closeModal(); openKycModal('${user.id}', '${user.email}')" class="admin-btn admin-btn-outline-primary">
+                <i data-lucide="shield" class="w-4 h-4"></i>
+                Gérer KYC
+            </button>
+            <button onclick="closeModal(); openTagModal('${user.id}', '${user.email}')" class="admin-btn admin-btn-outline-secondary">
+                <i data-lucide="tag" class="w-4 h-4"></i>
+                Gérer Tags
+            </button>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function getKycLabel(status) {
+    const labels = {
+        verified: '✓ Vérifié',
+        pending: '⏳ En attente',
+        rejected: '✗ Rejeté',
+        none: '? Non soumis'
+    };
+    return labels[status] || labels.none;
+}
+
+function closeModal() {
+    document.getElementById('userModal').classList.add('hidden');
+}
+
+// Toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `admin-toast admin-toast-${type}`;
+    toast.innerHTML = `
+        <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    lucide.createIcons();
+
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// API calls
+async function toggleUserStatus(userId, currentStatus) {
+    try {
+        const response = await fetch(`/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            showToast('Erreur lors de la mise à jour', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Erreur réseau', 'error');
+    }
+}
+
+async function bulkActivate() {
+    for (const userId of selectedUsers) {
+        await fetch(`/admin/users/${userId}/activate`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+    }
+    location.reload();
+}
+
+async function bulkDeactivate() {
+    for (const userId of selectedUsers) {
+        await fetch(`/admin/users/${userId}/deactivate`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+    }
+    location.reload();
+}
+
+async function bulkVerifyKyc() {
+    for (const userId of selectedUsers) {
+        await fetch(`/admin/users/${userId}/kyc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ status: 'verified' })
+        });
+    }
+    showToast('KYC vérifié pour tous les utilisateurs sélectionnés', 'success');
+    setTimeout(() => location.reload(), 1000);
+}
+
+// ============================================
+// THEME TOGGLE
+// ============================================
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('admin-theme', newTheme);
+
+    // Update icon visibility
+    document.querySelector('.theme-icon-light').style.display = newTheme === 'light' ? 'block' : 'none';
+    document.querySelector('.theme-icon-dark').style.display = newTheme === 'dark' ? 'block' : 'none';
+
+    lucide.createIcons();
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('admin-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    document.querySelector('.theme-icon-light').style.display = savedTheme === 'light' ? 'block' : 'none';
+    document.querySelector('.theme-icon-dark').style.display = savedTheme === 'dark' ? 'block' : 'none';
+}
+
+// ============================================
+// KYC PROFILE MODAL
+// ============================================
+let currentKycProfileUserId = null;
+
+function openKycProfileModal(userId) {
+    console.log('openKycProfileModal called:', userId);
+    const user = users.find(u => u.id === userId);
+    console.log('User found for KYC Profile:', user);
+
+    if (!user) {
+        console.error('User not found for ID:', userId);
+        showToast('Utilisateur non trouvé', 'error');
+        return;
+    }
+
+    currentKycProfileUserId = userId;
+
+    // Set avatar initials
+    const initials = user.email.substring(0, 2).toUpperCase();
+    const avatarEl = document.getElementById('kyc-profile-avatar');
+    if (avatarEl) avatarEl.textContent = initials;
+
+    // Set header info
+    const emailEl = document.getElementById('kyc-profile-email');
+    const createdEl = document.getElementById('kyc-profile-created');
+
+    if (emailEl) emailEl.textContent = user.email;
+    if (createdEl) createdEl.textContent = `Inscrit le ${user.created_at}`;
+
+    // Set role badge
+    const roleBadge = document.getElementById('kyc-profile-role');
+    if (roleBadge) {
+        roleBadge.className = `user-role-badge ${user.role}`;
+        roleBadge.innerHTML = `${user.role === 'admin' ? '👑' : user.role === 'bank_respo' ? '🏦' : '👤'} ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}`;
+    }
+
+    // Set details
+    const detailEmail = document.getElementById('kyc-detail-email');
+    const detailCreated = document.getElementById('kyc-detail-created');
+    const detailActivity = document.getElementById('kyc-detail-activity');
+
+    if (detailEmail) detailEmail.textContent = user.email;
+    if (detailCreated) detailCreated.textContent = user.created_at;
+    if (detailActivity) detailActivity.textContent = user.is_active ? 'Actif récemment' : 'Inactif';
+
+    // Set KYC status
+    selectKycStatus(user.kyc_status || 'none');
+
+    // Show modal
+    const modalEl = document.getElementById('kycProfileModal');
+    if (modalEl) {
+        modalEl.classList.remove('hidden');
+        console.log('KYC Profile Modal opened');
+    }
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeKycProfileModal() {
+    document.getElementById('kycProfileModal').classList.add('hidden');
+    currentKycProfileUserId = null;
+}
+
+function selectKycStatus(status) {
+    // Remove active class from all cards
+    document.querySelectorAll('.kyc-status-card').forEach(card => {
+        card.classList.remove('active');
+    });
+
+    // Add active to selected and check radio
+    const selectedCard = document.querySelector(`.kyc-status-card.${status}`);
+    if (selectedCard) {
+        selectedCard.classList.add('active');
+        selectedCard.querySelector('input[type="radio"]').checked = true;
+    }
+}
+
+async function saveKycProfile() {
+    const status = document.querySelector('input[name="kyc-profile-status"]:checked')?.value || 'none';
+    const note = document.getElementById('kyc-profile-note').value;
+
+    try {
+        const response = await fetch(`/admin/users/${currentKycProfileUserId}/kyc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ status, note })
+        });
+
+        if (response.ok) {
+            showToast('Profil KYC mis à jour avec succès', 'success');
+            closeKycProfileModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Erreur lors de la mise à jour', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Erreur réseau', 'error');
+    }
+}
+
+// ============================================
+// UPDATE BULK ACTIONS BAR
+// ============================================
+function updateBulkActionsBarEnhanced() {
+    const bar = document.getElementById('bulk-actions');
+    const countNum = document.getElementById('selected-count-num');
+
+    if (selectedUsers.size > 0) {
+        bar.classList.add('visible');
+        countNum.textContent = selectedUsers.size;
+    } else {
+        bar.classList.remove('visible');
+    }
+}
+
+// Override the original function
+const originalUpdateBulkActionsBar = updateBulkActionsBar;
+updateBulkActionsBar = function() {
+    updateBulkActionsBarEnhanced();
+};
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+    initTheme();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

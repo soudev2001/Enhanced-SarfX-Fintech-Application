@@ -1,223 +1,198 @@
 {% extends "app_base.html" %}
 
 {% block content %}
-<div class="wise-home animate-fade-in">
-    <!-- Hero Section - Wise Style -->
-    <section class="wise-hero">
-        <div class="wise-hero-badge">
-            <span class="wise-pulse-dot"></span>
+<div class="wise-home animate-fade-in redesign-2026">
+    <!-- Hero Section - 2026 Redesign -->
+    <section class="hero-2026">
+        <div class="hero-badge-2026">
+            <span class="live-dot-2026"></span>
             Taux en direct
         </div>
-        <h1 class="wise-hero-title">
+        <h1 class="hero-title-2026">
             Envoyez de l'argent<br/>
-            <span class="wise-hero-highlight">au meilleur taux</span>
+            au meilleur taux
         </h1>
-        <p class="wise-hero-subtitle">
+        <p class="hero-subtitle-2026">
             Comparez Western Union, Wise, et les banques marocaines en temps réel.
         </p>
     </section>
 
-    <!-- Quick Convert Card - Wise Style Enhanced -->
-    <section class="wise-convert-card">
+    <!-- Quick Convert Card - 2026 Glassmorphism Style -->
+    <section class="converter-card-2026 glass-card">
         <!-- You Send -->
         <div class="wise-convert-header">
             <span class="wise-label">You send</span>
-            <div class="wise-live-badge">
-                <span class="wise-live-dot"></span>
+            <div class="live-indicator-2026">
+                <span class="live-dot-2026"></span>
                 Live
             </div>
         </div>
 
-        <div class="wise-input-row">
-            <input type="number" id="home-amount" value="1000" class="wise-amount-input" placeholder="1,000.00">
-            <select id="home-from-currency" class="wise-currency-select">
-                <option value="USD">🇺🇸 USD ($)</option>
-                <option value="EUR">🇪🇺 EUR (€)</option>
-                <option value="GBP">🇬🇧 GBP (£)</option>
+        <div class="converter-input-group-2026">
+            <input type="number" id="home-amount" value="1000" class="converter-input-2026" placeholder="1,000.00">
+            <select id="home-from-currency" class="currency-select-2026">
+                <option value="USD">🇺🇸 USD</option>
+                <option value="EUR">🇪🇺 EUR</option>
+                <option value="GBP">🇬🇧 GBP</option>
                 <option value="CHF">🇨🇭 CHF</option>
-                <option value="CAD">🇨🇦 CAD ($)</option>
+                <option value="CAD">🇨🇦 CAD</option>
+                <option value="AED">🇦🇪 AED</option>
+                <option value="SAR">🇸🇦 SAR</option>
             </select>
         </div>
 
-        <!-- SarfX Rate Info -->
-        <div class="wise-rate-info">
-            <div class="wise-rate-line">
-                <span class="wise-rate-label">Taux SarfX</span>
-                <span class="wise-rate-value-display" id="home-rate">10.1002</span>
+        <!-- SarfX Rate Info - Modern Display -->
+        <div class="rate-display-2026">
+            <div>
+                <span class="wise-rate-label" style="font-size: 12px; color: var(--text-tertiary); display: block; margin-bottom: 4px;">Taux SarfX</span>
+                <span class="rate-value-2026" id="home-rate">10.1002</span>
             </div>
-            <div class="wise-rate-line">
-                <span class="wise-rate-label">Frais SarfX</span>
-                <span class="wise-rate-value-display wise-fees-low" id="home-fees">0.00 <span id="home-fees-currency">USD</span></span>
+            <div style="text-align: right;">
+                <span class="wise-rate-label" style="font-size: 12px; color: var(--text-tertiary); display: block; margin-bottom: 4px;">Frais</span>
+                <span style="color: var(--success); font-weight: 600;" id="home-fees">0.00 <span id="home-fees-currency">USD</span></span>
             </div>
         </div>
 
         <!-- Recipient Receives -->
         <div class="wise-convert-header" style="margin-top: 16px;">
             <span class="wise-label">Le bénéficiaire reçoit</span>
-            <span class="wise-via-sarfx">via SarfX</span>
+            <span class="wise-via-sarfx" style="font-size: 11px; color: var(--brand-primary); font-weight: 600;">via SarfX</span>
         </div>
 
-        <div class="wise-result-row">
-            <span class="wise-result-value" id="home-result">10 100,20</span>
-            <div class="wise-result-currency-box">
-                <span class="wise-result-flag">🇲🇦</span>
-                <span class="wise-result-currency">MAD (DH)</span>
+        <div class="converter-input-group-2026" style="margin-bottom: 0;">
+            <div class="converter-input-2026" style="background: var(--bg-secondary); border-radius: var(--radius-xl); padding: var(--space-4) var(--space-6); display: flex; align-items: center; justify-content: space-between;">
+                <span id="home-result" style="font-size: 28px; font-weight: 700; color: var(--text-primary);">10 100,20</span>
+                <div style="display: flex; align-items: center; gap: 8px; background: var(--surface); padding: 8px 12px; border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
+                    <span>🇲🇦</span>
+                    <span style="font-weight: 600;">MAD</span>
+                </div>
             </div>
         </div>
 
         <!-- Last Updated & Refresh -->
-        <div class="wise-update-row">
-            <div class="wise-update-time">
+        <div class="wise-update-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+            <div class="wise-update-time" style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-tertiary);">
                 <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
                 <span>Last updated: <strong id="last-update-time">--:--:--</strong></span>
             </div>
-            <button onclick="refreshRates()" class="wise-refresh-btn" id="refresh-btn">
+            <button onclick="refreshRates()" class="btn-secondary-2026" id="refresh-btn">
                 <i data-lucide="refresh-cw" style="width: 14px; height: 14px;" id="refresh-icon"></i>
                 Refresh
             </button>
         </div>
 
         <!-- AI Status -->
-        <div class="wise-ai-status">
-            <div class="wise-ai-indicator">
-                <span class="wise-ai-dot"></span>
-                <span id="ai-status-text">AI scanning market opportunities...</span>
-            </div>
+        <div class="wise-ai-status" style="display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 14px; background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(236,72,153,0.05)); border-radius: var(--radius-lg);">
+            <div style="width: 8px; height: 8px; background: var(--accent-purple); border-radius: 50%; animation: pulse-dot 2s infinite;"></div>
+            <span id="ai-status-text" style="font-size: 12px; color: var(--text-secondary);">AI scanning market opportunities...</span>
         </div>
 
-        <a href="#" id="continue-btn" onclick="goToConverter(event)" class="wise-cta-btn">
+        <button id="continue-btn" onclick="goToConverter(event)" class="btn-primary-2026" style="margin-top: 20px;">
             Continuer <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
-        </a>
+        </button>
     </section>
 
-    <!-- Compare Providers Section -->
-    <section class="wise-card">
-        <div class="wise-card-header">
-            <h2 class="wise-card-title">
+    <!-- Compare Providers Section - Redesigned -->
+    <section class="glass-card" style="padding: var(--space-5); margin-top: var(--space-4);">
+        <div class="wise-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+            <h2 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="git-compare" style="width: 18px; height: 18px; color: var(--brand-primary);"></i>
                 Compare Providers
             </h2>
-            <div class="wise-tabs-mini">
-                <button class="wise-tab-mini active" onclick="showProviderTab('popular')">Popular Pairs</button>
-                <button class="wise-tab-mini" onclick="showProviderTab('alerts')">Rate Alerts</button>
-            </div>
         </div>
 
-        <!-- Providers List - Dynamic -->
-        <div class="wise-providers-list" id="providers-list">
+        <!-- Providers List - Modern Design -->
+        <div class="providers-grid-2026 stagger-animation" id="providers-list">
             <!-- SarfX - Best -->
-            <div class="wise-provider-item wise-provider-best" onclick="selectProvider('SarfX', 10.1002, 10)">
-                <div class="wise-provider-left">
-                    <div class="wise-provider-logo sarfx-logo">
-                        <span>S</span>
-                    </div>
-                    <div class="wise-provider-info">
-                        <div class="wise-provider-name-row">
-                            <span class="wise-provider-name">SarfX</span>
-                            <span class="wise-best-tag">Meilleur Taux</span>
+            <div class="provider-card-2026 provider-best animate-slide-up" onclick="selectProvider('SarfX', 10.1002, 10)">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="provider-logo-2026">S</div>
+                    <div class="provider-info-2026">
+                        <div class="provider-name-2026">
+                            SarfX
+                            <span class="best-tag-2026">
+                                <i data-lucide="star" style="width: 10px; height: 10px;"></i>
+                                Meilleur Taux
+                            </span>
                         </div>
-                        <div class="wise-provider-meta">
-                            <span class="wise-provider-rating">⭐ 5.0</span>
-                            <span class="wise-provider-speed">⚡ Instantané</span>
-                        </div>
+                        <div class="provider-meta-2026">⭐ 5.0 • ⚡ Instantané</div>
                     </div>
                 </div>
-                <div class="wise-provider-right">
-                    <span class="wise-provider-amount" id="sarfx-amount">9898.24 MAD</span>
-                    <span class="wise-provider-details">Taux: <span id="sarfx-rate">10.1002</span> • Frais: <span id="sarfx-fees">10.00</span> USD</span>
-                    <span class="wise-provider-selected">✓ Votre choix</span>
+                <div class="provider-amount-2026">
+                    <div class="provider-amount-value-2026" id="sarfx-amount">9898.24 MAD</div>
+                    <div class="provider-amount-detail-2026">Taux: <span id="sarfx-rate">10.1002</span> • Frais: <span id="sarfx-fees">10.00</span> USD</div>
                 </div>
             </div>
 
             <!-- Wise -->
-            <div class="wise-provider-item" onclick="selectProvider('Wise', 9.9850, 5)">
-                <div class="wise-provider-left">
-                    <div class="wise-provider-logo" style="background: #9FE870;">
-                        <span style="color: #1A1A2E; font-weight: 800; font-size: 10px;">wise</span>
-                    </div>
-                    <div class="wise-provider-info">
-                        <div class="wise-provider-name-row">
-                            <span class="wise-provider-name">Wise</span>
-                        </div>
-                        <div class="wise-provider-meta">
-                            <span class="wise-provider-rating">⭐ 4.8</span>
-                            <span class="wise-provider-speed">⚡ 1-2h</span>
-                        </div>
+            <div class="provider-card-2026 animate-slide-up" onclick="selectProvider('Wise', 9.9850, 5)">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="provider-logo-2026" style="background: #9FE870; color: #1A1A2E; font-size: 10px;">wise</div>
+                    <div class="provider-info-2026">
+                        <div class="provider-name-2026">Wise</div>
+                        <div class="provider-meta-2026">⭐ 4.8 • ⚡ 1-2h</div>
                     </div>
                 </div>
-                <div class="wise-provider-right">
-                    <span class="wise-provider-amount" id="wise-amount">9980.00 MAD</span>
-                    <span class="wise-provider-details">Taux: <span id="wise-rate">9.9850</span> • Frais: <span id="wise-fees">5.00</span> USD</span>
+                <div class="provider-amount-2026">
+                    <div class="provider-amount-value-2026" id="wise-amount">9980.00 MAD</div>
+                    <div class="provider-amount-detail-2026">Taux: <span id="wise-rate">9.9850</span> • Frais: <span id="wise-fees">5.00</span> USD</div>
                 </div>
             </div>
 
             <!-- Western Union -->
-            <div class="wise-provider-item" onclick="selectProvider('Western Union', 9.8500, 15)">
-                <div class="wise-provider-left">
-                    <div class="wise-provider-logo" style="background: #FFCC00;">
-                        <span style="color: #000; font-weight: 800; font-size: 11px;">WU</span>
-                    </div>
-                    <div class="wise-provider-info">
-                        <div class="wise-provider-name-row">
-                            <span class="wise-provider-name">Western Union</span>
-                        </div>
-                        <div class="wise-provider-meta">
-                            <span class="wise-provider-rating">⭐ 4.2</span>
-                            <span class="wise-provider-speed">🕐 1-3j</span>
-                        </div>
+            <div class="provider-card-2026 animate-slide-up" onclick="selectProvider('Western Union', 9.8500, 15)">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="provider-logo-2026" style="background: #FFCC00; color: #000; font-size: 11px; font-weight: 800;">WU</div>
+                    <div class="provider-info-2026">
+                        <div class="provider-name-2026">Western Union</div>
+                        <div class="provider-meta-2026">⭐ 4.2 • 🕐 1-3j</div>
                     </div>
                 </div>
-                <div class="wise-provider-right">
-                    <span class="wise-provider-amount" id="wu-amount">9702.50 MAD</span>
-                    <span class="wise-provider-details">Taux: <span id="wu-rate">9.8500</span> • Frais: <span id="wu-fees">15.00</span> USD</span>
+                <div class="provider-amount-2026">
+                    <div class="provider-amount-value-2026" id="wu-amount">9702.50 MAD</div>
+                    <div class="provider-amount-detail-2026">Taux: <span id="wu-rate">9.8500</span> • Frais: <span id="wu-fees">15.00</span> USD</div>
                 </div>
             </div>
 
             <!-- Banque Populaire -->
-            <div class="wise-provider-item" onclick="selectProvider('Banque Populaire', 9.7200, 25)">
-                <div class="wise-provider-left">
-                    <div class="wise-provider-logo" style="background: #003366;">
-                        <span style="color: #fff; font-weight: 700; font-size: 10px;">BP</span>
-                    </div>
-                    <div class="wise-provider-info">
-                        <div class="wise-provider-name-row">
-                            <span class="wise-provider-name">Banque Populaire</span>
-                        </div>
-                        <div class="wise-provider-meta">
-                            <span class="wise-provider-rating">⭐ 3.9</span>
-                            <span class="wise-provider-speed">🕐 2-4j</span>
-                        </div>
+            <div class="provider-card-2026 animate-slide-up" onclick="selectProvider('Banque Populaire', 9.7200, 25)">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="provider-logo-2026" style="background: #003366; font-size: 10px;">BP</div>
+                    <div class="provider-info-2026">
+                        <div class="provider-name-2026">Banque Populaire</div>
+                        <div class="provider-meta-2026">⭐ 3.9 • 🕐 2-4j</div>
                     </div>
                 </div>
-                <div class="wise-provider-right">
-                    <span class="wise-provider-amount" id="bp-amount">9477.00 MAD</span>
-                    <span class="wise-provider-details">Taux: <span id="bp-rate">9.7200</span> • Frais: <span id="bp-fees">25.00</span> USD</span>
+                <div class="provider-amount-2026">
+                    <div class="provider-amount-value-2026" id="bp-amount">9477.00 MAD</div>
+                    <div class="provider-amount-detail-2026">Taux: <span id="bp-rate">9.7200</span> • Frais: <span id="bp-fees">25.00</span> USD</div>
                 </div>
             </div>
         </div>
 
-        <div class="wise-savings-banner">
-            <i data-lucide="piggy-bank" style="width: 16px; height: 16px;"></i>
-            Économisez jusqu'à <strong id="savings-amount">421 MAD</strong> avec SarfX
+        <!-- Savings Banner - Modernized -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding: 12px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(52,211,153,0.05)); border-radius: var(--radius-lg); color: var(--success); font-size: 14px; font-weight: 600;">
+            <i data-lucide="piggy-bank" style="width: 18px; height: 18px;"></i>
+            Économisez jusqu'à <strong id="savings-amount" style="margin: 0 4px;">421 MAD</strong> avec SarfX
         </div>
     </section>
 
-    <!-- Exchange Rate History - Frankfurter Style -->
-    <section class="wise-card">
-        <div class="wise-card-header">
-            <h2 class="wise-card-title">
+    <!-- Exchange Rate History - Redesigned 2026 -->
+    <section class="glass-card" style="padding: var(--space-5); margin-top: var(--space-4);">
+        <div class="wise-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); flex-wrap: wrap; gap: 12px;">
+            <h2 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="trending-up" style="width: 18px; height: 18px; color: var(--brand-primary);"></i>
                 Historique des Taux
             </h2>
-            <div class="wise-chart-controls">
-                <select id="chart-source-currency" class="wise-select-sm" onchange="loadChartData()">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="chart-source-currency" class="btn-secondary-2026" style="border: none; cursor: pointer;" onchange="loadChartData()">
                     <option value="USD">🇺🇸 USD</option>
                     <option value="EUR">🇪🇺 EUR</option>
                     <option value="GBP">🇬🇧 GBP</option>
                     <option value="CHF">🇨🇭 CHF</option>
                 </select>
-                <span class="wise-chart-arrow">→</span>
-                <select id="chart-target-currency" class="wise-select-sm" onchange="loadChartData()">
+                <span style="color: var(--text-tertiary);">→</span>
+                <select id="chart-target-currency" class="btn-secondary-2026" style="border: none; cursor: pointer;" onchange="loadChartData()">
                     <option value="MAD">🇲🇦 MAD</option>
                     <option value="EUR">🇪🇺 EUR</option>
                     <option value="USD">🇺🇸 USD</option>
@@ -225,31 +200,31 @@
             </div>
         </div>
 
-        <div class="wise-period-tabs">
-            <button class="wise-period-btn active" onclick="setPeriod('7')">7j</button>
-            <button class="wise-period-btn" onclick="setPeriod('30')">30j</button>
-            <button class="wise-period-btn" onclick="setPeriod('90')">3m</button>
-            <button class="wise-period-btn" onclick="setPeriod('365')">1a</button>
+        <div style="display: flex; gap: 8px; margin-bottom: var(--space-4);">
+            <button class="btn-secondary-2026 active" onclick="setPeriod('7')" style="flex: 1; padding: 10px;">7j</button>
+            <button class="btn-secondary-2026" onclick="setPeriod('30')" style="flex: 1; padding: 10px;">30j</button>
+            <button class="btn-secondary-2026" onclick="setPeriod('90')" style="flex: 1; padding: 10px;">3m</button>
+            <button class="btn-secondary-2026" onclick="setPeriod('365')" style="flex: 1; padding: 10px;">1a</button>
         </div>
 
-        <div class="wise-chart-container" id="rate-history-chart"></div>
+        <div class="wise-chart-container" id="rate-history-chart" style="height: 200px; border-radius: var(--radius-lg); overflow: hidden;"></div>
 
-        <div class="wise-stats-grid">
-            <div class="wise-stat-item">
-                <span class="wise-stat-label">Actuel</span>
-                <span class="wise-stat-value" id="stat-current">10.10</span>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: var(--space-4);">
+            <div style="text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-lg);">
+                <span style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Actuel</span>
+                <span style="font-size: 16px; font-weight: 700;" id="stat-current">10.10</span>
             </div>
-            <div class="wise-stat-item">
-                <span class="wise-stat-label">Max</span>
-                <span class="wise-stat-value wise-stat-up" id="stat-high">10.25</span>
+            <div style="text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-lg);">
+                <span style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Max</span>
+                <span style="font-size: 16px; font-weight: 700; color: var(--success);" id="stat-high">10.25</span>
             </div>
-            <div class="wise-stat-item">
-                <span class="wise-stat-label">Min</span>
-                <span class="wise-stat-value wise-stat-down" id="stat-low">9.95</span>
+            <div style="text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-lg);">
+                <span style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Min</span>
+                <span style="font-size: 16px; font-weight: 700; color: var(--error);" id="stat-low">9.95</span>
             </div>
-            <div class="wise-stat-item">
-                <span class="wise-stat-label">Variation</span>
-                <span class="wise-stat-value" id="stat-change">+0.15%</span>
+            <div style="text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-lg);">
+                <span style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Variation</span>
+                <span style="font-size: 16px; font-weight: 700;" id="stat-change">+0.15%</span>
             </div>
         </div>
     </section>
@@ -398,33 +373,33 @@
     </section>
     {% endif %}
 
-    <!-- Features Grid -->
-    <section class="wise-features-grid">
-        <div class="wise-feature-item">
-            <div class="wise-feature-icon" style="background: rgba(224, 90, 3, 0.1); color: var(--brand-primary);">
-                <i data-lucide="zap" style="width: 24px; height: 24px;"></i>
+    <!-- Features Grid - Modern 2026 -->
+    <section style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: var(--space-4);">
+        <div class="glass-card" style="padding: 20px; text-align: center;">
+            <div style="width: 48px; height: 48px; margin: 0 auto 12px; background: linear-gradient(135deg, rgba(224,90,3,0.15), rgba(255,138,61,0.1)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="zap" style="width: 24px; height: 24px; color: var(--brand-primary);"></i>
             </div>
-            <h3 class="wise-feature-title">Rapide</h3>
-            <p class="wise-feature-desc">En quelques minutes</p>
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">Rapide</h3>
+            <p style="font-size: 12px; color: var(--text-tertiary);">En quelques minutes</p>
         </div>
-        <div class="wise-feature-item">
-            <div class="wise-feature-icon" style="background: var(--success-bg); color: var(--success);">
-                <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+        <div class="glass-card" style="padding: 20px; text-align: center;">
+            <div style="width: 48px; height: 48px; margin: 0 auto 12px; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(52,211,153,0.1)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="shield-check" style="width: 24px; height: 24px; color: var(--success);"></i>
             </div>
-            <h3 class="wise-feature-title">Sécurisé</h3>
-            <p class="wise-feature-desc">Cryptage bancaire</p>
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">Sécurisé</h3>
+            <p style="font-size: 12px; color: var(--text-tertiary);">Cryptage bancaire</p>
         </div>
-        <div class="wise-feature-item">
-            <div class="wise-feature-icon" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">
-                <i data-lucide="brain-circuit" style="width: 24px; height: 24px;"></i>
+        <div class="glass-card" style="padding: 20px; text-align: center;">
+            <div style="width: 48px; height: 48px; margin: 0 auto 12px; background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(168,85,247,0.1)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="brain-circuit" style="width: 24px; height: 24px; color: var(--accent-purple);"></i>
             </div>
-            <h3 class="wise-feature-title">IA</h3>
-            <p class="wise-feature-desc">Prédictions précises</p>
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">IA</h3>
+            <p style="font-size: 12px; color: var(--text-tertiary);">Prédictions précises</p>
         </div>
     </section>
 
-    <!-- Main CTA -->
-    <a href="{{ url_for('app.converter') }}" class="wise-main-cta">
+    <!-- Main CTA - Modernized -->
+    <a href="{{ url_for('app.converter') }}" class="btn-primary-2026" style="margin-top: var(--space-6); text-decoration: none;">
         <span>Commencer maintenant</span>
         <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
     </a>
@@ -1452,6 +1427,56 @@
     padding: 3px 10px;
     border-radius: 6px;
 }
+
+/* Currency Select Style - 2026 */
+.currency-select-2026 {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--bg-tertiary, #f0f0f0);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 12px;
+    padding: 12px 16px;
+    padding-right: 36px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 120px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: all 0.2s ease;
+}
+
+.currency-select-2026:hover {
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.currency-select-2026:focus {
+    outline: none;
+    border-color: var(--brand-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.converter-input-group-2026 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.converter-input-2026 {
+    flex: 1;
+    font-size: 28px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    min-width: 0;
+}
+
+.converter-input-2026:focus {
+    outline: none;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -1465,7 +1490,7 @@ let currentPeriod = '7';
 
 // Taux de fallback vers MAD (simulé car MAD non supporté par Frankfurter)
 const madMultipliers = {
-    'USD': 10.10, 'EUR': 10.85, 'GBP': 12.75, 'CHF': 11.35, 'CAD': 7.45
+    'USD': 10.10, 'EUR': 10.85, 'GBP': 12.75, 'CHF': 11.35, 'CAD': 7.45, 'AED': 2.75, 'SAR': 2.69
 };
 
 // Provider data avec frais et taux - SarfX TOUJOURS le moins cher!

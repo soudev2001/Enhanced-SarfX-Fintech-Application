@@ -74,7 +74,7 @@ def atms():
     # Get cities for filter
     cities = atm_service.get_cities_with_atms()
 
-    return render_template('admin/atms.html',
+    return render_template('admin/atms_2026.html',
                          atms=atms_list,
                          banks=banks,
                          banks_dict=banks_dict,
@@ -82,7 +82,8 @@ def atms():
                          total_atms=total_atms,
                          page=page,
                          total_pages=total_pages,
-                         selected_bank=bank_filter)
+                         selected_bank=bank_filter,
+                         active_tab='admin_atms')
 
 
 @admin_bp.route('/atms/dashboard')
@@ -169,7 +170,7 @@ def atm_dashboard():
     # Sources
     sources = list(db.sources.find().sort('imported_at', -1).limit(5)) if 'sources' in db.list_collection_names() else []
 
-    return render_template('admin/atm_dashboard.html',
+    return render_template('admin/atm_dashboard_2026.html',
                          total_atms=total_atms,
                          active_atms=active_atms,
                          inactive_atms=inactive_atms,
@@ -184,7 +185,8 @@ def atm_dashboard():
                          nfc_percent=nfc_percent,
                          deposit_percent=deposit_percent,
                          atm_24h_percent=atm_24h_percent,
-                         sources=sources)
+                         sources=sources,
+                         active_tab='admin_atms')
 
 
 @admin_bp.route('/atms/add', methods=['GET', 'POST'])
@@ -242,7 +244,7 @@ def add_atm():
             flash("Erreur lors de la creation de l'ATM", "error")
 
     banks = atm_service.get_all_banks()
-    return render_template('admin/atm_form.html', atm=None, banks=banks, cities=MOROCCAN_CITIES)
+    return render_template('admin/atm_form_2026.html', atm=None, banks=banks, cities=MOROCCAN_CITIES, active_tab='admin_atms')
 
 
 @admin_bp.route('/atms/<atm_id>/edit', methods=['GET', 'POST'])
@@ -307,7 +309,7 @@ def edit_atm(atm_id):
             flash("Erreur lors de la mise a jour", "error")
 
     banks = atm_service.get_all_banks()
-    return render_template('admin/atm_form.html', atm=atm, banks=banks, cities=MOROCCAN_CITIES)
+    return render_template('admin/atm_form_2026.html', atm=atm, banks=banks, cities=MOROCCAN_CITIES, active_tab='admin_atms')
 
 
 @admin_bp.route('/atms/<atm_id>/view')
@@ -324,7 +326,7 @@ def view_atm(atm_id):
 
     bank = atm_service.get_bank_by_code(atm.get('bank_code'))
 
-    return render_template('admin/atm_view.html', atm=atm, bank=bank)
+    return render_template('admin/atm_view_2026.html', atm=atm, bank=bank, active_tab='admin_atms')
 
 
 @admin_bp.route('/atms/<atm_id>/toggle', methods=['POST'])
@@ -538,4 +540,4 @@ def import_atms():
         else:
             flash("Format de fichier invalide (CSV requis)", "error")
 
-    return render_template('admin/atm_import.html')
+    return render_template('admin/atm_import_2026.html', active_tab='admin_atms')

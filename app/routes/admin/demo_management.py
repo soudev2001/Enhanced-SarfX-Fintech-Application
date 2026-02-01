@@ -36,7 +36,7 @@ def demo_page():
     if os.path.exists(demo_dir):
         screenshot_count = len([f for f in os.listdir(demo_dir) if f.endswith('.png')])
 
-    return render_template('admin/demo.html',
+    return render_template('admin/demo_2026.html',
                          demo_results=demo_results[:10],
                          latest_video=latest_video,
                          screenshot_count=screenshot_count)

@@ -1,0 +1,219 @@
+{% extends "app_base.html" %}
+
+{% block title %}Mon Portefeuille - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+                        <i data-lucide="wallet" class="w-8 h-8"></i>
+                    </span>
+                    Mon Portefeuille Admin
+                </h1>
+                <p class="admin-subtitle">{{ admin.email if admin else 'Administrateur' }}</p>
+            </div>
+
+            <div class="admin-header-actions">
+                <a href="{{ url_for('admin.wallets') }}" class="admin-btn admin-btn-outline-primary">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    Tous les Wallets
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Balance Card -->
+    <div class="admin-card admin-balance-hero">
+        <div class="admin-balance-hero-content">
+            <div class="admin-balance-hero-icon">
+                <i data-lucide="trending-up" class="w-10 h-10"></i>
+            </div>
+            <div class="admin-balance-hero-info">
+                <p class="admin-balance-hero-label">Solde Total (équivalent USD)</p>
+                <p class="admin-balance-hero-value">${{ "%.2f" % total_balance.total_usd if total_balance else '0.00' }}</p>
+            </div>
+            <div class="admin-balance-hero-chart">
+                <canvas id="balance-sparkline" width="120" height="40"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Currency Balances Grid -->
+    <div class="admin-currency-grid">
+        {% if wallet and wallet.balances %}
+        {% set currency_config = {
+            'USD': {'flag': '🇺🇸', 'name': 'Dollar US', 'color': '#22c55e'},
+            'EUR': {'flag': '🇪🇺', 'name': 'Euro', 'color': '#3b82f6'},
+            'GBP': {'flag': '🇬🇧', 'name': 'Livre Sterling', 'color': '#8b5cf6'},
+            'MAD': {'flag': '🇲🇦', 'name': 'Dirham Marocain', 'color': '#ef4444'},
+            'CHF': {'flag': '🇨🇭', 'name': 'Franc Suisse', 'color': '#f59e0b'},
+            'CAD': {'flag': '🇨🇦', 'name': 'Dollar Canadien', 'color': '#ec4899'},
+            'AED': {'flag': '🇦🇪', 'name': 'Dirham Émirati', 'color': '#06b6d4'},
+            'SAR': {'flag': '🇸🇦', 'name': 'Riyal Saoudien', 'color': '#10b981'}
+        } %}
+        {% for currency, balance in wallet.balances.items() %}
+        {% set config = currency_config.get(currency, {'flag': '💵', 'name': currency, 'color': '#6b7280'}) %}
+        <div class="admin-currency-card" style="--currency-color: {{ config.color }}">
+            <div class="admin-currency-header">
+                <span class="admin-currency-flag">{{ config.flag }}</span>
+                <div class="admin-currency-info">
+                    <h3 class="admin-currency-code">{{ currency }}</h3>
+                    <p class="admin-currency-name">{{ config.name }}</p>
+                </div>
+            </div>
+            <div class="admin-currency-balance">
+                <p class="admin-currency-amount">{{ "%.2f"|format(balance) }}</p>
+                <span class="admin-currency-trend admin-trend-up">
+                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                    +2.5%
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="admin-empty-currencies">
+            <div class="admin-empty-icon">
+                <i data-lucide="wallet" class="w-12 h-12"></i>
+            </div>
+            <p>Aucune devise dans votre portefeuille</p>
+            <a href="{{ url_for('app.wallet_recharge') }}" class="admin-btn admin-btn-primary mt-4">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Ajouter une devise
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="admin-quick-actions-grid">
+        <a href="{{ url_for('app.wallet_recharge') }}" class="admin-quick-action-card">
+            <div class="admin-quick-action-icon" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.1)); color: #22c55e;">
+                <i data-lucide="plus-circle" class="w-6 h-6"></i>
+            </div>
+            <span class="admin-quick-action-label">Recharger</span>
+        </a>
+        <a href="{{ url_for('app.wallet_swap') }}" class="admin-quick-action-card">
+            <div class="admin-quick-action-icon" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1)); color: #3b82f6;">
+                <i data-lucide="repeat" class="w-6 h-6"></i>
+            </div>
+            <span class="admin-quick-action-label">Swap</span>
+        </a>
+        <a href="{{ url_for('admin.transactions') }}" class="admin-quick-action-card">
+            <div class="admin-quick-action-icon" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.1)); color: #a855f7;">
+                <i data-lucide="receipt" class="w-6 h-6"></i>
+            </div>
+            <span class="admin-quick-action-label">Transactions</span>
+        </a>
+        <a href="{{ url_for('admin.wallets') }}" class="admin-quick-action-card">
+            <div class="admin-quick-action-icon" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 138, 0, 0.1)); color: #f59e0b;">
+                <i data-lucide="wallet" class="w-6 h-6"></i>
+            </div>
+            <span class="admin-quick-action-label">Gérer Wallets</span>
+        </a>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
+                Mes Transactions Récentes
+            </h3>
+            <a href="{{ url_for('admin.transactions') }}" class="admin-btn admin-btn-ghost admin-btn-sm">
+                Voir tout
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+        <div class="admin-card-body" style="padding: 0;">
+            <div class="admin-transactions-list">
+                {% if transactions %}
+                {% for tx in transactions[:5] %}
+                <div class="admin-transaction-item">
+                    <div class="admin-transaction-main">
+                        <div class="admin-transaction-icon {{ 'receive' if tx.type == 'receive' else 'send' }}">
+                            <i data-lucide="{{ 'arrow-down-left' if tx.type == 'receive' else 'arrow-up-right' }}" class="w-5 h-5"></i>
+                        </div>
+                        <div class="admin-transaction-info">
+                            <p class="admin-transaction-user">{{ tx.description or tx.type|title }}</p>
+                            <p class="admin-transaction-id">{{ tx.transaction_id[:16] if tx.transaction_id else '--' }}...</p>
+                        </div>
+                    </div>
+                    <div class="admin-transaction-amount">
+                        <p class="admin-transaction-from {{ 'text-green-500' if tx.type == 'receive' else 'text-red-500' }}">
+                            {{ '+' if tx.type == 'receive' else '-' }}{{ "{:,.2f}".format(tx.amount or 0) }} {{ tx.from_currency or '?' }}
+                        </p>
+                        <p class="admin-transaction-date">
+                            {{ tx.created_at.strftime('%d/%m/%Y') if tx.created_at else '--' }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="admin-empty-state" style="padding: 40px 20px;">
+                    <i data-lucide="inbox" class="w-12 h-12"></i>
+                    <p>Aucune transaction récente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Simple sparkline chart
+    const canvas = document.getElementById('balance-sparkline');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const data = [30, 45, 35, 50, 40, 60, 55, 70];
+        const width = canvas.width;
+        const height = canvas.height;
+        const step = width / (data.length - 1);
+        const max = Math.max(...data);
+        const min = Math.min(...data);
+        const range = max - min;
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+
+        data.forEach((val, i) => {
+            const x = i * step;
+            const y = height - ((val - min) / range) * height;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+});
+</script>
+{% endblock %}

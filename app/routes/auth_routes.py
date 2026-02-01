@@ -160,6 +160,35 @@ def login():
                 return render_template('auth/login.html')
 
             if user.get('password') and check_password_hash(user['password'], password):
+                # Check if 2FA is enabled
+                if user.get('two_factor_enabled'):
+                    # Check for trusted device token
+                    device_token = request.cookies.get('sarfx_device_token')
+
+                    try:
+                        from app.services.two_factor_service import TwoFactorService
+                        tfa_service = TwoFactorService()
+
+                        if device_token and tfa_service.verify_trusted_device(str(user['_id']), device_token):
+                            # Device is trusted, skip 2FA
+                            session.permanent = True
+                            session['user_id'] = str(user['_id'])
+                            session['email'] = user['email']
+                            session['role'] = user.get('role', 'user')
+                            session['auth_method'] = 'email'
+                            log_history("LOGIN", f"Connexion réussie (appareil de confiance): {email}", user=email)
+                            return redirect(url_for('app.home'))
+                    except ImportError:
+                        pass
+
+                    # Store pending user for 2FA verification
+                    session['pending_2fa_user_id'] = str(user['_id'])
+                    session['pending_2fa_email'] = user['email']
+                    session['pending_2fa_role'] = user.get('role', 'user')
+                    log_history("LOGIN_2FA_PENDING", f"2FA requis: {email}", user=email)
+                    return redirect(url_for('auth.verify_2fa'))
+
+                # No 2FA, proceed with login
                 session.permanent = True
                 session['user_id'] = str(user['_id'])
                 session['email'] = user['email']
@@ -171,6 +200,79 @@ def login():
         flash("Identifiants incorrects", "error")
 
     return render_template('auth/login.html')
+
+
+@auth_bp.route('/verify-2fa', methods=['GET', 'POST'])
+def verify_2fa():
+    """Page de vérification 2FA"""
+    pending_user_id = session.get('pending_2fa_user_id')
+    pending_email = session.get('pending_2fa_email')
+
+    if not pending_user_id:
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip().replace(' ', '').replace('-', '')
+        remember_device = request.form.get('remember_device') == 'on'
+
+        try:
+            from app.services.two_factor_service import TwoFactorService
+            tfa_service = TwoFactorService()
+
+            # Get device info
+            device_info = {
+                'user_agent': request.headers.get('User-Agent', ''),
+                'browser': request.headers.get('Sec-CH-UA', ''),
+                'os': request.headers.get('Sec-CH-UA-Platform', ''),
+                'device_type': 'mobile' if 'Mobile' in request.headers.get('User-Agent', '') else 'desktop'
+            }
+            ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+
+            result = tfa_service.verify_login_2fa(
+                pending_user_id,
+                code,
+                remember_device=remember_device,
+                device_info=device_info,
+                ip_address=ip_address
+            )
+
+            if result.get('success'):
+                # Complete login
+                session.permanent = True
+                session['user_id'] = pending_user_id
+                session['email'] = pending_email
+                session['role'] = session.get('pending_2fa_role', 'user')
+                session['auth_method'] = 'email'
+
+                # Clear pending 2FA session data
+                session.pop('pending_2fa_user_id', None)
+                session.pop('pending_2fa_email', None)
+                session.pop('pending_2fa_role', None)
+
+                log_history("LOGIN_2FA_SUCCESS", f"Connexion 2FA réussie: {pending_email}", user=pending_email)
+
+                response = redirect(url_for('app.home'))
+
+                # Set device token cookie if provided
+                if result.get('device_token'):
+                    response.set_cookie(
+                        'sarfx_device_token',
+                        result['device_token'],
+                        max_age=30*24*60*60,  # 30 days
+                        httponly=True,
+                        secure=True,
+                        samesite='Lax'
+                    )
+
+                return response
+            else:
+                flash(result.get('error', 'Code invalide'), 'error')
+
+        except ImportError:
+            flash("Service 2FA non disponible", "error")
+            return redirect(url_for('auth.login'))
+
+    return render_template('auth/verify_2fa.html', email=pending_email)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

@@ -17,11 +17,21 @@ def dashboard():
     wallet_count = db.wallets.count_documents({})
     transaction_count = db.transactions.count_documents({})
     beneficiary_count = db.beneficiaries.count_documents({}) if 'beneficiaries' in db.list_collection_names() else 0
+    bank_count = db.banks.count_documents({}) if 'banks' in db.list_collection_names() else 0
+    atm_count = db.atms.count_documents({}) if 'atms' in db.list_collection_names() else 0
 
     # Today's stats
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     new_users_today = db.users.count_documents({"created_at": {"$gte": today}})
     today_transactions = db.transactions.count_documents({"created_at": {"$gte": today}})
+
+    # Today's volume
+    today_volume_pipeline = [
+        {"$match": {"created_at": {"$gte": today}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    today_volume_result = list(db.transactions.aggregate(today_volume_pipeline))
+    today_volume = today_volume_result[0]['total'] if today_volume_result else 0
 
     # Calculate total volume
     pipeline = [
@@ -60,13 +70,17 @@ def dashboard():
         user = db.users.find_one({"_id": ObjectId(tx['user_id'])}) if tx.get('user_id') else None
         tx['user_email'] = user['email'] if user else 'Unknown'
 
-    return render_template('admin/dashboard.html',
-                         user_count=user_count,
+    # Use the new 2026 dashboard template
+    return render_template('admin/dashboard_2026.html',
+                         total_users=user_count,
                          supplier_count=supplier_count,
-                         wallet_count=wallet_count,
-                         transaction_count=transaction_count,
+                         total_wallets=wallet_count,
+                         total_transactions=transaction_count,
                          beneficiary_count=beneficiary_count,
+                         bank_count=bank_count,
+                         atm_count=atm_count,
                          total_volume=volume,
+                         today_volume=today_volume,
                          new_users_today=new_users_today,
                          today_transactions=today_transactions,
                          volume_data=volume_data,
@@ -74,7 +88,8 @@ def dashboard():
                          currency_data=currency_data,
                          history=recent_history,
                          recent_transactions=recent_transactions,
-                         recent_users=recent_users)
+                         recent_users=recent_users,
+                         active_tab='admin_dashboard')
 
 
 @admin_bp.route('/history')

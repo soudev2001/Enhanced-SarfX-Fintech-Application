@@ -1,0 +1,1728 @@
+{% extends "app_base.html" %}
+
+{% block title %}Dashboard Admin - SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    /* Override background for admin */
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    /* Admin specific animations */
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    @keyframes glow-pulse {
+        0%, 100% { box-shadow: 0 0 20px rgba(224, 90, 3, 0.3); }
+        50% { box-shadow: 0 0 40px rgba(224, 90, 3, 0.5); }
+    }
+
+    .admin-floating { animation: float 6s ease-in-out infinite; }
+    .admin-glow { animation: glow-pulse 3s ease-in-out infinite; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <h1 class="admin-title">
+                    <span class="admin-title-icon">
+                        <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
+                    </span>
+                    Dashboard Admin
+                </h1>
+                <p class="admin-subtitle">Bienvenue, <strong>{{ current_user.email }}</strong></p>
+            </div>
+
+            <div class="admin-header-actions">
+                <!-- Theme Switcher -->
+                <div class="admin-theme-switcher">
+                    <button class="admin-theme-btn" data-theme="light" onclick="setTheme('light')" title="Mode clair">
+                        <i data-lucide="sun" class="w-4 h-4"></i>
+                    </button>
+                    <button class="admin-theme-btn active" data-theme="dark" onclick="setTheme('dark')" title="Mode sombre">
+                        <i data-lucide="moon" class="w-4 h-4"></i>
+                    </button>
+                    <button class="admin-theme-btn" data-theme="system" onclick="setTheme('system')" title="Système">
+                        <i data-lucide="monitor" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Notifications -->
+                <div class="admin-notification-wrapper">
+                    <button id="notification-btn" class="admin-notification-btn admin-glow">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span id="notification-badge" class="admin-notification-badge hidden">0</span>
+                    </button>
+
+                    <div id="notifications-panel" class="admin-notifications-panel hidden">
+                        <div class="admin-notifications-header">
+                            <h4>Notifications</h4>
+                            <button onclick="clearNotifications()" class="admin-btn-ghost-sm">
+                                <i data-lucide="check-check" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="notifications-list" class="admin-notifications-list">
+                            <p class="text-muted text-sm text-center py-4">Aucune notification</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Period Selector -->
+                <select id="chart-period" onchange="updateVolumeChart()" class="admin-select-sm">
+                    <option value="7">7 jours</option>
+                    <option value="30">30 jours</option>
+                    <option value="90">90 jours</option>
+                </select>
+
+                <!-- Refresh Button -->
+                <button onclick="location.reload()" class="admin-btn-icon" title="Rafraîchir">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="admin-stats-grid stagger-container">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon admin-stat-icon-primary">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Utilisateurs</p>
+                <p class="admin-stat-value counter" data-target="{{ total_users }}">{{ total_users | default(0) }}</p>
+                <p class="admin-stat-trend admin-stat-trend-up">
+                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                    <span>+{{ new_users_today | default(0) }} aujourd'hui</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="arrow-up-down" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Transactions</p>
+                <p class="admin-stat-value counter" data-target="{{ total_transactions }}">{{ total_transactions | default(0) }}</p>
+                <p class="admin-stat-trend admin-stat-trend-up">
+                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                    <span>{{ today_transactions | default(0) }} aujourd'hui</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="coins" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Volume Total</p>
+                <p class="admin-stat-value">{{ "{:,.0f}".format(total_volume | default(0)) }} <small>MAD</small></p>
+                <p class="admin-stat-trend admin-stat-trend-up">
+                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                    <span>{{ "{:,.0f}".format(today_volume | default(0)) }} MAD aujourd'hui</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon admin-stat-icon-info">
+                <i data-lucide="wallet" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Wallets Actifs</p>
+                <p class="admin-stat-value counter" data-target="{{ total_wallets }}">{{ total_wallets | default(0) }}</p>
+                <p class="admin-stat-trend">
+                    <span>{{ total_currencies | default(5) }} devises</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="admin-charts-grid">
+        <div class="admin-card admin-chart-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="line-chart" class="w-5 h-5 text-primary"></i>
+                    Volume des Transactions
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div id="volume-chart" class="admin-chart-container"></div>
+            </div>
+        </div>
+
+        <div class="admin-card admin-chart-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="pie-chart" class="w-5 h-5 text-success"></i>
+                    Répartition par Devise
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div id="currency-chart" class="admin-chart-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Grid -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="zap" class="w-5 h-5 text-warning"></i>
+                Actions Rapides
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-quick-actions-grid">
+                <a href="{{ url_for('admin.users') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-blue-500 to-blue-600">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Utilisateurs</span>
+                    <span class="admin-quick-action-count">{{ total_users | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.transactions') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-green-500 to-green-600">
+                        <i data-lucide="receipt" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Transactions</span>
+                    <span class="admin-quick-action-count">{{ total_transactions | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.wallets') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-purple-500 to-purple-600">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Wallets</span>
+                    <span class="admin-quick-action-count">{{ total_wallets | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('admin_banks.list_banks') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-amber-500 to-orange-600">
+                        <i data-lucide="building-2" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Banques</span>
+                    <span class="admin-quick-action-count">{{ bank_count | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('suppliers.list_suppliers') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-cyan-500 to-teal-600">
+                        <i data-lucide="store" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Fournisseurs</span>
+                    <span class="admin-quick-action-count">{{ supplier_count | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.beneficiaries') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-pink-500 to-rose-600">
+                        <i data-lucide="contact" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Bénéficiaires</span>
+                    <span class="admin-quick-action-count">{{ beneficiary_count | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.atms') }}" class="admin-quick-action">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-indigo-500 to-violet-600">
+                        <i data-lucide="landmark" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">ATMs</span>
+                    <span class="admin-quick-action-count">{{ atm_count | default(0) }}</span>
+                </a>
+
+                <a href="{{ url_for('admin.demo_page') }}" class="admin-quick-action admin-quick-action-special">
+                    <div class="admin-quick-action-icon bg-gradient-to-br from-violet-500 to-fuchsia-600">
+                        <i data-lucide="play-circle" class="w-5 h-5"></i>
+                    </div>
+                    <span class="admin-quick-action-label">Démo Robot</span>
+                    <span class="admin-quick-action-badge">Test</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KYC Verification Section -->
+    <div class="admin-card admin-kyc-section">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="shield-check" class="w-5 h-5 text-warning"></i>
+                Vérifications KYC
+            </h3>
+            <div class="admin-header-actions">
+                <span id="kyc-pending-badge" class="admin-badge admin-badge-warning">
+                    <i data-lucide="clock" class="w-3 h-3"></i>
+                    <span id="kyc-pending-count">0</span> en attente
+                </span>
+                <button onclick="refreshKYCStats()" class="admin-btn-icon" title="Actualiser">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <!-- KYC Stats Grid -->
+            <div class="admin-kyc-stats-grid">
+                <div class="admin-kyc-stat">
+                    <div class="admin-kyc-stat-icon admin-kyc-stat-pending">
+                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-kyc-stat-content">
+                        <span class="admin-kyc-stat-value" id="kyc-stat-pending">0</span>
+                        <span class="admin-kyc-stat-label">En attente</span>
+                    </div>
+                </div>
+                <div class="admin-kyc-stat">
+                    <div class="admin-kyc-stat-icon admin-kyc-stat-verified">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-kyc-stat-content">
+                        <span class="admin-kyc-stat-value" id="kyc-stat-verified">0</span>
+                        <span class="admin-kyc-stat-label">Vérifiés</span>
+                    </div>
+                </div>
+                <div class="admin-kyc-stat">
+                    <div class="admin-kyc-stat-icon admin-kyc-stat-rejected">
+                        <i data-lucide="x-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-kyc-stat-content">
+                        <span class="admin-kyc-stat-value" id="kyc-stat-rejected">0</span>
+                        <span class="admin-kyc-stat-label">Rejetés</span>
+                    </div>
+                </div>
+                <div class="admin-kyc-stat">
+                    <div class="admin-kyc-stat-icon admin-kyc-stat-rate">
+                        <i data-lucide="percent" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-kyc-stat-content">
+                        <span class="admin-kyc-stat-value" id="kyc-stat-rate">0%</span>
+                        <span class="admin-kyc-stat-label">Taux de validation</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KYC Level Distribution -->
+            <div class="admin-kyc-levels">
+                <h4 class="admin-kyc-levels-title">Niveaux de vérification</h4>
+                <div class="admin-kyc-level-bars">
+                    <div class="admin-kyc-level-bar">
+                        <div class="admin-kyc-level-info">
+                            <span class="admin-kyc-level-name">Premium</span>
+                            <span class="admin-kyc-level-count" id="kyc-level-premium">0</span>
+                        </div>
+                        <div class="admin-kyc-level-progress">
+                            <div class="admin-kyc-level-fill admin-kyc-level-premium" id="kyc-bar-premium" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="admin-kyc-level-bar">
+                        <div class="admin-kyc-level-info">
+                            <span class="admin-kyc-level-name">Standard</span>
+                            <span class="admin-kyc-level-count" id="kyc-level-standard">0</span>
+                        </div>
+                        <div class="admin-kyc-level-progress">
+                            <div class="admin-kyc-level-fill admin-kyc-level-standard" id="kyc-bar-standard" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="admin-kyc-level-bar">
+                        <div class="admin-kyc-level-info">
+                            <span class="admin-kyc-level-name">Basic</span>
+                            <span class="admin-kyc-level-count" id="kyc-level-basic">0</span>
+                        </div>
+                        <div class="admin-kyc-level-progress">
+                            <div class="admin-kyc-level-fill admin-kyc-level-basic" id="kyc-bar-basic" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="admin-kyc-level-bar">
+                        <div class="admin-kyc-level-info">
+                            <span class="admin-kyc-level-name">Non vérifié</span>
+                            <span class="admin-kyc-level-count" id="kyc-level-none">0</span>
+                        </div>
+                        <div class="admin-kyc-level-progress">
+                            <div class="admin-kyc-level-fill admin-kyc-level-none" id="kyc-bar-none" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Documents List -->
+            <div class="admin-kyc-pending-list" id="kyc-pending-documents">
+                <h4 class="admin-kyc-pending-title">Documents en attente</h4>
+                <div class="admin-kyc-docs-list" id="kyc-docs-list">
+                    <div class="admin-empty-state">
+                        <i data-lucide="file-check" class="w-10 h-10"></i>
+                        <p>Aucun document en attente</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Section Enhanced -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="download" class="w-5 h-5 text-info"></i>
+                Export des Données
+            </h3>
+            <div class="admin-header-actions">
+                <select id="export-period" class="admin-select-sm">
+                    <option value="7">7 jours</option>
+                    <option value="30" selected>30 jours</option>
+                    <option value="90">90 jours</option>
+                    <option value="365">1 an</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-export-grid-enhanced">
+                <!-- CSV Exports -->
+                <div class="admin-export-group">
+                    <h4 class="admin-export-group-title">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        Export CSV
+                    </h4>
+                    <div class="admin-export-buttons">
+                        <a href="/api/export/transactions.csv" class="admin-btn admin-btn-outline-primary" onclick="this.href = '/api/export/transactions.csv?days=' + document.getElementById('export-period').value">
+                            <i data-lucide="receipt" class="w-4 h-4"></i>
+                            <span>Transactions</span>
+                        </a>
+                        <a href="/api/export/users.csv" class="admin-btn admin-btn-outline-secondary">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            <span>Utilisateurs</span>
+                        </a>
+                        <a href="/api/export/wallets.csv" class="admin-btn admin-btn-outline-info">
+                            <i data-lucide="wallet" class="w-4 h-4"></i>
+                            <span>Wallets</span>
+                        </a>
+                        <a href="/api/export/beneficiaries.csv" class="admin-btn admin-btn-outline-warning">
+                            <i data-lucide="contact" class="w-4 h-4"></i>
+                            <span>Bénéficiaires</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- PDF Reports -->
+                <div class="admin-export-group">
+                    <h4 class="admin-export-group-title">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Rapports PDF
+                    </h4>
+                    <div class="admin-export-buttons">
+                        <a href="/api/export/transactions.pdf" target="_blank" class="admin-btn admin-btn-gradient" onclick="this.href = '/api/export/transactions.pdf?days=' + document.getElementById('export-period').value">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>Rapport Transactions</span>
+                        </a>
+                        <button onclick="printTransactionReport()" class="admin-btn admin-btn-outline-primary">
+                            <i data-lucide="file-down" class="w-4 h-4"></i>
+                            <span>Télécharger PDF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADVANCED ANALYTICS SECTION -->
+    <div class="admin-analytics-section">
+        <div class="admin-section-header">
+            <h2 class="admin-section-title">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 text-primary"></i>
+                Analytics Avancées
+            </h2>
+            <div class="admin-section-actions">
+                <select id="analytics-range" onchange="updateAnalytics()" class="admin-select-sm">
+                    <option value="7">7 jours</option>
+                    <option value="30" selected>30 jours</option>
+                    <option value="90">90 jours</option>
+                    <option value="365">1 an</option>
+                </select>
+                <button onclick="refreshAnalytics()" class="admin-btn-icon" title="Actualiser">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Analytics Cards Row -->
+        <div class="admin-analytics-grid">
+            <!-- Conversion Rate Card -->
+            <div class="admin-analytics-card">
+                <div class="admin-analytics-card-header">
+                    <div class="admin-analytics-icon admin-analytics-icon-success">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-analytics-meta">
+                        <span class="admin-analytics-label">Taux de conversion</span>
+                        <span class="admin-analytics-value" id="analytics-conversion-rate">0%</span>
+                    </div>
+                </div>
+                <div class="admin-analytics-chart" id="conversion-sparkline"></div>
+                <div class="admin-analytics-footer">
+                    <span class="admin-analytics-change positive" id="conversion-change">
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i> +0%
+                    </span>
+                    <span class="admin-analytics-period">vs période précédente</span>
+                </div>
+            </div>
+
+            <!-- Average Transaction Value -->
+            <div class="admin-analytics-card">
+                <div class="admin-analytics-card-header">
+                    <div class="admin-analytics-icon admin-analytics-icon-primary">
+                        <i data-lucide="coins" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-analytics-meta">
+                        <span class="admin-analytics-label">Montant moyen</span>
+                        <span class="admin-analytics-value" id="analytics-avg-amount">0 €</span>
+                    </div>
+                </div>
+                <div class="admin-analytics-chart" id="amount-sparkline"></div>
+                <div class="admin-analytics-footer">
+                    <span class="admin-analytics-change positive" id="amount-change">
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i> +0%
+                    </span>
+                    <span class="admin-analytics-period">vs période précédente</span>
+                </div>
+            </div>
+
+            <!-- Active Users -->
+            <div class="admin-analytics-card">
+                <div class="admin-analytics-card-header">
+                    <div class="admin-analytics-icon admin-analytics-icon-info">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-analytics-meta">
+                        <span class="admin-analytics-label">Utilisateurs actifs</span>
+                        <span class="admin-analytics-value" id="analytics-active-users">0</span>
+                    </div>
+                </div>
+                <div class="admin-analytics-chart" id="users-sparkline"></div>
+                <div class="admin-analytics-footer">
+                    <span class="admin-analytics-change positive" id="users-change">
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i> +0%
+                    </span>
+                    <span class="admin-analytics-period">vs période précédente</span>
+                </div>
+            </div>
+
+            <!-- Revenue -->
+            <div class="admin-analytics-card">
+                <div class="admin-analytics-card-header">
+                    <div class="admin-analytics-icon admin-analytics-icon-warning">
+                        <i data-lucide="piggy-bank" class="w-5 h-5"></i>
+                    </div>
+                    <div class="admin-analytics-meta">
+                        <span class="admin-analytics-label">Revenus (frais)</span>
+                        <span class="admin-analytics-value" id="analytics-revenue">0 €</span>
+                    </div>
+                </div>
+                <div class="admin-analytics-chart" id="revenue-sparkline"></div>
+                <div class="admin-analytics-footer">
+                    <span class="admin-analytics-change positive" id="revenue-change">
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i> +0%
+                    </span>
+                    <span class="admin-analytics-period">vs période précédente</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="admin-charts-row">
+            <!-- Transaction Heatmap -->
+            <div class="admin-card admin-card-chart">
+                <div class="admin-card-header">
+                    <h3 class="admin-card-title">
+                        <i data-lucide="calendar" class="w-5 h-5 text-primary"></i>
+                        Activité par jour/heure
+                    </h3>
+                </div>
+                <div class="admin-card-body">
+                    <div id="activity-heatmap" style="height: 280px;"></div>
+                </div>
+            </div>
+
+            <!-- Top Corridors -->
+            <div class="admin-card admin-card-chart">
+                <div class="admin-card-header">
+                    <h3 class="admin-card-title">
+                        <i data-lucide="globe" class="w-5 h-5 text-success"></i>
+                        Top Corridors
+                    </h3>
+                </div>
+                <div class="admin-card-body">
+                    <div id="corridors-chart" style="height: 280px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="gauge" class="w-5 h-5 text-info"></i>
+                    Métriques de Performance
+                </h3>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-metrics-grid">
+                    <div class="admin-metric-item">
+                        <div class="admin-metric-header">
+                            <span class="admin-metric-label">Temps traitement moyen</span>
+                            <span class="admin-metric-value" id="metric-processing-time">0.0s</span>
+                        </div>
+                        <div class="admin-metric-bar">
+                            <div class="admin-metric-fill admin-metric-fill-success" id="metric-processing-bar" style="width: 0%"></div>
+                        </div>
+                        <span class="admin-metric-target">Cible: < 2s</span>
+                    </div>
+                    <div class="admin-metric-item">
+                        <div class="admin-metric-header">
+                            <span class="admin-metric-label">Taux de succès</span>
+                            <span class="admin-metric-value" id="metric-success-rate">0%</span>
+                        </div>
+                        <div class="admin-metric-bar">
+                            <div class="admin-metric-fill admin-metric-fill-primary" id="metric-success-bar" style="width: 0%"></div>
+                        </div>
+                        <span class="admin-metric-target">Cible: > 99%</span>
+                    </div>
+                    <div class="admin-metric-item">
+                        <div class="admin-metric-header">
+                            <span class="admin-metric-label">Disponibilité API</span>
+                            <span class="admin-metric-value" id="metric-uptime">0%</span>
+                        </div>
+                        <div class="admin-metric-bar">
+                            <div class="admin-metric-fill admin-metric-fill-info" id="metric-uptime-bar" style="width: 0%"></div>
+                        </div>
+                        <span class="admin-metric-target">Cible: 99.9%</span>
+                    </div>
+                    <div class="admin-metric-item">
+                        <div class="admin-metric-header">
+                            <span class="admin-metric-label">Satisfaction client</span>
+                            <span class="admin-metric-value" id="metric-satisfaction">0/5</span>
+                        </div>
+                        <div class="admin-metric-bar">
+                            <div class="admin-metric-fill admin-metric-fill-warning" id="metric-satisfaction-bar" style="width: 0%"></div>
+                        </div>
+                        <span class="admin-metric-target">Cible: > 4.5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Grid -->
+    <div class="admin-activity-grid">
+        <!-- Recent Transactions -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="activity" class="w-5 h-5 text-success"></i>
+                    Transactions Récentes
+                </h3>
+                <a href="{{ url_for('admin.transactions') }}" class="admin-btn-link">
+                    Voir tout <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-activity-list">
+                    {% for tx in recent_transactions[:5] %}
+                    <div class="admin-activity-item">
+                        <div class="admin-activity-avatar admin-activity-avatar-gradient">
+                            {{ tx.user_email[0] | upper if tx.user_email else 'U' }}
+                        </div>
+                        <div class="admin-activity-content">
+                            <p class="admin-activity-title">{{ tx.user_email | default('N/A') }}</p>
+                            <p class="admin-activity-meta">
+                                {{ tx.from_currency }} → {{ tx.to_currency }}
+                            </p>
+                        </div>
+                        <div class="admin-activity-details">
+                            <p class="admin-activity-amount">{{ tx.amount | round(2) }} {{ tx.from_currency }}</p>
+                            <span class="admin-badge admin-badge-{{ 'success' if tx.status == 'completed' else ('warning' if tx.status == 'pending' else 'error') }}">
+                                {{ tx.status | capitalize }}
+                            </span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="admin-empty-state">
+                        <i data-lucide="inbox" class="w-12 h-12"></i>
+                        <p>Aucune transaction récente</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Users -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-info"></i>
+                    Nouveaux Utilisateurs
+                </h3>
+                <a href="{{ url_for('admin.users') }}" class="admin-btn-link">
+                    Voir tout <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-activity-list">
+                    {% for user in recent_users[:5] %}
+                    <div class="admin-activity-item">
+                        <div class="admin-activity-avatar admin-activity-avatar-info">
+                            {% set email_name = user.email.split('@')[0] if user.email else 'us' %}
+                            {% if '.' in email_name %}
+                                {% set email_parts = email_name.split('.') %}
+                                {{ email_parts[0][0] | upper }}{{ email_parts[1][0] | upper }}
+                            {% else %}
+                                {{ email_name[:2] | upper }}
+                            {% endif %}
+                        </div>
+                        <div class="admin-activity-content">
+                            <p class="admin-activity-title">{{ user.email | default('N/A') }}</p>
+                            <p class="admin-activity-meta">
+                                {% if user.created_at %}
+                                {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                Date inconnue
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="admin-activity-details">
+                            <span class="admin-badge admin-badge-{{ 'error' if user.role == 'admin' else 'secondary' }}">
+                                {{ user.role | capitalize }}
+                            </span>
+                            <span class="admin-status-dot admin-status-{{ 'online' if user.is_active else 'offline' }}"></span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="admin-empty-state">
+                        <i data-lucide="users" class="w-12 h-12"></i>
+                        <p>Aucun utilisateur récent</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+// Real data from backend
+const volumeData = {{ volume_data | tojson | default('[]') }};
+const volumeLabels = {{ volume_labels | tojson | default('[]') }};
+const currencyData = {{ currency_data | tojson | default('{}') }};
+
+// Counter Animation
+function animateCounters() {
+    document.querySelectorAll('.counter').forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target') || counter.textContent);
+        const duration = 2000;
+        const step = target / (duration / 16);
+        let current = 0;
+
+        const timer = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                counter.textContent = target.toLocaleString('fr-FR');
+                clearInterval(timer);
+            } else {
+                counter.textContent = Math.floor(current).toLocaleString('fr-FR');
+            }
+        }, 16);
+    });
+}
+
+// Volume Chart
+let volumeChart;
+function initVolumeChart() {
+    const options = {
+        series: [{
+            name: 'Volume (MAD)',
+            data: volumeData.length > 0 ? volumeData : [0, 0, 0, 0, 0, 0, 0]
+        }],
+        chart: {
+            type: 'area',
+            height: 280,
+            toolbar: { show: false },
+            background: 'transparent',
+            animations: { enabled: true, easing: 'easeinout', speed: 800 },
+            fontFamily: 'Inter, system-ui, sans-serif'
+        },
+        colors: ['#e05a03'],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.6,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        stroke: { curve: 'smooth', width: 3 },
+        grid: {
+            borderColor: 'rgba(255,255,255,0.1)',
+            strokeDashArray: 4,
+            padding: { left: 10, right: 10 }
+        },
+        xaxis: {
+            categories: volumeLabels.length > 0 ? volumeLabels : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            labels: { style: { colors: '#94a3b8', fontSize: '12px' } },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                style: { colors: '#94a3b8', fontSize: '12px' },
+                formatter: (val) => val >= 1000 ? (val / 1000).toFixed(1) + 'K' : val
+            }
+        },
+        tooltip: {
+            theme: 'dark',
+            y: { formatter: (val) => val.toLocaleString('fr-FR') + ' MAD' }
+        },
+        markers: {
+            size: 0,
+            hover: { size: 6 }
+        }
+    };
+
+    volumeChart = new ApexCharts(document.querySelector("#volume-chart"), options);
+    volumeChart.render();
+}
+
+// Currency Distribution Chart
+function initCurrencyChart() {
+    const labels = Object.keys(currencyData).length > 0 ? Object.keys(currencyData) : ['EUR', 'USD', 'MAD', 'GBP'];
+    const values = Object.values(currencyData).length > 0 ? Object.values(currencyData) : [45, 30, 20, 5];
+
+    const options = {
+        series: values,
+        chart: {
+            type: 'donut',
+            height: 280,
+            background: 'transparent',
+            fontFamily: 'Inter, system-ui, sans-serif'
+        },
+        labels: labels,
+        colors: ['#3b82f6', '#22c55e', '#e05a03', '#a855f7', '#f59e0b'],
+        legend: {
+            position: 'bottom',
+            labels: { colors: '#94a3b8' },
+            markers: { radius: 12 }
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '65%',
+                    labels: {
+                        show: true,
+                        name: { color: '#fff' },
+                        value: { color: '#94a3b8', fontSize: '18px' },
+                        total: {
+                            show: true,
+                            label: 'Total',
+                            color: '#94a3b8',
+                            fontSize: '14px'
+                        }
+                    }
+                }
+            }
+        },
+        stroke: { show: false },
+        dataLabels: { enabled: false },
+        tooltip: { theme: 'dark' }
+    };
+
+    const chart = new ApexCharts(document.querySelector("#currency-chart"), options);
+    chart.render();
+}
+
+// Update chart with new period
+function updateVolumeChart() {
+    const period = document.getElementById('chart-period').value;
+    fetch(`/admin/api/volume-data?days=${period}`)
+        .then(res => res.json())
+        .then(data => {
+            volumeChart.updateOptions({
+                xaxis: { categories: data.labels }
+            });
+            volumeChart.updateSeries([{ data: data.values }]);
+        })
+        .catch(err => console.log('Error updating chart:', err));
+}
+
+// Notifications
+let notifications = [];
+
+function toggleNotifications() {
+    const panel = document.getElementById('notifications-panel');
+    panel.classList.toggle('hidden');
+}
+
+function clearNotifications() {
+    notifications = [];
+    document.getElementById('notification-badge').classList.add('hidden');
+    renderNotifications();
+}
+
+function renderNotifications() {
+    const list = document.getElementById('notifications-list');
+
+    if (notifications.length === 0) {
+        list.innerHTML = '<p class="text-muted text-sm text-center py-4">Aucune notification</p>';
+        return;
+    }
+
+    list.innerHTML = notifications.map(n => `
+        <div class="admin-notification-item">
+            <span class="admin-notification-dot ${n.type === 'transaction' ? 'bg-success' : 'bg-info'}"></span>
+            <div>
+                <p class="admin-notification-text">${n.message}</p>
+                <p class="admin-notification-time">${formatTime(n.time)}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+function formatTime(date) {
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'À l\'instant';
+    if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
+    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    initVolumeChart();
+    initCurrencyChart();
+
+    // Animate counters
+    animateCounters();
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Notification toggle
+    const notifBtn = document.getElementById('notification-btn');
+    if (notifBtn) {
+        notifBtn.addEventListener('click', toggleNotifications);
+    }
+
+    // Close notifications on outside click
+    document.addEventListener('click', (e) => {
+        const panel = document.getElementById('notifications-panel');
+        const btn = document.getElementById('notification-btn');
+        if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+
+    // Initialize theme
+    initTheme();
+});
+
+// Theme Management
+function setTheme(theme) {
+    localStorage.setItem('sarfx-admin-theme', theme);
+    applyTheme(theme);
+    updateThemeButtons(theme);
+}
+
+function applyTheme(theme) {
+    const html = document.documentElement;
+
+    if (theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    } else {
+        html.setAttribute('data-theme', theme);
+    }
+
+    // Update body background for admin pages
+    if (theme === 'light' || (theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.body.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)';
+    } else {
+        document.body.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)';
+    }
+}
+
+function updateThemeButtons(theme) {
+    document.querySelectorAll('.admin-theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('sarfx-admin-theme') || 'dark';
+    applyTheme(savedTheme);
+    updateThemeButtons(savedTheme);
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const currentTheme = localStorage.getItem('sarfx-admin-theme');
+        if (currentTheme === 'system') {
+            applyTheme('system');
+        }
+    });
+}
+
+// ========== KYC MANAGEMENT ==========
+
+// Load KYC statistics
+async function loadKYCStats() {
+    try {
+        const response = await fetch('/api/kyc/statistics');
+        const data = await response.json();
+
+        if (data.success) {
+            // Update stat cards
+            document.getElementById('kyc-stat-pending').textContent = data.pending_total || 0;
+            document.getElementById('kyc-stat-verified').textContent = data.by_status?.verified || 0;
+            document.getElementById('kyc-stat-rejected').textContent = data.by_status?.rejected || 0;
+            document.getElementById('kyc-stat-rate').textContent = (data.verification_rate || 0) + '%';
+            document.getElementById('kyc-pending-count').textContent = data.pending_total || 0;
+
+            // Update level distribution bars
+            const levels = data.by_level || {};
+            const totalUsers = Object.values(levels).reduce((a, b) => a + b, 0) || 1;
+
+            ['premium', 'standard', 'basic', 'none'].forEach(level => {
+                const count = levels[level] || 0;
+                const percentage = Math.round((count / totalUsers) * 100);
+                document.getElementById(`kyc-level-${level}`).textContent = count;
+                document.getElementById(`kyc-bar-${level}`).style.width = percentage + '%';
+            });
+        }
+    } catch (error) {
+        console.error('Error loading KYC stats:', error);
+    }
+}
+
+// Load pending KYC documents
+async function loadPendingDocuments() {
+    try {
+        const response = await fetch('/api/kyc/pending');
+        const data = await response.json();
+
+        const container = document.getElementById('kyc-docs-list');
+
+        if (data.success && data.documents && data.documents.length > 0) {
+            container.innerHTML = data.documents.slice(0, 5).map(doc => `
+                <div class="admin-kyc-doc-item">
+                    <div class="admin-kyc-doc-avatar">
+                        ${(doc.user_name || 'U')[0].toUpperCase()}
+                    </div>
+                    <div class="admin-kyc-doc-info">
+                        <span class="admin-kyc-doc-name">${doc.user_name || 'N/A'}</span>
+                        <span class="admin-kyc-doc-type">${doc.document_type_name}</span>
+                    </div>
+                    <div class="admin-kyc-doc-meta">
+                        <span class="admin-kyc-doc-time">${formatDocTime(doc.uploaded_at)}</span>
+                        <span class="admin-badge admin-badge-warning">${doc.status}</span>
+                    </div>
+                    <div class="admin-kyc-doc-actions">
+                        <button onclick="approveDocument('${doc.id}')" class="admin-btn-icon admin-btn-success" title="Approuver">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="rejectDocument('${doc.id}')" class="admin-btn-icon admin-btn-error" title="Rejeter">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Re-init Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        } else {
+            container.innerHTML = `
+                <div class="admin-empty-state">
+                    <i data-lucide="file-check" class="w-10 h-10"></i>
+                    <p>Aucun document en attente</p>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    } catch (error) {
+        console.error('Error loading pending documents:', error);
+    }
+}
+
+function formatDocTime(dateStr) {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    return date.toLocaleDateString('fr-FR');
+}
+
+// Approve document
+async function approveDocument(documentId) {
+    if (!confirm('Approuver ce document KYC ?')) return;
+
+    try {
+        const response = await fetch(`/api/kyc/documents/${documentId}/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approved: true })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAdminToast('Document approuvé avec succès', 'success');
+            refreshKYCStats();
+        } else {
+            showAdminToast(data.error || 'Erreur lors de l\'approbation', 'error');
+        }
+    } catch (error) {
+        console.error('Error approving document:', error);
+        showAdminToast('Erreur de connexion', 'error');
+    }
+}
+
+// Reject document
+async function rejectDocument(documentId) {
+    const reason = prompt('Raison du rejet (optionnel):');
+    if (reason === null) return; // User cancelled
+
+    try {
+        const response = await fetch(`/api/kyc/documents/${documentId}/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approved: false, reason: reason || 'Document non conforme' })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAdminToast('Document rejeté', 'warning');
+            refreshKYCStats();
+        } else {
+            showAdminToast(data.error || 'Erreur lors du rejet', 'error');
+        }
+    } catch (error) {
+        console.error('Error rejecting document:', error);
+        showAdminToast('Erreur de connexion', 'error');
+    }
+}
+
+// Refresh KYC stats
+function refreshKYCStats() {
+    loadKYCStats();
+    loadPendingDocuments();
+}
+
+// Admin Toast notification
+function showAdminToast(message, type = 'info') {
+    const existingToast = document.querySelector('.admin-toast');
+    if (existingToast) existingToast.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `admin-toast admin-toast-${type}`;
+    toast.innerHTML = `
+        <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Initialize KYC on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load KYC data
+    loadKYCStats();
+    loadPendingDocuments();
+
+    // Refresh every 30 seconds
+    setInterval(refreshKYCStats, 30000);
+});
+</script>
+
+<style>
+/* KYC Section Styles */
+.admin-kyc-section {
+    margin-bottom: 24px;
+}
+
+.admin-kyc-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-kyc-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--um-bg-card);
+    border: 1px solid var(--um-border);
+    border-radius: 12px;
+}
+
+.admin-kyc-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-kyc-stat-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.admin-kyc-stat-verified { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.admin-kyc-stat-rejected { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.admin-kyc-stat-rate { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+.admin-kyc-stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--um-text-primary);
+}
+
+.admin-kyc-stat-label {
+    font-size: 12px;
+    color: var(--um-text-secondary);
+}
+
+/* KYC Levels */
+.admin-kyc-levels {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--um-bg-secondary);
+    border-radius: 12px;
+}
+
+.admin-kyc-levels-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--um-text-primary);
+    margin-bottom: 16px;
+}
+
+.admin-kyc-level-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-kyc-level-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-kyc-level-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-kyc-level-name {
+    font-size: 13px;
+    color: var(--um-text-secondary);
+}
+
+.admin-kyc-level-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--um-text-primary);
+}
+
+.admin-kyc-level-progress {
+    height: 8px;
+    background: var(--um-bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.admin-kyc-level-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.admin-kyc-level-premium { background: linear-gradient(90deg, #a855f7, #ec4899); }
+.admin-kyc-level-standard { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+.admin-kyc-level-basic { background: linear-gradient(90deg, #22c55e, #84cc16); }
+.admin-kyc-level-none { background: var(--um-border); }
+
+/* KYC Pending Documents */
+.admin-kyc-pending-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--um-text-primary);
+    margin-bottom: 12px;
+}
+
+.admin-kyc-docs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-kyc-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--um-bg-secondary);
+    border: 1px solid var(--um-border);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.admin-kyc-doc-item:hover {
+    border-color: var(--um-primary);
+}
+
+.admin-kyc-doc-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--um-primary), #ff8c42);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.admin-kyc-doc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-kyc-doc-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--um-text-primary);
+}
+
+.admin-kyc-doc-type {
+    font-size: 12px;
+    color: var(--um-text-tertiary);
+}
+
+.admin-kyc-doc-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.admin-kyc-doc-time {
+    font-size: 11px;
+    color: var(--um-text-tertiary);
+}
+
+.admin-kyc-doc-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-btn-success {
+    color: #22c55e !important;
+}
+
+.admin-btn-success:hover {
+    background: rgba(34, 197, 94, 0.15);
+}
+
+.admin-btn-error {
+    color: #ef4444 !important;
+}
+
+.admin-btn-error:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* Admin Toast */
+.admin-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--um-bg-card);
+    border: 1px solid var(--um-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.admin-toast.hide {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideOutRight {
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+.admin-toast-success { border-left: 3px solid #22c55e; }
+.admin-toast-success i { color: #22c55e; }
+.admin-toast-error { border-left: 3px solid #ef4444; }
+.admin-toast-error i { color: #ef4444; }
+.admin-toast-warning { border-left: 3px solid #f59e0b; }
+.admin-toast-warning i { color: #f59e0b; }
+.admin-toast-info { border-left: 3px solid #3b82f6; }
+.admin-toast-info i { color: #3b82f6; }
+
+.admin-toast span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--um-text-primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .admin-kyc-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .admin-kyc-doc-item {
+        flex-wrap: wrap;
+    }
+
+    .admin-kyc-doc-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+}
+</style>
+
+<script>
+// =====================================================
+// ADVANCED ANALYTICS CHARTS
+// =====================================================
+
+// Sparkline chart options helper
+function createSparkline(elementId, data, color) {
+    const options = {
+        series: [{
+            data: data
+        }],
+        chart: {
+            type: 'area',
+            height: 50,
+            sparkline: { enabled: true },
+            animations: { enabled: true, easing: 'easeinout', speed: 800 }
+        },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 100]
+            }
+        },
+        colors: [color],
+        tooltip: {
+            fixed: { enabled: false },
+            x: { show: false },
+            y: {
+                formatter: function(val) { return val.toLocaleString(); }
+            },
+            marker: { show: false }
+        }
+    };
+
+    const chart = new ApexCharts(document.querySelector('#' + elementId), options);
+    chart.render();
+    return chart;
+}
+
+// Initialize Analytics Charts
+function initAnalyticsCharts() {
+    // Sparklines with sample data (will be updated via API)
+    const conversionData = [65, 68, 70, 72, 75, 78, 82, 80, 85, 88, 90, 92];
+    const amountData = [250, 280, 260, 310, 290, 320, 350, 340, 380, 400, 420, 450];
+    const usersData = [120, 125, 130, 128, 140, 145, 155, 160, 175, 185, 190, 205];
+    const revenueData = [1200, 1350, 1280, 1450, 1520, 1680, 1750, 1820, 1950, 2100, 2250, 2400];
+
+    createSparkline('conversion-sparkline', conversionData, '#22c55e');
+    createSparkline('amount-sparkline', amountData, '#6366f1');
+    createSparkline('users-sparkline', usersData, '#3b82f6');
+    createSparkline('revenue-sparkline', revenueData, '#f59e0b');
+
+    // Initialize Heatmap
+    initActivityHeatmap();
+
+    // Initialize Corridors Chart
+    initCorridorsChart();
+
+    // Update metrics
+    updatePerformanceMetrics();
+
+    // Update analytics values
+    updateAnalyticsValues();
+}
+
+// Activity Heatmap
+function initActivityHeatmap() {
+    // Generate sample heatmap data (7 days x 24 hours)
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const hours = Array.from({length: 24}, (_, i) => `${i}h`);
+
+    const series = days.map((day, dayIndex) => ({
+        name: day,
+        data: hours.map((hour, hourIndex) => {
+            // Simulate activity patterns (higher during business hours, lower at night)
+            let base = Math.floor(Math.random() * 30);
+            if (hourIndex >= 9 && hourIndex <= 18) base += 40; // Business hours
+            if (dayIndex >= 5) base = Math.floor(base * 0.6); // Weekend
+            return base;
+        })
+    }));
+
+    const options = {
+        series: series,
+        chart: {
+            type: 'heatmap',
+            height: 280,
+            toolbar: { show: false },
+            background: 'transparent',
+            fontFamily: 'Inter, system-ui, sans-serif'
+        },
+        dataLabels: { enabled: false },
+        colors: ['#6366f1'],
+        xaxis: {
+            categories: hours,
+            labels: {
+                style: { colors: '#94a3b8', fontSize: '10px' },
+                rotate: 0,
+                hideOverlappingLabels: true
+            }
+        },
+        yaxis: {
+            labels: { style: { colors: '#94a3b8', fontSize: '11px' } }
+        },
+        plotOptions: {
+            heatmap: {
+                shadeIntensity: 0.5,
+                radius: 4,
+                colorScale: {
+                    ranges: [
+                        { from: 0, to: 20, name: 'Faible', color: '#1e293b' },
+                        { from: 21, to: 40, name: 'Moyen', color: '#4f46e5' },
+                        { from: 41, to: 60, name: 'Élevé', color: '#6366f1' },
+                        { from: 61, to: 100, name: 'Très élevé', color: '#818cf8' }
+                    ]
+                }
+            }
+        },
+        grid: { show: false },
+        legend: { show: false },
+        tooltip: {
+            theme: 'dark',
+            y: {
+                formatter: function(val) { return val + ' transactions'; }
+            }
+        }
+    };
+
+    const chart = new ApexCharts(document.querySelector('#activity-heatmap'), options);
+    chart.render();
+}
+
+// Top Corridors Chart
+function initCorridorsChart() {
+    const options = {
+        series: [{
+            name: 'Transactions',
+            data: [1420, 890, 654, 432, 298]
+        }],
+        chart: {
+            type: 'bar',
+            height: 280,
+            toolbar: { show: false },
+            background: 'transparent',
+            fontFamily: 'Inter, system-ui, sans-serif'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: true,
+                borderRadius: 8,
+                barHeight: '60%',
+                distributed: true
+            }
+        },
+        colors: ['#6366f1', '#22c55e', '#f59e0b', '#3b82f6', '#ec4899'],
+        dataLabels: {
+            enabled: true,
+            textAnchor: 'start',
+            style: { colors: ['#fff'], fontSize: '12px', fontWeight: 600 },
+            formatter: function(val) { return val.toLocaleString(); },
+            offsetX: 10
+        },
+        xaxis: {
+            categories: ['EUR → MAD', 'USD → MAD', 'GBP → MAD', 'MAD → EUR', 'EUR → USD'],
+            labels: { style: { colors: '#94a3b8', fontSize: '11px' } },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: { style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 500 } }
+        },
+        grid: {
+            borderColor: 'rgba(255, 255, 255, 0.05)',
+            xaxis: { lines: { show: true } },
+            yaxis: { lines: { show: false } }
+        },
+        legend: { show: false },
+        tooltip: {
+            theme: 'dark',
+            y: {
+                formatter: function(val) { return val.toLocaleString() + ' transactions'; }
+            }
+        }
+    };
+
+    const chart = new ApexCharts(document.querySelector('#corridors-chart'), options);
+    chart.render();
+}
+
+// Update Analytics Values
+function updateAnalyticsValues() {
+    // Simulated values - in production, fetch from API
+    document.getElementById('analytics-conversion-rate').textContent = '12.4%';
+    document.getElementById('analytics-avg-amount').textContent = '385 €';
+    document.getElementById('analytics-active-users').textContent = '1,247';
+    document.getElementById('analytics-revenue').textContent = '8,456 €';
+
+    // Update change indicators
+    updateChangeIndicator('conversion-change', 8.2, true);
+    updateChangeIndicator('amount-change', 5.4, true);
+    updateChangeIndicator('users-change', 12.1, true);
+    updateChangeIndicator('revenue-change', 15.8, true);
+}
+
+function updateChangeIndicator(elementId, value, positive) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.className = `admin-analytics-change ${positive ? 'positive' : 'negative'}`;
+        element.innerHTML = `
+            <i data-lucide="arrow-${positive ? 'up' : 'down'}" class="w-3 h-3"></i>
+            ${positive ? '+' : ''}${value}%
+        `;
+    }
+}
+
+// Update Performance Metrics
+function updatePerformanceMetrics() {
+    const metrics = {
+        processingTime: { value: '0.8s', percent: 60 },
+        successRate: { value: '99.7%', percent: 99.7 },
+        uptime: { value: '99.95%', percent: 99.95 },
+        satisfaction: { value: '4.8/5', percent: 96 }
+    };
+
+    // Processing time
+    document.getElementById('metric-processing-time').textContent = metrics.processingTime.value;
+    document.getElementById('metric-processing-bar').style.width = metrics.processingTime.percent + '%';
+
+    // Success rate
+    document.getElementById('metric-success-rate').textContent = metrics.successRate.value;
+    document.getElementById('metric-success-bar').style.width = metrics.successRate.percent + '%';
+
+    // Uptime
+    document.getElementById('metric-uptime').textContent = metrics.uptime.value;
+    document.getElementById('metric-uptime-bar').style.width = metrics.uptime.percent + '%';
+
+    // Satisfaction
+    document.getElementById('metric-satisfaction').textContent = metrics.satisfaction.value;
+    document.getElementById('metric-satisfaction-bar').style.width = metrics.satisfaction.percent + '%';
+}
+
+// Refresh Analytics
+function refreshAnalytics() {
+    const btn = event.target.closest('button');
+    if (btn) {
+        btn.classList.add('animate-spin');
+        setTimeout(() => btn.classList.remove('animate-spin'), 1000);
+    }
+
+    // Reload data (in production, call API)
+    updateAnalyticsValues();
+    updatePerformanceMetrics();
+    showAdminToast('Analytics actualisées', 'success');
+}
+
+// Update Analytics based on range
+function updateAnalytics() {
+    const range = document.getElementById('analytics-range').value;
+    console.log('Updating analytics for range:', range + ' days');
+
+    // In production, fetch new data from API based on range
+    refreshAnalytics();
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize analytics after a small delay to ensure DOM is ready
+    setTimeout(initAnalyticsCharts, 500);
+});
+</script>
+{% endblock %}

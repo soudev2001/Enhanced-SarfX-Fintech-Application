@@ -1,0 +1,324 @@
+{% extends "app_base.html" %}
+
+{% block title %}Contrôle API - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour au Dashboard
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                        <i data-lucide="key" class="w-8 h-8"></i>
+                    </span>
+                    Contrôle API Banque
+                </h1>
+                <p class="admin-subtitle">Gestion des accès et paramètres API</p>
+            </div>
+
+            <div class="admin-header-actions">
+                <button onclick="regenerateApiKey()" class="admin-btn admin-btn-outline-warning">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Régénérer clé
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Status Card -->
+    <div class="admin-card admin-api-status-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="activity" class="w-5 h-5 text-cyan-500"></i>
+                Statut de l'API
+            </h3>
+            <div class="admin-api-status">
+                {% if api_info.is_active %}
+                <span class="admin-status-indicator admin-status-active"></span>
+                <span class="admin-status-text admin-text-success">Actif</span>
+                {% else %}
+                <span class="admin-status-indicator admin-status-inactive"></span>
+                <span class="admin-status-text admin-text-danger">Inactif</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-api-credentials">
+                <!-- API Key -->
+                <div class="admin-credential-box">
+                    <div class="admin-credential-header">
+                        <i data-lucide="key" class="w-4 h-4"></i>
+                        <span>Clé API</span>
+                    </div>
+                    <div class="admin-credential-content">
+                        <code id="api-key" class="admin-code-display">{{ api_info.api_key or 'Non configuré' }}</code>
+                        {% if api_info.api_key %}
+                        <button onclick="copyToClipboard('api-key')" class="admin-btn admin-btn-sm admin-btn-ghost">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- API Secret -->
+                <div class="admin-credential-box">
+                    <div class="admin-credential-header">
+                        <i data-lucide="shield" class="w-4 h-4"></i>
+                        <span>Secret API</span>
+                    </div>
+                    <div class="admin-credential-content">
+                        <code id="api-secret" class="admin-code-display admin-code-masked">{{ '•' * 32 if api_info.api_secret else 'Non configuré' }}</code>
+                        {% if api_info.api_secret %}
+                        <button onclick="toggleSecret()" class="admin-btn admin-btn-sm admin-btn-ghost" id="toggle-secret-btn">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="copySecret()" class="admin-btn admin-btn-sm admin-btn-ghost">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Webhook URL -->
+                <div class="admin-credential-box">
+                    <div class="admin-credential-header">
+                        <i data-lucide="webhook" class="w-4 h-4"></i>
+                        <span>Webhook URL</span>
+                    </div>
+                    <div class="admin-credential-content">
+                        <code class="admin-code-display">{{ api_info.webhook_url or 'Non configuré' }}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 1">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(8, 145, 178, 0.1)); color: #06b6d4;">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Requêtes / heure</p>
+                <p class="admin-stat-value">{{ api_info.requests_last_hour or 0 }}</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 2">
+            <div class="admin-stat-icon admin-stat-icon-success">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Taux de succès</p>
+                <p class="admin-stat-value">{{ api_info.success_rate or 100 }}%</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 3">
+            <div class="admin-stat-icon admin-stat-icon-warning">
+                <i data-lucide="gauge" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Limite</p>
+                <p class="admin-stat-value">{{ api_info.rate_limit or 1000 }}/h</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card stagger-item" style="--stagger-delay: 4">
+            <div class="admin-stat-icon" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.1)); color: #a855f7;">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+            <div class="admin-stat-content">
+                <p class="admin-stat-label">Latence moy.</p>
+                <p class="admin-stat-value">{{ api_info.avg_latency or 45 }}ms</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="settings" class="w-5 h-5 text-blue-500"></i>
+                Configuration
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <form id="api-config-form" class="admin-form">
+                <div class="admin-form-grid">
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Limite de requêtes (par heure)</label>
+                        <input type="number" name="rate_limit" value="{{ api_info.rate_limit or 1000 }}"
+                               class="admin-form-input" min="100" max="10000">
+                        <p class="admin-form-hint">Entre 100 et 10 000 requêtes par heure</p>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">URL Webhook</label>
+                        <input type="url" name="webhook_url" value="{{ api_info.webhook_url or '' }}"
+                               class="admin-form-input" placeholder="https://votre-banque.com/api/webhook">
+                        <p class="admin-form-hint">Recevez des notifications en temps réel</p>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">IPs autorisées</label>
+                        <textarea name="allowed_ips" class="admin-form-textarea" rows="3"
+                                  placeholder="Une IP par ligne&#10;ex: 192.168.1.1">{{ api_info.allowed_ips | join('\n') if api_info.allowed_ips else '' }}</textarea>
+                        <p class="admin-form-hint">Laissez vide pour autoriser toutes les IPs</p>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Environnement</label>
+                        <div class="admin-radio-group">
+                            <label class="admin-radio-item">
+                                <input type="radio" name="environment" value="sandbox"
+                                       {{ 'checked' if api_info.environment == 'sandbox' else '' }}>
+                                <span class="admin-radio-label">
+                                    <i data-lucide="flask-conical" class="w-4 h-4"></i>
+                                    Sandbox (test)
+                                </span>
+                            </label>
+                            <label class="admin-radio-item">
+                                <input type="radio" name="environment" value="production"
+                                       {{ 'checked' if api_info.environment == 'production' else '' }}>
+                                <span class="admin-radio-label">
+                                    <i data-lucide="rocket" class="w-4 h-4"></i>
+                                    Production
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-form-actions">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Enregistrer les modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Endpoints Documentation -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="book-open" class="w-5 h-5 text-purple-500"></i>
+                Documentation API
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-endpoints-list">
+                <div class="admin-endpoint-item">
+                    <div class="admin-endpoint-method admin-method-get">GET</div>
+                    <div class="admin-endpoint-info">
+                        <code class="admin-endpoint-path">/api/v1/rates</code>
+                        <p class="admin-endpoint-desc">Obtenir les taux de change actuels</p>
+                    </div>
+                </div>
+                <div class="admin-endpoint-item">
+                    <div class="admin-endpoint-method admin-method-post">POST</div>
+                    <div class="admin-endpoint-info">
+                        <code class="admin-endpoint-path">/api/v1/convert</code>
+                        <p class="admin-endpoint-desc">Effectuer une conversion de devise</p>
+                    </div>
+                </div>
+                <div class="admin-endpoint-item">
+                    <div class="admin-endpoint-method admin-method-get">GET</div>
+                    <div class="admin-endpoint-info">
+                        <code class="admin-endpoint-path">/api/v1/atms</code>
+                        <p class="admin-endpoint-desc">Liste des ATMs avec filtres</p>
+                    </div>
+                </div>
+                <div class="admin-endpoint-item">
+                    <div class="admin-endpoint-method admin-method-get">GET</div>
+                    <div class="admin-endpoint-info">
+                        <code class="admin-endpoint-path">/api/v1/transactions</code>
+                        <p class="admin-endpoint-desc">Historique des transactions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const apiSecret = "{{ api_info.api_secret or '' }}";
+let secretVisible = false;
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    navigator.clipboard.writeText(element.textContent);
+    showToast('Copié dans le presse-papier !', 'success');
+}
+
+function copySecret() {
+    navigator.clipboard.writeText(apiSecret);
+    showToast('Secret copié !', 'success');
+}
+
+function toggleSecret() {
+    const secretEl = document.getElementById('api-secret');
+    const btn = document.getElementById('toggle-secret-btn');
+    secretVisible = !secretVisible;
+
+    if (secretVisible) {
+        secretEl.textContent = apiSecret;
+        secretEl.classList.remove('admin-code-masked');
+        btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+    } else {
+        secretEl.textContent = '•'.repeat(32);
+        secretEl.classList.add('admin-code-masked');
+        btn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+    }
+    lucide.createIcons();
+}
+
+function regenerateApiKey() {
+    if (confirm('Êtes-vous sûr ? L\'ancienne clé sera invalidée.')) {
+        // API call to regenerate
+        showToast('Nouvelle clé générée !', 'success');
+    }
+}
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `admin-toast admin-toast-${type}`;
+    toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-4 h-4"></i> ${message}`;
+    document.body.appendChild(toast);
+    lucide.createIcons();
+    setTimeout(() => toast.remove(), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

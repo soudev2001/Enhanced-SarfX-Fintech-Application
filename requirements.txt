@@ -18,5 +18,17 @@ flask-caching>=2.1.0
 flask-compress>=1.14
 redis>=5.0.0
 
+# 2FA - Two Factor Authentication
+pyotp>=2.9.0
+qrcode[pil]>=7.4.0
+
+# OpenTelemetry Tracing
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-otlp>=1.20.0
+opentelemetry-instrumentation-flask>=0.41b0
+opentelemetry-instrumentation-requests>=0.41b0
+opentelemetry-instrumentation-pymongo>=0.41b0
+
 # Monitoring (optional)
 sentry-sdk[flask]>=1.39.0

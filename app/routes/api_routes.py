@@ -1481,119 +1481,6 @@ def test_bank_connection():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ==================== NOTIFICATIONS ====================
-
-@api_bp.route('/notifications')
-@login_required_api
-def get_notifications():
-    """Récupère les notifications de l'utilisateur"""
-    db = get_db()
-    user_id = session['user_id']
-
-    if db is None:
-        return jsonify({"success": True, "notifications": []})
-
-    notifications = list(db.notifications.find(
-        {"user_id": user_id}
-    ).sort("created_at", -1).limit(20))
-
-    for n in notifications:
-        n['_id'] = str(n['_id'])
-        n['id'] = n['_id']
-        n['time'] = n.get('created_at', datetime.utcnow()).isoformat()
-
-    return jsonify({
-        "success": True,
-        "notifications": notifications
-    })
-
-
-@api_bp.route('/notifications/<notif_id>/read', methods=['POST'])
-@login_required_api
-def mark_notification_read(notif_id):
-    """Marque une notification comme lue"""
-    db = get_db()
-    user_id = session['user_id']
-
-    if db is not None:
-        from bson import ObjectId
-        db.notifications.update_one(
-            {"_id": ObjectId(notif_id), "user_id": user_id},
-            {"$set": {"read": True}}
-        )
-
-    return jsonify({"success": True})
-
-
-@api_bp.route('/notifications/read-all', methods=['POST'])
-@login_required_api
-def mark_all_notifications_read():
-    """Marque toutes les notifications comme lues"""
-    db = get_db()
-    user_id = session['user_id']
-
-    if db is not None:
-        db.notifications.update_many(
-            {"user_id": user_id},
-            {"$set": {"read": True}}
-        )
-
-    return jsonify({"success": True})
-
-
-@api_bp.route('/notifications/check')
-@login_required_api
-def check_new_notifications():
-    """Vérifie s'il y a de nouvelles notifications"""
-    db = get_db()
-    user_id = session['user_id']
-
-    if db is None:
-        return jsonify({"hasNew": False})
-
-    unread_count = db.notifications.count_documents({
-        "user_id": user_id,
-        "read": False
-    })
-
-    latest = None
-    if unread_count > 0:
-        latest_doc = db.notifications.find_one(
-            {"user_id": user_id, "read": False},
-            sort=[("created_at", -1)]
-        )
-        if latest_doc:
-            latest = {
-                "title": latest_doc.get('title', ''),
-                "message": latest_doc.get('message', '')
-            }
-
-    return jsonify({
-        "hasNew": unread_count > 0,
-        "unreadCount": unread_count,
-        "latest": latest
-    })
-
-
-def create_notification(user_id, notif_type, title, message):
-    """Helper pour créer une notification (utilisable depuis d'autres modules)"""
-    db = get_db()
-    if db is None:
-        return None
-
-    notification = {
-        "user_id": user_id,
-        "type": notif_type,
-        "title": title,
-        "message": message,
-        "read": False,
-        "created_at": datetime.utcnow()
-    }
-
-    result = db.notifications.insert_one(notification)
-    return str(result.inserted_id)
-
-
 # ==================== CHATBOT ====================
 
 @api_bp.route('/chatbot/message', methods=['POST'])
@@ -2017,3 +1904,1275 @@ def admin_wallet_stats():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ==================== GLOBAL SEARCH API ====================
+
+@api_bp.route('/search')
+@login_required_api
+def global_search():
+    """Recherche globale dans l'application"""
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable", "results": []}), 500
+
+    query = request.args.get('q', '').strip()
+    if len(query) < 2:
+        return jsonify({"results": []})
+
+    user_id = session.get('user_id')
+    results = []
+
+    try:
+        # Regex pour recherche insensible à la casse
+        import re
+        regex_pattern = re.compile(query, re.IGNORECASE)
+
+        # 1. Recherche dans les transactions de l'utilisateur
+        transactions = list(db.transactions.find({
+            "user_id": user_id,
+            "$or": [
+                {"reference": {"$regex": regex_pattern}},
+                {"from_currency": {"$regex": regex_pattern}},
+                {"to_currency": {"$regex": regex_pattern}},
+                {"type": {"$regex": regex_pattern}},
+                {"description": {"$regex": regex_pattern}}
+            ]
+        }).limit(5))
+
+        for tx in transactions:
+            results.append({
+                "type": "transaction",
+                "title": f"{tx.get('from_currency', '')} → {tx.get('to_currency', '')}",
+                "subtitle": f"Réf: {tx.get('reference', 'N/A')} | {tx.get('amount', 0)} {tx.get('from_currency', '')}",
+                "url": f"/app/transactions?highlight={str(tx.get('_id', ''))}"
+            })
+
+        # 2. Recherche dans les bénéficiaires de l'utilisateur
+        beneficiaries = list(db.beneficiaries.find({
+            "user_id": user_id,
+            "$or": [
+                {"name": {"$regex": regex_pattern}},
+                {"email": {"$regex": regex_pattern}},
+                {"iban": {"$regex": regex_pattern}},
+                {"bank_name": {"$regex": regex_pattern}}
+            ]
+        }).limit(5))
+
+        for ben in beneficiaries:
+            results.append({
+                "type": "beneficiary",
+                "title": ben.get('name', 'Sans nom'),
+                "subtitle": ben.get('email', '') or ben.get('iban', '')[:20] + '...' if ben.get('iban') else '',
+                "url": f"/app/beneficiaries?highlight={str(ben.get('_id', ''))}"
+            })
+
+        # 3. Recherche dans les ATMs
+        atms = list(db.atms.find({
+            "$or": [
+                {"name": {"$regex": regex_pattern}},
+                {"city": {"$regex": regex_pattern}},
+                {"address": {"$regex": regex_pattern}},
+                {"bank_name": {"$regex": regex_pattern}}
+            ]
+        }).limit(5))
+
+        for atm in atms:
+            results.append({
+                "type": "atm",
+                "title": atm.get('name', 'ATM'),
+                "subtitle": f"{atm.get('city', '')} - {atm.get('bank_name', '')}",
+                "url": f"/app/atms?highlight={str(atm.get('_id', ''))}"
+            })
+
+        # 4. Recherche dans les pages de navigation
+        pages = [
+            {"name": "Accueil", "url": "/app/home", "keywords": ["accueil", "home", "dashboard", "tableau de bord"]},
+            {"name": "Wallets", "url": "/app/wallets", "keywords": ["wallets", "portefeuilles", "soldes", "balances"]},
+            {"name": "Convertir", "url": "/app/converter", "keywords": ["convertir", "converter", "exchange", "change", "taux"]},
+            {"name": "Transactions", "url": "/app/transactions", "keywords": ["transactions", "historique", "history", "paiements"]},
+            {"name": "Bénéficiaires", "url": "/app/beneficiaries", "keywords": ["bénéficiaires", "beneficiaries", "contacts"]},
+            {"name": "ATMs", "url": "/app/atms", "keywords": ["atm", "distributeur", "cash", "retrait"]},
+            {"name": "Profil", "url": "/app/profile", "keywords": ["profil", "profile", "compte", "account"]},
+            {"name": "Réglages", "url": "/app/settings", "keywords": ["réglages", "settings", "paramètres", "preferences"]},
+            {"name": "FAQ", "url": "/app/faq", "keywords": ["faq", "aide", "help", "questions"]},
+            {"name": "IA Prédictions", "url": "/app/ai-forecast", "keywords": ["ia", "ai", "prédictions", "forecast", "machine learning"]}
+        ]
+
+        query_lower = query.lower()
+        for page in pages:
+            if query_lower in page["name"].lower() or any(query_lower in kw for kw in page["keywords"]):
+                results.append({
+                    "type": "page",
+                    "title": page["name"],
+                    "subtitle": "Page de navigation",
+                    "url": page["url"]
+                })
+
+        # Limiter le nombre total de résultats
+        results = results[:15]
+
+        return jsonify({
+            "success": True,
+            "query": query,
+            "results": results,
+            "count": len(results)
+        })
+
+    except Exception as e:
+        print(f"Search error: {e}")
+        return jsonify({"error": str(e), "results": []}), 500
+
+
+# ==================== KYC SERVICE API ====================
+
+@api_bp.route('/kyc/status')
+@login_required_api
+def get_kyc_status():
+    """Récupère le statut KYC de l'utilisateur connecté"""
+    from app.services.kyc_service import get_kyc_service
+
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Non authentifié"}), 401
+
+    kyc_service = get_kyc_service()
+    status = kyc_service.get_user_kyc_status(user_id)
+
+    return jsonify(status)
+
+
+@api_bp.route('/kyc/upload', methods=['POST'])
+@login_required_api
+def upload_kyc_document():
+    """Upload un document KYC"""
+    from app.services.kyc_service import get_kyc_service
+    import hashlib
+    import os
+
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "error": "Database unavailable"}), 500
+
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Non authentifié"}), 401
+
+    # Vérifier le fichier
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "Aucun fichier fourni"}), 400
+
+    file = request.files['file']
+    document_type = request.form.get('document_type', 'id_card')
+
+    if file.filename == '':
+        return jsonify({"success": False, "error": "Nom de fichier vide"}), 400
+
+    # Vérifier l'extension
+    allowed_extensions = {'pdf', 'jpg', 'jpeg', 'png', 'webp'}
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in allowed_extensions:
+        return jsonify({"success": False, "error": f"Extension non autorisée. Utilisez: {', '.join(allowed_extensions)}"}), 400
+
+    # Vérifier la taille (max 10MB)
+    file.seek(0, 2)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > 10 * 1024 * 1024:
+        return jsonify({"success": False, "error": "Fichier trop volumineux (max 10MB)"}), 400
+
+    try:
+        # Créer le dossier uploads si nécessaire
+        upload_folder = os.path.join(os.getcwd(), 'uploads', 'kyc', user_id)
+        os.makedirs(upload_folder, exist_ok=True)
+
+        # Générer un nom de fichier unique
+        file_hash = hashlib.md5(file.read()).hexdigest()[:12]
+        file.seek(0)
+
+        filename = f"{document_type}_{file_hash}.{ext}"
+        file_path = os.path.join(upload_folder, filename)
+
+        # Sauvegarder le fichier
+        file.save(file_path)
+
+        # Enregistrer dans le service KYC
+        kyc_service = get_kyc_service()
+        result = kyc_service.upload_document(user_id, document_type, {
+            "filename": filename,
+            "content_type": file.content_type,
+            "file_path": file_path,
+            "file_hash": file_hash,
+            "file_size": file_size,
+        })
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"KYC upload error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route('/kyc/documents/<document_id>/verify', methods=['POST'])
+@login_required_api
+def verify_kyc_document(document_id):
+    """Vérifie/Rejette un document KYC (admin uniquement)"""
+    from app.services.kyc_service import get_kyc_service
+
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "error": "Database unavailable"}), 500
+
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)})
+
+    if not user or user.get('role') != 'admin':
+        return jsonify({"success": False, "error": "Non autorisé"}), 403
+
+    data = request.get_json() or {}
+    approved = data.get('approved', False)
+    reason = data.get('reason')
+
+    kyc_service = get_kyc_service()
+    result = kyc_service.verify_document(document_id, user_id, approved, reason)
+
+    return jsonify(result)
+
+
+@api_bp.route('/kyc/pending')
+@login_required_api
+def get_pending_kyc_documents():
+    """Récupère les documents KYC en attente (admin uniquement)"""
+    from app.services.kyc_service import get_kyc_service
+
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)})
+
+    if not user or user.get('role') != 'admin':
+        return jsonify({"error": "Non autorisé"}), 403
+
+    kyc_service = get_kyc_service()
+    documents = kyc_service.get_pending_documents()
+
+    return jsonify({
+        "success": True,
+        "documents": documents,
+        "count": len(documents)
+    })
+
+
+@api_bp.route('/kyc/statistics')
+@login_required_api
+def get_kyc_statistics():
+    """Récupère les statistiques KYC (admin uniquement)"""
+    from app.services.kyc_service import get_kyc_service
+
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)})
+
+    if not user or user.get('role') != 'admin':
+        return jsonify({"error": "Non autorisé"}), 403
+
+    kyc_service = get_kyc_service()
+    stats = kyc_service.get_kyc_statistics()
+
+    return jsonify({
+        "success": True,
+        **stats
+    })
+
+
+# ==================== NOTIFICATIONS PUSH SERVICE ====================
+
+@api_bp.route('/notifications/check')
+@login_required_api
+def check_new_notifications():
+    """Vérifie s'il y a de nouvelles notifications non lues"""
+    from app.services.db_service import get_db
+    from datetime import datetime, timedelta
+
+    user_id = session.get('user_id')
+    db = get_db()
+
+    if db is None:
+        return jsonify({
+            "success": True,
+            "hasNew": False,
+            "unread_count": 0
+        })
+
+    # Compter les notifications non lues
+    unread_count = db.notifications.count_documents({
+        "user_id": user_id,
+        "read": False
+    })
+
+    # Récupérer la dernière notification (pour affichage push)
+    latest = None
+    has_new = False
+
+    if unread_count > 0:
+        latest_doc = db.notifications.find_one(
+            {"user_id": user_id, "read": False},
+            sort=[("created_at", -1)]
+        )
+        if latest_doc:
+            has_new = True
+            latest = {
+                "id": str(latest_doc.get("_id")),
+                "title": latest_doc.get("title", "Notification"),
+                "message": latest_doc.get("message", ""),
+                "type": latest_doc.get("type", "info"),
+                "created_at": latest_doc.get("created_at", datetime.utcnow()).isoformat()
+            }
+
+    return jsonify({
+        "success": True,
+        "hasNew": has_new,
+        "unread_count": unread_count,
+        "latest": latest
+    })
+
+
+@api_bp.route('/notifications')
+@login_required_api
+def get_user_notifications():
+    """Récupère les notifications de l'utilisateur avec pagination"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    limit = int(request.args.get('limit', 20))
+    offset = int(request.args.get('offset', 0))
+    unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+
+    notif_service = get_notification_service()
+    notifications = notif_service.get_user_notifications(
+        user_id,
+        limit=limit,
+        offset=offset,
+        unread_only=unread_only
+    )
+
+    # Compter les non-lues
+    db = get_db()
+    unread_count = 0
+    if db is not None:
+        unread_count = db.notifications.count_documents({
+            "user_id": user_id,
+            "read": False
+        })
+
+    return jsonify({
+        "success": True,
+        "notifications": notifications,
+        "unread_count": unread_count,
+        "limit": limit,
+        "offset": offset
+    })
+
+
+@api_bp.route('/notifications/<notification_id>/read', methods=['POST'])
+@login_required_api
+def mark_notification_as_read(notification_id):
+    """Marque une notification comme lue"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    notif_service = get_notification_service()
+    result = notif_service.mark_as_read(notification_id, user_id)
+
+    return jsonify(result)
+
+
+@api_bp.route('/notifications/read-all', methods=['POST'])
+@login_required_api
+def mark_all_notifications_read():
+    """Marque toutes les notifications comme lues"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    notif_service = get_notification_service()
+    result = notif_service.mark_all_as_read(user_id)
+
+    return jsonify(result)
+
+
+@api_bp.route('/notifications/subscribe', methods=['POST'])
+@login_required_api
+def subscribe_push_notifications():
+    """Enregistre un abonnement aux notifications push"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    data = request.get_json() or {}
+    subscription = data.get('subscription')
+
+    if not subscription:
+        return jsonify({"success": False, "error": "Subscription data required"}), 400
+
+    notif_service = get_notification_service()
+    result = notif_service.register_push_subscription(user_id, subscription)
+
+    return jsonify(result)
+
+
+@api_bp.route('/notifications/unsubscribe', methods=['POST'])
+@login_required_api
+def unsubscribe_push_notifications():
+    """Supprime un abonnement aux notifications push"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    data = request.get_json() or {}
+    endpoint = data.get('endpoint')
+
+    if not endpoint:
+        return jsonify({"success": False, "error": "Endpoint required"}), 400
+
+    notif_service = get_notification_service()
+    result = notif_service.unsubscribe_push(user_id, endpoint)
+
+    return jsonify(result)
+
+
+@api_bp.route('/notifications/preferences', methods=['GET', 'POST'])
+@login_required_api
+def notification_preferences():
+    """Gère les préférences de notifications de l'utilisateur"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    notif_service = get_notification_service()
+
+    if request.method == 'GET':
+        preferences = notif_service.get_user_preferences(user_id)
+        return jsonify({
+            "success": True,
+            "preferences": preferences
+        })
+
+    # POST - Mise à jour des préférences
+    data = request.get_json() or {}
+    result = notif_service.update_user_preferences(user_id, data)
+
+    return jsonify(result)
+
+
+@api_bp.route('/notifications/test', methods=['POST'])
+@login_required_api
+def test_push_notification():
+    """Envoie une notification de test (pour debug)"""
+    from app.services.notification_service import get_notification_service
+
+    user_id = session.get('user_id')
+    notif_service = get_notification_service()
+
+    # Créer une notification de test
+    result = notif_service.create_notification(
+        user_id=user_id,
+        notification_type='system',
+        title='🔔 Test de notification',
+        message='Vos notifications push fonctionnent correctement!',
+        icon='bell',
+        color='#10B981',
+        channels=['in_app', 'push']
+    )
+
+    return jsonify(result)
+
+
+@api_bp.route('/notifications/stats')
+@login_required_api
+def get_notification_stats():
+    """Statistiques des notifications (admin uniquement)"""
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "Database unavailable"}), 500
+
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)})
+
+    if not user or user.get('role') != 'admin':
+        return jsonify({"error": "Non autorisé"}), 403
+
+    try:
+        # Statistiques globales
+        total_notifications = db.notifications.count_documents({})
+        unread_notifications = db.notifications.count_documents({"read": False})
+        push_subscriptions = db.push_subscriptions.count_documents({}) if 'push_subscriptions' in db.list_collection_names() else 0
+
+        # Par type
+        type_stats = list(db.notifications.aggregate([
+            {"$group": {"_id": "$type", "count": {"$sum": 1}}}
+        ]))
+
+        # Par jour (7 derniers jours)
+        from datetime import timedelta
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        daily_stats = list(db.notifications.aggregate([
+            {"$match": {"created_at": {"$gte": seven_days_ago}}},
+            {"$group": {
+                "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]))
+
+        return jsonify({
+            "success": True,
+            "stats": {
+                "total": total_notifications,
+                "unread": unread_notifications,
+                "push_subscriptions": push_subscriptions,
+                "by_type": {item['_id']: item['count'] for item in type_stats},
+                "daily": {item['_id']: item['count'] for item in daily_stats}
+            }
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== EXPORT SERVICE API ====================
+
+@api_bp.route('/export/transactions.csv')
+@login_required_api
+def export_transactions_csv():
+    """Exporte les transactions au format CSV"""
+    from flask import Response
+    from app.services.export_service import get_export_service
+    from datetime import timedelta
+
+    db = get_db()
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+
+    # Paramètres
+    is_admin = user and user.get('role') == 'admin'
+    filter_user_id = None if is_admin else user_id
+
+    # Dates optionnelles
+    start_date = None
+    end_date = None
+    days = request.args.get('days')
+    if days:
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=int(days))
+
+    export_service = get_export_service()
+    csv_data = export_service.export_transactions_csv(
+        user_id=filter_user_id,
+        start_date=start_date,
+        end_date=end_date,
+        status=request.args.get('status'),
+        currency=request.args.get('currency')
+    )
+
+    filename = f"sarfx_transactions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return Response(
+        csv_data.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
+@api_bp.route('/export/users.csv')
+@login_required_api
+def export_users_csv():
+    """Exporte les utilisateurs au format CSV (admin uniquement)"""
+    from flask import Response
+    from app.services.export_service import get_export_service
+
+    db = get_db()
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+
+    if not user or user.get('role') != 'admin':
+        return jsonify({"error": "Non autorisé"}), 403
+
+    export_service = get_export_service()
+    csv_data = export_service.export_users_csv(
+        role=request.args.get('role'),
+        kyc_status=request.args.get('kyc_status')
+    )
+
+    filename = f"sarfx_users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return Response(
+        csv_data.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
+@api_bp.route('/export/wallets.csv')
+@login_required_api
+def export_wallets_csv():
+    """Exporte les wallets au format CSV"""
+    from flask import Response
+    from app.services.export_service import get_export_service
+
+    db = get_db()
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+
+    is_admin = user and user.get('role') == 'admin'
+    filter_user_id = None if is_admin else user_id
+
+    export_service = get_export_service()
+    csv_data = export_service.export_wallets_csv(user_id=filter_user_id)
+
+    filename = f"sarfx_wallets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return Response(
+        csv_data.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
+@api_bp.route('/export/beneficiaries.csv')
+@login_required_api
+def export_beneficiaries_csv():
+    """Exporte les bénéficiaires au format CSV"""
+    from flask import Response
+    from app.services.export_service import get_export_service
+
+    user_id = session.get('user_id')
+
+    export_service = get_export_service()
+    csv_data = export_service.export_beneficiaries_csv(user_id=user_id)
+
+    filename = f"sarfx_beneficiaries_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return Response(
+        csv_data.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
+@api_bp.route('/export/transactions.pdf')
+@login_required_api
+def export_transactions_pdf():
+    """Génère un rapport PDF des transactions (retourne HTML pour impression)"""
+    from flask import Response
+    from app.services.export_service import get_export_service
+    from datetime import timedelta
+
+    db = get_db()
+    user_id = session.get('user_id')
+    user = db.users.find_one({"_id": safe_object_id(user_id)}) if db else None
+
+    is_admin = user and user.get('role') == 'admin'
+    filter_user_id = None if is_admin else user_id
+
+    # Dates
+    start_date = None
+    end_date = None
+    days = request.args.get('days', 30)
+    if days:
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=int(days))
+
+    export_service = get_export_service()
+    html_content = export_service.generate_transaction_report_html(
+        user_id=filter_user_id,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    return Response(
+        html_content,
+        mimetype='text/html',
+        headers={'Content-Type': 'text/html; charset=utf-8'}
+    )
+
+
+@api_bp.route('/export/wallet-statement.pdf')
+@login_required_api
+def export_wallet_statement():
+    """Génère un relevé de compte (retourne HTML pour impression)"""
+    from flask import Response
+    from app.services.export_service import get_export_service
+
+    user_id = session.get('user_id')
+    period_days = int(request.args.get('days', 30))
+
+    export_service = get_export_service()
+    html_content = export_service.generate_wallet_statement_html(
+        user_id=user_id,
+        period_days=period_days
+    )
+
+    return Response(
+        html_content,
+        mimetype='text/html',
+        headers={'Content-Type': 'text/html; charset=utf-8'}
+    )
+
+
+# ==================== TWO-FACTOR AUTHENTICATION (2FA) API ====================
+
+def get_two_factor_service():
+    """Helper pour obtenir le service 2FA"""
+    from app.services.two_factor_service import TwoFactorService
+    return TwoFactorService()
+
+
+@api_bp.route('/2fa/status')
+@login_required_api
+def get_2fa_status():
+    """Récupère le statut 2FA de l'utilisateur"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_two_factor_service()
+    status = service.get_2fa_status(user_id)
+
+    return jsonify({"success": True, "status": status})
+
+
+@api_bp.route('/2fa/setup', methods=['POST'])
+@login_required_api
+def setup_2fa():
+    """Démarre le processus de configuration 2FA"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_two_factor_service()
+    result = service.setup_2fa(user_id)
+
+    if result.get('success'):
+        return jsonify({
+            "success": True,
+            "qr_code": result.get('qr_code'),
+            "secret": result.get('manual_entry_key'),
+            "uri": result.get('uri')
+        })
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/enable', methods=['POST'])
+@login_required_api
+def enable_2fa():
+    """Active le 2FA après vérification du code"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    code = data.get('code', '').strip()
+
+    if not code:
+        return jsonify({"success": False, "error": "Verification code required"}), 400
+
+    service = get_two_factor_service()
+    result = service.verify_and_enable_2fa(user_id, code)
+
+    if result.get('success'):
+        return jsonify({
+            "success": True,
+            "message": result.get('message'),
+            "backup_codes": result.get('backup_codes')
+        })
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/disable', methods=['POST'])
+@login_required_api
+def disable_2fa():
+    """Désactive le 2FA"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    code = data.get('code', '').strip()
+
+    if not code:
+        return jsonify({"success": False, "error": "Verification code required"}), 400
+
+    service = get_two_factor_service()
+    result = service.disable_2fa(user_id, code)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/verify', methods=['POST'])
+def verify_2fa_login():
+    """Vérifie le code 2FA lors de la connexion"""
+    data = request.get_json() or {}
+
+    # L'utilisateur doit avoir passé la première étape d'auth
+    pending_user_id = session.get('pending_2fa_user_id')
+    if not pending_user_id:
+        return jsonify({"success": False, "error": "No pending 2FA verification"}), 400
+
+    code = data.get('code', '').strip()
+    remember_device = data.get('remember_device', False)
+
+    if not code:
+        return jsonify({"success": False, "error": "Verification code required"}), 400
+
+    # Récupérer les infos de l'appareil
+    device_info = {
+        'user_agent': request.headers.get('User-Agent', ''),
+        'browser': request.headers.get('Sec-CH-UA', ''),
+        'os': request.headers.get('Sec-CH-UA-Platform', ''),
+        'device_type': 'mobile' if 'Mobile' in request.headers.get('User-Agent', '') else 'desktop'
+    }
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+
+    service = get_two_factor_service()
+    result = service.verify_login_2fa(
+        pending_user_id,
+        code,
+        remember_device=remember_device,
+        device_info=device_info,
+        ip_address=ip_address
+    )
+
+    if result.get('success'):
+        # Finaliser la connexion
+        session['user_id'] = pending_user_id
+        session.pop('pending_2fa_user_id', None)
+
+        response_data = {
+            "success": True,
+            "message": "Login successful",
+            "used_backup_code": result.get('used_backup_code', False)
+        }
+
+        if result.get('device_token'):
+            response_data['device_token'] = result['device_token']
+
+        return jsonify(response_data)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/backup-codes/regenerate', methods=['POST'])
+@login_required_api
+def regenerate_backup_codes():
+    """Régénère les codes de secours"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    code = data.get('code', '').strip()
+
+    if not code:
+        return jsonify({"success": False, "error": "Verification code required"}), 400
+
+    service = get_two_factor_service()
+    result = service.regenerate_backup_codes(user_id, code)
+
+    if result.get('success'):
+        return jsonify({
+            "success": True,
+            "backup_codes": result.get('backup_codes'),
+            "message": result.get('message')
+        })
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/devices')
+@login_required_api
+def get_trusted_devices():
+    """Liste les appareils de confiance"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    # Token de l'appareil actuel (depuis cookie)
+    current_device_token = request.cookies.get('sarfx_device_token')
+
+    service = get_two_factor_service()
+    devices = service.get_trusted_devices(user_id)
+
+    # Marquer l'appareil actuel
+    for device in devices:
+        if current_device_token and device.get('id'):
+            # Comparer les tokens (simplification)
+            device['is_current'] = False
+
+    return jsonify({
+        "success": True,
+        "devices": devices
+    })
+
+
+@api_bp.route('/2fa/devices/<device_id>', methods=['DELETE'])
+@login_required_api
+def remove_trusted_device(device_id):
+    """Supprime un appareil de confiance"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_two_factor_service()
+    result = service.remove_trusted_device(user_id, device_id)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/devices', methods=['DELETE'])
+@login_required_api
+def remove_all_trusted_devices():
+    """Supprime tous les appareils de confiance"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_two_factor_service()
+    result = service.remove_all_trusted_devices(user_id)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/2fa/logs')
+@login_required_api
+def get_2fa_logs():
+    """Récupère les logs 2FA de l'utilisateur"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    limit = request.args.get('limit', 20, type=int)
+
+    service = get_two_factor_service()
+    logs = service.get_2fa_logs(user_id, limit)
+
+    return jsonify({
+        "success": True,
+        "logs": logs
+    })
+
+
+# ==================== LANGUAGE / I18N ====================
+
+def get_i18n_service():
+    """Lazy import du service i18n pour éviter les imports circulaires"""
+    from app.services.i18n_service import I18nService
+    return I18nService()
+
+
+@api_bp.route('/language')
+def get_current_language():
+    """Récupère la langue courante de l'utilisateur"""
+    i18n = get_i18n_service()
+    lang = i18n.get_current_language()
+    languages = i18n.get_available_languages()
+
+    return jsonify({
+        "success": True,
+        "language": lang,
+        "languages": languages,
+        "is_rtl": i18n.is_rtl(lang)
+    })
+
+
+@api_bp.route('/language/set', methods=['POST'])
+def set_language():
+    """Change la langue de l'interface"""
+    data = request.get_json() or {}
+    lang = data.get('language', 'fr')
+
+    i18n = get_i18n_service()
+
+    if not i18n.is_supported_language(lang):
+        return jsonify({
+            "success": False,
+            "error": f"Langue '{lang}' non supportée",
+            "supported": list(i18n.get_available_languages().keys())
+        }), 400
+
+    # Sauvegarder en session
+    i18n.set_language(lang)
+
+    # Sauvegarder en base si utilisateur connecté
+    user_id = session.get('user_id')
+    if user_id:
+        db = get_db()
+        if db:
+            db.users.update_one(
+                {"_id": safe_object_id(user_id)},
+                {"$set": {"language": lang}}
+            )
+
+    return jsonify({
+        "success": True,
+        "language": lang,
+        "is_rtl": i18n.is_rtl(lang),
+        "message": f"Langue changée en {i18n.get_available_languages()[lang]['name']}"
+    })
+
+
+@api_bp.route('/language/translations')
+def get_translations():
+    """Récupère les traductions pour la langue courante (pour usage JS)"""
+    i18n = get_i18n_service()
+    lang = request.args.get('lang', i18n.get_current_language())
+
+    translations = i18n.get_translations(lang)
+
+    return jsonify({
+        "success": True,
+        "language": lang,
+        "is_rtl": i18n.is_rtl(lang),
+        "translations": translations
+    })
+
+# ==================== RATE ALERTS ====================
+
+def get_rate_alert_service():
+    """Lazy import du service d'alertes de taux"""
+    from app.services.rate_alert_service import RateAlertService
+    return RateAlertService()
+
+
+@api_bp.route('/rate-alerts')
+@login_required_api
+def get_rate_alerts():
+    """Récupère les alertes de taux de l'utilisateur"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    status = request.args.get('status')
+    pair = request.args.get('pair')
+    limit = request.args.get('limit', 50, type=int)
+
+    service = get_rate_alert_service()
+    alerts = service.get_user_alerts(user_id, status=status, pair=pair, limit=limit)
+
+    return jsonify({
+        "success": True,
+        "alerts": alerts,
+        "count": len(alerts)
+    })
+
+
+@api_bp.route('/rate-alerts/<alert_id>')
+@login_required_api
+def get_rate_alert(alert_id):
+    """Récupère une alerte spécifique"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_rate_alert_service()
+    alert = service.get_alert_by_id(user_id, alert_id)
+
+    if alert:
+        return jsonify({"success": True, "alert": alert})
+
+    return jsonify({"success": False, "error": "Alerte non trouvée"}), 404
+
+
+@api_bp.route('/rate-alerts', methods=['POST'])
+@login_required_api
+def create_rate_alert():
+    """Crée une nouvelle alerte de taux"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+
+    # Validation des champs requis
+    required = ['from_currency', 'to_currency', 'alert_type', 'target_rate']
+    missing = [f for f in required if not data.get(f)]
+
+    if missing:
+        return jsonify({
+            "success": False,
+            "error": f"Champs requis manquants: {', '.join(missing)}"
+        }), 400
+
+    # Parser la date d'expiration si fournie
+    expiry_date = None
+    if data.get('expiry_date'):
+        try:
+            expiry_date = datetime.fromisoformat(data['expiry_date'].replace('Z', '+00:00'))
+        except:
+            pass
+
+    service = get_rate_alert_service()
+    result = service.create_alert(
+        user_id=user_id,
+        from_currency=data['from_currency'],
+        to_currency=data['to_currency'],
+        alert_type=data['alert_type'],
+        target_rate=float(data['target_rate']),
+        notification_channels=data.get('notification_channels'),
+        expiry_date=expiry_date,
+        name=data.get('name'),
+        notes=data.get('notes')
+    )
+
+    if result.get('success'):
+        return jsonify(result), 201
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/rate-alerts/<alert_id>', methods=['PUT', 'PATCH'])
+@login_required_api
+def update_rate_alert(alert_id):
+    """Met à jour une alerte"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+
+    service = get_rate_alert_service()
+    result = service.update_alert(user_id, alert_id, data)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/rate-alerts/<alert_id>', methods=['DELETE'])
+@login_required_api
+def delete_rate_alert(alert_id):
+    """Supprime une alerte"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_rate_alert_service()
+    result = service.delete_alert(user_id, alert_id)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 404
+
+
+@api_bp.route('/rate-alerts/<alert_id>/pause', methods=['POST'])
+@login_required_api
+def pause_rate_alert(alert_id):
+    """Met en pause une alerte"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_rate_alert_service()
+    result = service.pause_alert(user_id, alert_id)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/rate-alerts/<alert_id>/resume', methods=['POST'])
+@login_required_api
+def resume_rate_alert(alert_id):
+    """Réactive une alerte"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_rate_alert_service()
+    result = service.resume_alert(user_id, alert_id)
+
+    if result.get('success'):
+        return jsonify(result)
+
+    return jsonify(result), 400
+
+
+@api_bp.route('/rate-alerts/statistics')
+@login_required_api
+def get_rate_alert_statistics():
+    """Récupère les statistiques des alertes"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_rate_alert_service()
+    stats = service.get_alert_statistics(user_id)
+
+    return jsonify({
+        "success": True,
+        "statistics": stats
+    })
+
+
+@api_bp.route('/rate-alerts/history')
+@login_required_api
+def get_rate_alert_history():
+    """Récupère l'historique des déclenchements"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    alert_id = request.args.get('alert_id')
+    limit = request.args.get('limit', 50, type=int)
+
+    service = get_rate_alert_service()
+    history = service.get_trigger_history(user_id, alert_id=alert_id, limit=limit)
+
+    return jsonify({
+        "success": True,
+        "history": history
+    })
+
+
+@api_bp.route('/rate-alerts/popular-pairs')
+def get_popular_pairs():
+    """Récupère les paires populaires avec leurs taux"""
+    service = get_rate_alert_service()
+    pairs = service.get_popular_pairs()
+
+    return jsonify({
+        "success": True,
+        "pairs": pairs
+    })
+
+
+@api_bp.route('/rate-alerts/suggestions')
+@login_required_api
+def get_rate_alert_suggestions():
+    """Récupère des suggestions d'alertes"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service = get_rate_alert_service()
+    suggestions = service.get_suggested_alerts(user_id)
+
+    return jsonify({
+        "success": True,
+        "suggestions": suggestions
+    })

@@ -15,7 +15,7 @@ def transactions():
 
     # Verifier si la collection existe
     if 'transactions' not in db.list_collection_names():
-        return render_template('admin/transactions.html', transactions=[])
+        return render_template('admin/transactions_2026.html', transactions=[], active_tab='admin_transactions')
 
     # Filtres
     status = request.args.get('status')
@@ -48,7 +48,7 @@ def transactions():
         except Exception:
             tx['user_email'] = 'Unknown'
 
-    return render_template('admin/transactions.html', transactions=all_transactions)
+    return render_template('admin/transactions_2026.html', transactions=all_transactions, active_tab='admin_transactions')
 
 
 @admin_bp.route('/transactions/<tx_id>/status', methods=['POST'])

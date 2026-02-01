@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Vérification 2FA - SarfX{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card animate-fade-in">
+        <!-- Logo -->
+        <div class="auth-logo">
+            <img src="{{ url_for('static', filename='images/sarfx-logo.png') }}" alt="SarfX" onerror="this.style.display='none'">
+            <h1>SarfX</h1>
+        </div>
+
+        <!-- 2FA Icon -->
+        <div class="tfa-icon-container">
+            <div class="tfa-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+            </div>
+        </div>
+
+        <h2 class="auth-title">Vérification en 2 étapes</h2>
+        <p class="auth-subtitle">
+            Entrez le code à 6 chiffres de votre application d'authentification
+            {% if email %}<br><strong>{{ email }}</strong>{% endif %}
+        </p>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 2FA Form -->
+        <form method="POST" action="{{ url_for('auth.verify_2fa') }}" class="auth-form" id="tfa-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Code Input -->
+            <div class="tfa-code-group">
+                <div class="tfa-code-inputs" id="tfa-inputs">
+                    <input type="text" maxlength="1" class="tfa-digit" data-index="0" autocomplete="off" autofocus>
+                    <input type="text" maxlength="1" class="tfa-digit" data-index="1" autocomplete="off">
+                    <input type="text" maxlength="1" class="tfa-digit" data-index="2" autocomplete="off">
+                    <span class="tfa-separator">-</span>
+                    <input type="text" maxlength="1" class="tfa-digit" data-index="3" autocomplete="off">
+                    <input type="text" maxlength="1" class="tfa-digit" data-index="4" autocomplete="off">
+                    <input type="text" maxlength="1" class="tfa-digit" data-index="5" autocomplete="off">
+                </div>
+                <input type="hidden" name="code" id="tfa-code-hidden">
+            </div>
+
+            <!-- Remember Device -->
+            <div class="tfa-remember">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="remember_device" id="remember_device">
+                    <span class="checkbox-custom"></span>
+                    <span>Faire confiance à cet appareil pendant 30 jours</span>
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="auth-btn auth-btn-primary" id="verify-btn">
+                <span>Vérifier</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
+        </form>
+
+        <!-- Backup Code Option -->
+        <div class="tfa-backup-option">
+            <p>Vous n'avez pas accès à votre application ?</p>
+            <button type="button" class="tfa-backup-btn" onclick="toggleBackupMode()">
+                Utiliser un code de secours
+            </button>
+        </div>
+
+        <!-- Back to Login -->
+        <a href="{{ url_for('auth.login') }}" class="auth-back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Retour à la connexion
+        </a>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.auth-card {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+}
+
+.auth-logo {
+    margin-bottom: 24px;
+}
+
+.auth-logo img {
+    height: 48px;
+    margin-bottom: 8px;
+}
+
+.auth-logo h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ff6f00;
+    margin: 0;
+}
+
+.tfa-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.tfa-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(34, 197, 94, 0.15);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #22c55e;
+}
+
+.auth-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0 0 8px 0;
+}
+
+.auth-subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+    margin: 0 0 28px 0;
+    line-height: 1.5;
+}
+
+.auth-subtitle strong {
+    color: #f8fafc;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.alert-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.alert-success {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #86efac;
+}
+
+.alert-info {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+}
+
+.auth-form {
+    margin-bottom: 24px;
+}
+
+.tfa-code-group {
+    margin-bottom: 24px;
+}
+
+.tfa-code-inputs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.tfa-digit {
+    width: 48px;
+    height: 56px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: 600;
+    text-align: center;
+    color: #f8fafc;
+    transition: all 0.2s;
+}
+
+.tfa-digit:focus {
+    outline: none;
+    border-color: #ff6f00;
+    background: rgba(255, 111, 0, 0.1);
+}
+
+.tfa-separator {
+    font-size: 24px;
+    color: #475569;
+    margin: 0 4px;
+}
+
+.tfa-remember {
+    margin-bottom: 24px;
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.checkbox-label input {
+    display: none;
+}
+
+.checkbox-custom {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.checkbox-label input:checked + .checkbox-custom {
+    background: #ff6f00;
+    border-color: #ff6f00;
+}
+
+.checkbox-label input:checked + .checkbox-custom::after {
+    content: '✓';
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.auth-btn-primary {
+    background: linear-gradient(135deg, #ff6f00 0%, #ff8f00 100%);
+    color: white;
+}
+
+.auth-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(255, 111, 0, 0.3);
+}
+
+.auth-btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.tfa-backup-option {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tfa-backup-option p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 8px 0;
+}
+
+.tfa-backup-btn {
+    background: none;
+    border: none;
+    color: #ff6f00;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.tfa-backup-btn:hover {
+    background: rgba(255, 111, 0, 0.1);
+}
+
+.auth-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.auth-back-link:hover {
+    color: #f8fafc;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Loading state */
+.auth-btn.loading span {
+    opacity: 0;
+}
+
+.auth-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('.tfa-digit');
+    const hiddenInput = document.getElementById('tfa-code-hidden');
+    const form = document.getElementById('tfa-form');
+    const verifyBtn = document.getElementById('verify-btn');
+
+    // Handle input
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            const value = e.target.value;
+
+            // Only allow digits
+            if (!/^\d*$/.test(value)) {
+                e.target.value = '';
+                return;
+            }
+
+            // Move to next input
+            if (value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+
+            // Update hidden input
+            updateHiddenCode();
+
+            // Auto-submit when all filled
+            if (getCode().length === 6) {
+                form.submit();
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !input.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+
+        // Handle paste
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+
+            pastedData.split('').forEach((char, i) => {
+                if (inputs[i]) {
+                    inputs[i].value = char;
+                }
+            });
+
+            updateHiddenCode();
+
+            if (pastedData.length === 6) {
+                inputs[5].focus();
+                setTimeout(() => form.submit(), 100);
+            }
+        });
+    });
+
+    function getCode() {
+        return Array.from(inputs).map(i => i.value).join('');
+    }
+
+    function updateHiddenCode() {
+        hiddenInput.value = getCode();
+    }
+
+    // Form submit
+    form.addEventListener('submit', function(e) {
+        const code = getCode();
+        if (code.length !== 6) {
+            e.preventDefault();
+            alert('Veuillez entrer un code à 6 chiffres');
+            return;
+        }
+
+        verifyBtn.classList.add('loading');
+        verifyBtn.disabled = true;
+    });
+});
+
+function toggleBackupMode() {
+    const inputs = document.querySelectorAll('.tfa-digit');
+    const subtitle = document.querySelector('.auth-subtitle');
+
+    // Clear inputs
+    inputs.forEach(i => i.value = '');
+    inputs[0].focus();
+
+    // Update subtitle
+    subtitle.innerHTML = 'Entrez l\'un de vos codes de secours à 8 caractères';
+
+    // Show toast
+    alert('Entrez un code de secours (format: XXXX-XXXX)');
+}
+</script>
+{% endblock %}

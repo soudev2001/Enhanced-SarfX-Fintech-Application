@@ -8,6 +8,14 @@ from app.decorators import login_required, role_required, get_current_user, get_
 app_bp = Blueprint('app', __name__)
 
 
+# ==================== OFFLINE PAGE ====================
+
+@app_bp.route('/offline')
+def offline():
+    """Page affichée quand l'utilisateur est hors ligne"""
+    return render_template('offline.html')
+
+
 
 
 
@@ -156,6 +164,17 @@ def rate_history():
     user = get_current_user()
     return render_template('app_rate_history.html',
         active_tab='rate_history',
+        user=user
+    )
+
+
+@app_bp.route('/rate-alerts')
+@login_required
+def rate_alerts():
+    """Page de gestion des alertes de taux"""
+    user = get_current_user()
+    return render_template('app_rate_alerts.html',
+        active_tab='rate_alerts',
         user=user
     )
 
@@ -758,7 +777,7 @@ def admin_sr_bank():
         for tx in transactions:
             stats['total_volume'] += float(tx.get('amount', 0))
 
-    return render_template('admin_sr_bank_dashboard.html',
+    return render_template('admin/sr_bank_dashboard_2026.html',
         user=user,
         stats=stats
     )
@@ -790,7 +809,7 @@ def admin_associate_bank():
             # En production, récupérer depuis une collection api_logs
             bank_stats['api_calls'] = 0
 
-    return render_template('admin_associate_bank_dashboard.html',
+    return render_template('admin/associate_bank_dashboard_2026.html',
         user=user,
         bank=user_bank,
         stats=bank_stats
@@ -826,7 +845,7 @@ def admin_api_control():
                 'last_sync': bank.get('last_api_sync')
             })
 
-    return render_template('admin_api_control.html',
+    return render_template('admin/api_control_2026.html',
         user=user,
         api_info=api_info
     )
@@ -846,7 +865,7 @@ def admin_atm_management():
             for atm in atms:
                 atm['_id'] = str(atm['_id'])
 
-    return render_template('admin_atm_management.html',
+    return render_template('admin/atm_management_2026.html',
         user=user,
         atms=atms
     )

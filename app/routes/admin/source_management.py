@@ -12,4 +12,4 @@ def sources():
 
     sources_list = list(db.sources.find().sort('imported_at', -1)) if 'sources' in db.list_collection_names() else []
 
-    return render_template('admin/sources.html', sources=sources_list)
+    return render_template('admin/sources_2026.html', sources=sources_list, active_tab='admin_sources')

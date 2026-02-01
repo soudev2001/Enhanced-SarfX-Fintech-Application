@@ -1,0 +1,355 @@
+{% extends "app_base.html" %}
+
+{% block title %}Hors Ligne - SarfX{% endblock %}
+
+{% block content %}
+<div class="offline-container">
+    <div class="offline-content animate-fade-in">
+        <!-- Offline Icon -->
+        <div class="offline-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="1" y1="1" x2="23" y2="23"/>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+        </div>
+
+        <h1 class="offline-title">Vous êtes hors ligne</h1>
+        <p class="offline-subtitle">
+            Pas de connexion Internet détectée.<br>
+            Vérifiez votre connexion et réessayez.
+        </p>
+
+        <!-- Cached Data Available -->
+        <div class="offline-cached-info" id="cached-info" style="display: none;">
+            <div class="cached-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <polyline points="9 12 12 15 16 10"/>
+                </svg>
+                <span>Données en cache disponibles</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="offline-actions">
+            <button onclick="tryReconnect()" class="offline-btn offline-btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Réessayer
+            </button>
+
+            <button onclick="goToHome()" class="offline-btn offline-btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Accueil (cache)
+            </button>
+        </div>
+
+        <!-- Available Offline Features -->
+        <div class="offline-features">
+            <h3>Fonctionnalités disponibles hors ligne :</h3>
+            <ul>
+                <li>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Consultation des derniers taux (cache)
+                </li>
+                <li>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Historique des transactions récentes
+                </li>
+                <li>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Liste des bénéficiaires
+                </li>
+            </ul>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="connection-status" id="connection-status">
+            <span class="status-dot offline"></span>
+            <span>Hors ligne</span>
+        </div>
+    </div>
+</div>
+
+<style>
+.offline-container {
+    min-height: calc(100vh - 140px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.offline-content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.offline-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border-radius: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+}
+
+.offline-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.offline-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+}
+
+.offline-cached-info {
+    margin-bottom: 24px;
+}
+
+.cached-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 20px;
+    font-size: 13px;
+    color: #22c55e;
+}
+
+.offline-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.offline-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.offline-btn-primary {
+    background: linear-gradient(135deg, #ff6f00 0%, #ff8f00 100%);
+    color: white;
+}
+
+.offline-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 111, 0, 0.3);
+}
+
+.offline-btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.offline-btn-secondary:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-light);
+}
+
+.offline-features {
+    text-align: left;
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+
+.offline-features h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+}
+
+.offline-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.offline-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.offline-features li svg {
+    color: #22c55e;
+    flex-shrink: 0;
+}
+
+.connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot.offline {
+    background: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+    background: #22c55e;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+</style>
+
+<script>
+// Check for cached data
+if ('caches' in window) {
+    caches.has('sarfx-dynamic-v2').then(exists => {
+        if (exists) {
+            document.getElementById('cached-info').style.display = 'block';
+        }
+    });
+}
+
+// Try to reconnect
+function tryReconnect() {
+    const btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        Connexion...
+    `;
+
+    fetch('/api/health', { cache: 'no-store' })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                throw new Error('Still offline');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Réessayer
+            `;
+            showToast('Toujours hors ligne', 'error');
+        });
+}
+
+// Go to home (cached version)
+function goToHome() {
+    window.location.href = '/app/home';
+}
+
+// Monitor online status
+window.addEventListener('online', () => {
+    const status = document.getElementById('connection-status');
+    status.innerHTML = `
+        <span class="status-dot online"></span>
+        <span>En ligne</span>
+    `;
+    showToast('Connexion rétablie !', 'success');
+    setTimeout(() => window.location.reload(), 1000);
+});
+
+window.addEventListener('offline', () => {
+    const status = document.getElementById('connection-status');
+    status.innerHTML = `
+        <span class="status-dot offline"></span>
+        <span>Hors ligne</span>
+    `;
+});
+
+// Toast notification
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background: ${type === 'success' ? '#22c55e' : '#ef4444'};
+        color: white;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9999;
+        animation: slideUp 0.3s ease-out;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+{% endblock %}

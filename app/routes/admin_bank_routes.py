@@ -41,7 +41,7 @@ def list_banks():
     for user in bank_respos:
         user['_id'] = str(user['_id'])
 
-    return render_template('admin/banks.html', banks=banks, users=bank_respos, active_tab='banks')
+    return render_template('admin/banks_2026.html', banks=banks, users=bank_respos, active_tab='admin_banks')
 
 @admin_banks_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
@@ -95,7 +95,7 @@ def create_bank():
         flash(f'Banque "{name}" créée avec succès!', 'success')
         return redirect(url_for('admin_banks.list_banks'))
 
-    return render_template('admin/bank_form.html', bank=None, action='create')
+    return render_template('admin/bank_form_2026.html', bank=None, action='create')
 
 @admin_banks_bp.route('/edit/<bank_id>', methods=['GET', 'POST'])
 @admin_required
@@ -141,7 +141,7 @@ def edit_bank(bank_id):
         return redirect(url_for('admin_banks.list_banks'))
 
     bank['_id'] = str(bank['_id'])
-    return render_template('admin/bank_form.html', bank=bank, action='edit')
+    return render_template('admin/bank_form_2026.html', bank=bank, action='edit')
 
 @admin_banks_bp.route('/delete/<bank_id>', methods=['POST'])
 @admin_required

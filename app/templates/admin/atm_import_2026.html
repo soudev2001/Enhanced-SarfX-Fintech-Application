@@ -1,0 +1,231 @@
+{% extends "app_base.html" %}
+
+{% block title %}Import ATM - Admin SarfX{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-2026.css') }}">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper fade-in-up">
+
+    <!-- Admin Header -->
+    <div class="admin-header-2026">
+        <div class="admin-header-content">
+            <div class="admin-header-left">
+                <a href="{{ url_for('admin.atms') }}" class="admin-btn-link mb-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Retour à la liste
+                </a>
+                <h1 class="admin-title">
+                    <span class="admin-title-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                        <i data-lucide="upload" class="w-8 h-8"></i>
+                    </span>
+                    Importer des ATM
+                </h1>
+                <p class="admin-subtitle">Importez des données ATM depuis un fichier CSV</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="admin-card admin-card-info">
+        <div class="admin-card-body">
+            <div class="admin-info-content">
+                <div class="admin-info-icon">
+                    <i data-lucide="info" class="w-6 h-6"></i>
+                </div>
+                <div class="admin-info-text">
+                    <h4>Format du fichier CSV</h4>
+                    <p>Le fichier CSV doit contenir les colonnes suivantes (en-têtes obligatoires) :</p>
+                    <div class="admin-code-block">
+                        <code>ATM ID,Banque,Nom,Adresse,Ville,District,Latitude,Longitude,Type,Services,Statut,24h,Horaires,Accès PMR,NFC</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="file-up" class="w-5 h-5 text-blue-500"></i>
+                Téléverser le fichier
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <form method="POST" enctype="multipart/form-data" id="import-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div id="dropzone" class="admin-dropzone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" name="file" id="file-input" accept=".csv" class="hidden" required>
+                    <i data-lucide="upload-cloud" class="admin-dropzone-icon"></i>
+                    <p class="admin-dropzone-title">Glissez-déposez votre fichier CSV ici</p>
+                    <p class="admin-dropzone-subtitle">ou cliquez pour sélectionner un fichier</p>
+                    <p id="file-name" class="admin-dropzone-filename hidden"></p>
+                </div>
+
+                <div class="admin-form-actions mt-6">
+                    <a href="{{ url_for('admin.export_atms') }}" class="admin-btn admin-btn-outline-secondary">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Télécharger le modèle
+                    </a>
+                    <button type="submit" id="submit-btn" class="admin-btn admin-btn-primary" disabled>
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        Importer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sample Data -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="table" class="w-5 h-5 text-green-500"></i>
+                Exemple de données
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ATM ID</th>
+                            <th>Banque</th>
+                            <th>Nom</th>
+                            <th>Ville</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-mono">ATW_CAS_00001</td>
+                            <td>attijariwafa</td>
+                            <td>ATM Twin Center</td>
+                            <td>Casablanca</td>
+                            <td>33.591370</td>
+                            <td>-7.626690</td>
+                        </tr>
+                        <tr>
+                            <td class="font-mono">BCP_RAB_00001</td>
+                            <td>banque_populaire</td>
+                            <td>ATM Agdal</td>
+                            <td>Rabat</td>
+                            <td>33.984560</td>
+                            <td>-6.847890</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Codes Reference -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">
+                <i data-lucide="building-2" class="w-5 h-5 text-purple-500"></i>
+                Codes des banques partenaires
+            </h3>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-bank-codes-grid">
+                <div class="admin-bank-code-item">
+                    <div class="admin-bank-code-avatar" style="background: #E30613">AT</div>
+                    <div class="admin-bank-code-info">
+                        <span class="admin-bank-code-value">attijariwafa</span>
+                        <span class="admin-bank-code-name">Attijariwafa Bank</span>
+                    </div>
+                </div>
+                <div class="admin-bank-code-item">
+                    <div class="admin-bank-code-avatar" style="background: #00843D">BO</div>
+                    <div class="admin-bank-code-info">
+                        <span class="admin-bank-code-value">boa</span>
+                        <span class="admin-bank-code-name">Bank of Africa</span>
+                    </div>
+                </div>
+                <div class="admin-bank-code-item">
+                    <div class="admin-bank-code-avatar" style="background: #005BAA">BP</div>
+                    <div class="admin-bank-code-info">
+                        <span class="admin-bank-code-value">banque_populaire</span>
+                        <span class="admin-bank-code-name">Banque Populaire</span>
+                    </div>
+                </div>
+                <div class="admin-bank-code-item">
+                    <div class="admin-bank-code-avatar" style="background: #C41E3A">CI</div>
+                    <div class="admin-bank-code-info">
+                        <span class="admin-bank-code-value">cih</span>
+                        <span class="admin-bank-code-name">CIH Bank</span>
+                    </div>
+                </div>
+                <div class="admin-bank-code-item">
+                    <div class="admin-bank-code-avatar" style="background: #DC0032">BM</div>
+                    <div class="admin-bank-code-info">
+                        <span class="admin-bank-code-value">bmci</span>
+                        <span class="admin-bank-code-name">BMCI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Bottom Navigation -->
+{% include 'admin/partials/bottom_nav.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const fileName = document.getElementById('file-name');
+const submitBtn = document.getElementById('submit-btn');
+
+// Drag and drop
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('admin-dropzone-active');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('admin-dropzone-active');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('admin-dropzone-active');
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.csv')) {
+        fileInput.files = files;
+        updateFileName(files[0].name);
+    }
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        updateFileName(fileInput.files[0].name);
+    }
+});
+
+function updateFileName(name) {
+    fileName.textContent = '📄 ' + name;
+    fileName.classList.remove('hidden');
+    submitBtn.disabled = false;
+}
+
+// Init Lucide
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
+</script>
+{% endblock %}
