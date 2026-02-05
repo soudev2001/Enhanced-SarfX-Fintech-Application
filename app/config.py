@@ -32,7 +32,8 @@ class Config:
     SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
 
     # Session Security
-    SESSION_COOKIE_SECURE = True  # Requis pour HTTPS (Cloud Run)
+    # SESSION_COOKIE_SECURE requires HTTPS - set via FORCE_HTTPS env var
+    SESSION_COOKIE_SECURE = os.environ.get("FORCE_HTTPS", "").lower() == "true"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = 3600  # 1 heure
