@@ -130,9 +130,9 @@ def create_app():
         """Health check endpoint for Docker/Kubernetes"""
         from flask import jsonify
         from .services.db_service import get_db
-        
+
         status = {"status": "healthy", "service": "sarfx-flask"}
-        
+
         # Check MongoDB connection
         try:
             db = get_db()
@@ -144,7 +144,7 @@ def create_app():
         except Exception as e:
             status["mongodb"] = f"error: {str(e)}"
             status["status"] = "degraded"
-        
+
         return jsonify(status), 200 if status["status"] == "healthy" else 503
 
     # Gestionnaires d'erreurs

@@ -157,15 +157,17 @@ services:
         condition: service_healthy
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Use preprod config (HTTP only) - switch to sarfx.conf when SSL is ready
-      - ./nginx/conf.d/sarfx-preprod.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL config with HTTPS
+      - ./nginx/conf.d/sarfx-ssl.conf:/etc/nginx/conf.d/default.conf:ro
       - ./app/static:/var/www/static:ro
       - nginx_logs:/var/log/nginx
-      # SSL Certificates (Let's Encrypt) - uncomment when ready
-      # - /etc/letsencrypt:/etc/letsencrypt:ro
+      # SSL Certificates (Let's Encrypt)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # ACME challenge directory for cert renewal
+      - /var/www/certbot:/var/www/certbot:ro
     ports:
       - "80:80"
-      # - "443:443"  # Uncomment when SSL is ready
+      - "443:443"
     networks:
       - sarfx-network
     logging:
