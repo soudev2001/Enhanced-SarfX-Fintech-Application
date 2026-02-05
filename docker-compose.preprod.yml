@@ -1,0 +1,149 @@
+# ===========================================
+# SarfX Enhanced - Docker Compose Pre-Production
+# ===========================================
+# Environnement de pré-production (staging)
+# - Configuration proche de la prod
+# - Sans SSL (HTTP uniquement)
+# - Avec outils de debug limités
+# - Auth MongoDB/Redis activée
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.preprod.yml up -d
+#   OU: make preprod
+
+services:
+  # ===========================================
+  # MongoDB - Avec authentification
+  # ===========================================
+  mongo:
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-preprod123}
+    command: mongod --auth --bind_ip_all
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===========================================
+  # Redis - Avec authentification
+  # ===========================================
+  redis:
+    command: redis-server --requirepass ${REDIS_PASSWORD:-preprod_redis}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===========================================
+  # Flask Application - Gunicorn
+  # ===========================================
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - FLASK_ENV=staging
+      - MONGO_LOCAL=true
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_DB=SarfX_Enhanced
+      - MONGO_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_PASSWORD=${MONGO_ROOT_PASSWORD:-preprod123}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-preprod_redis}@redis:6379/0
+      - AI_BACKEND_URL=http://ai-backend:8087
+      - LOG_LEVEL=INFO
+    command: >
+      gunicorn
+      --bind 0.0.0.0:5050
+      --workers 2
+      --threads 2
+      --timeout 60
+      --access-logfile -
+      --error-logfile -
+      --capture-output
+      "app:create_app()"
+    ports:
+      - "${FLASK_PORT:-5050}:5050"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ===========================================
+  # AI Backend - FastAPI
+  # ===========================================
+  ai-backend:
+    environment:
+      - MONGO_LOCAL=true
+      - MONGO_HOST=mongo
+      - MONGO_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_PASSWORD=${MONGO_ROOT_PASSWORD:-preprod123}
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # ===========================================
+  # Nginx - Sans SSL (HTTP only pour preprod)
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: sarfx-nginx-preprod
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/sarfx-preprod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./app/static:/var/www/static:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      flask-app:
+        condition: service_healthy
+    networks:
+      - sarfx-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================
+  # Mongo Express - Accès restreint
+  # ===========================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: sarfx-mongo-express-preprod
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-preprod123}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-preprod123}@mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USERNAME:-preprod}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD:-preprod123}
+    ports:
+      - "127.0.0.1:8081:8081"  # Localhost only
+    depends_on:
+      - mongo
+    networks:
+      - sarfx-network
+    restart: unless-stopped
+
+volumes:
+  nginx_logs:
+
+networks:
+  sarfx-network:
+    driver: bridge

@@ -3,11 +3,12 @@
 # ===========================================
 # Commandes simplifiées pour Docker Compose
 
-.PHONY: help dev prod build up down logs shell clean seed test
+.PHONY: help dev prod preprod build up down logs shell clean seed test
 
 # Variables
 COMPOSE_BASE = docker-compose -f docker-compose.yml
 COMPOSE_DEV = $(COMPOSE_BASE) -f docker-compose.dev.yml
+COMPOSE_PREPROD = $(COMPOSE_BASE) -f docker-compose.preprod.yml
 COMPOSE_PROD = $(COMPOSE_BASE) -f docker-compose.prod.yml
 
 # Couleurs
@@ -41,6 +42,20 @@ dev-d: ## Démarre le dev en arrière-plan
 dev-down: ## Arrête l'environnement de développement
 	@echo "$(RED)⏹️  Stopping development environment...$(NC)"
 	$(COMPOSE_DEV) down
+
+# ===========================================
+# PRÉ-PRODUCTION (Staging)
+# ===========================================
+preprod: ## Démarre l'environnement de pré-production
+	@echo "$(YELLOW)🎭 Starting pre-production environment...$(NC)"
+	$(COMPOSE_PREPROD) up --build -d
+
+preprod-down: ## Arrête l'environnement de pré-production
+	@echo "$(RED)⏹️  Stopping pre-production environment...$(NC)"
+	$(COMPOSE_PREPROD) down
+
+preprod-logs: ## Logs de la pré-production
+	$(COMPOSE_PREPROD) logs -f
 
 # ===========================================
 # PRODUCTION
