@@ -1,0 +1,157 @@
+# ===========================================
+# SarfX Enhanced - Docker Compose Base
+# ===========================================
+# Configuration commune pour tous les environnements
+# Usage:
+#   Dev:  docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   Prod: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # ============================================
+  # MongoDB - Base de données principale
+  # ============================================
+  mongo:
+    image: mongo:7.0
+    container_name: sarfx-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: SarfX_Enhanced
+      # En prod, ajouter auth:
+      # MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      # MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+      - ./scripts/seed/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    networks:
+      - sarfx-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # Redis - Cache et Rate Limiting
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: sarfx-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - sarfx-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Flask App - Application principale
+  # ============================================
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sarfx-flask
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database
+      MONGO_URI: mongodb://mongo:27017/SarfX_Enhanced
+      MONGO_LOCAL: "true"
+      # Cache
+      REDIS_URL: redis://redis:6379/0
+      CACHE_TYPE: redis
+      # Backend IA
+      AI_BACKEND_URL: http://ai-backend:8087
+      AI_BACKEND_TIMEOUT: "5"
+      # App Config
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-with-32-chars}
+      # Email (optionnel)
+      SMTP_EMAIL: ${SMTP_EMAIL:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SERVER: ${SMTP_SERVER:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      # OAuth (optionnel)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - flask_uploads:/app/uploads
+      - flask_logs:/app/logs
+    ports:
+      - "${FLASK_PORT:-5050}:5050"
+    networks:
+      - sarfx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================
+  # AI Backend - Moteur ML/Arbitrage (FastAPI)
+  # ============================================
+  ai-backend:
+    build:
+      context: ./SarfX Backend
+      dockerfile: Dockerfile
+    container_name: sarfx-ai
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://mongo:27017/SarfX_Enhanced
+      MONGO_LOCAL: "true"
+      AI_PORT: "8087"
+      PORT: "8087"
+    ports:
+      - "${AI_PORT:-8087}:8087"
+    networks:
+      - sarfx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  sarfx-network:
+    driver: bridge
+    name: sarfx-network
+
+# ============================================
+# Volumes persistants
+# ============================================
+volumes:
+  mongo_data:
+    name: sarfx-mongo-data
+  mongo_config:
+    name: sarfx-mongo-config
+  redis_data:
+    name: sarfx-redis-data
+  flask_uploads:
+    name: sarfx-flask-uploads
+  flask_logs:
+    name: sarfx-flask-logs

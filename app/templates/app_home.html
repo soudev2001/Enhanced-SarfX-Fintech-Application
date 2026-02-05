@@ -295,51 +295,52 @@
                 <i data-lucide="landmark" style="width: 18px; height: 18px; color: var(--brand-primary);"></i>
                 Banques Partenaires
             </h2>
+            <a href="{{ url_for('app.banks_list') }}" class="wise-link">Voir tout</a>
         </div>
 
         <div class="wise-banks-grid">
             {% if banks and banks|length > 0 %}
                 {% for bank in banks[:6] %}
-                <div class="wise-bank-item">
+                <a href="{{ url_for('app.bank_detail', bank_id=bank._id) }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     {% if bank.logo %}
                     <img src="{{ bank.logo }}" alt="{{ bank.name }}" class="wise-bank-logo">
                     {% else %}
                     <div class="wise-bank-placeholder">{{ bank.name[:2] | upper }}</div>
                     {% endif %}
                     <span class="wise-bank-name">{{ bank.name }}</span>
-                </div>
+                </a>
                 {% endfor %}
             {% else %}
-                <div class="wise-bank-item">
+                <a href="{{ url_for('app.banks_list') }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     <img src="{{ url_for('static', filename='images/banks/attijariwafa.svg') }}" alt="Attijariwafa" class="wise-bank-logo">
                     <span class="wise-bank-name">Attijariwafa</span>
-                </div>
-                <div class="wise-bank-item">
+                </a>
+                <a href="{{ url_for('app.banks_list') }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     <img src="{{ url_for('static', filename='images/banks/banque-populaire.svg') }}" alt="Banque Populaire" class="wise-bank-logo">
                     <span class="wise-bank-name">B. Populaire</span>
-                </div>
-                <div class="wise-bank-item">
+                </a>
+                <a href="{{ url_for('app.banks_list') }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     <img src="{{ url_for('static', filename='images/banks/cih.svg') }}" alt="CIH" class="wise-bank-logo">
                     <span class="wise-bank-name">CIH Bank</span>
-                </div>
-                <div class="wise-bank-item">
+                </a>
+                <a href="{{ url_for('app.banks_list') }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     <img src="{{ url_for('static', filename='images/banks/boa.svg') }}" alt="BOA" class="wise-bank-logo">
                     <span class="wise-bank-name">Bank of Africa</span>
-                </div>
-                <div class="wise-bank-item">
+                </a>
+                <a href="{{ url_for('app.banks_list') }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     <img src="{{ url_for('static', filename='images/banks/bmci.svg') }}" alt="BMCI" class="wise-bank-logo">
                     <span class="wise-bank-name">BMCI</span>
-                </div>
-                <div class="wise-bank-item">
+                </a>
+                <a href="{{ url_for('app.banks_list') }}" class="wise-bank-item" style="text-decoration: none; color: inherit;">
                     <img src="{{ url_for('static', filename='images/banks/albarid.svg') }}" alt="Al Barid" class="wise-bank-logo">
                     <span class="wise-bank-name">Al Barid</span>
-                </div>
+                </a>
             {% endif %}
         </div>
 
         <p class="wise-banks-footer">
-            <span class="wise-highlight">{{ banks|length if banks else 6 }}</span> banques •
-            <span class="wise-highlight">250+</span> distributeurs
+            <span class="wise-highlight">{{ bank_count|default(banks|length if banks else 6) }}</span> banques •
+            <span class="wise-highlight">{{ atm_count|default(250) }}{% if atm_count|default(0) > 0 %}{% else %}+{% endif %}</span> distributeurs
         </p>
     </section>
 
@@ -962,11 +963,13 @@
     border: 1px solid var(--border-light);
     border-radius: 12px;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .wise-bank-item:hover {
     border-color: var(--brand-primary);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(224, 90, 3, 0.15);
 }
 
 .wise-bank-logo {

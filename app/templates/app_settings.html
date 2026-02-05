@@ -47,19 +47,30 @@
             </button>
         </div>
 
-        <!-- Color Accent (Preview) -->
-        <div class="wise-setting-row hover-lift" style="opacity: 0.7;">
+        <!-- Color Accent Selector -->
+        <div class="wise-setting-row hover-lift" id="accent-color-row">
             <div class="wise-setting-info">
                 <div class="wise-setting-icon-mini" style="background: rgba(255, 111, 0, 0.15);">
-                    <i data-lucide="droplet" style="width: 18px; height: 18px; color: var(--brand-primary);"></i>
+                    <i data-lucide="palette" style="width: 18px; height: 18px; color: var(--brand-primary);"></i>
                 </div>
                 <div>
                     <span class="wise-setting-title">Couleur d'accentuation</span>
-                    <p class="wise-setting-subtitle">Bientôt disponible</p>
+                    <p class="wise-setting-subtitle">Personnalisez l'apparence</p>
                 </div>
             </div>
-            <div class="wise-color-preview">
-                <span class="wise-color-dot" style="background: #ff6f00;"></span>
+            <div class="wise-color-selector">
+                <button type="button" class="wise-color-option" data-color="orange" style="background: #e05a03;" title="Orange" onclick="setAccentColor('orange')"></button>
+                <button type="button" class="wise-color-option" data-color="blue" style="background: #3b82f6;" title="Bleu" onclick="setAccentColor('blue')"></button>
+                <button type="button" class="wise-color-option" data-color="green" style="background: #22c55e;" title="Vert" onclick="setAccentColor('green')"></button>
+                <button type="button" class="wise-color-option" data-color="purple" style="background: #8b5cf6;" title="Violet" onclick="setAccentColor('purple')"></button>
+                <button type="button" class="wise-color-option" data-color="pink" style="background: #ec4899;" title="Rose" onclick="setAccentColor('pink')"></button>
+                <button type="button" class="wise-color-option" data-color="red" style="background: #ef4444;" title="Rouge" onclick="setAccentColor('red')"></button>
+                <button type="button" class="wise-color-option" data-color="teal" style="background: #14b8a6;" title="Turquoise" onclick="setAccentColor('teal')"></button>
+                <button type="button" class="wise-color-option" data-color="amber" style="background: #f59e0b;" title="Ambre" onclick="setAccentColor('amber')"></button>
+                <button type="button" class="wise-color-option" data-color="cyan" style="background: #06b6d4;" title="Cyan" onclick="setAccentColor('cyan')"></button>
+                <button type="button" class="wise-color-option" data-color="indigo" style="background: #6366f1;" title="Indigo" onclick="setAccentColor('indigo')"></button>
+                <button type="button" class="wise-color-option" data-color="lime" style="background: #84cc16;" title="Lime" onclick="setAccentColor('lime')"></button>
+                <button type="button" class="wise-color-option" data-color="rose" style="background: #f43f5e;" title="Rose vif" onclick="setAccentColor('rose')"></button>
             </div>
         </div>
     </div>
@@ -881,9 +892,131 @@
 [data-theme="dark"] #theme-icon-container {
     background: rgba(245, 158, 11, 0.15) !important;
 }
+
+/* Color Selector Styles */
+.wise-color-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    max-width: 180px;
+    justify-content: flex-end;
+}
+
+.wise-color-option {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.wise-color-option:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.wise-color-option.active {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.wise-color-option.active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 480px) {
+    .wise-color-selector {
+        gap: 6px;
+        max-width: 150px;
+    }
+    .wise-color-option {
+        width: 22px;
+        height: 22px;
+    }
+}
 </style>
 
 <script>
+// Accent Color Management
+const ACCENT_COLORS = {
+    orange: { primary: '#e05a03', light: '#ff7a2e', bg: 'rgba(224, 90, 3, 0.15)' },
+    blue: { primary: '#3b82f6', light: '#60a5fa', bg: 'rgba(59, 130, 246, 0.15)' },
+    green: { primary: '#22c55e', light: '#4ade80', bg: 'rgba(34, 197, 94, 0.15)' },
+    purple: { primary: '#8b5cf6', light: '#a78bfa', bg: 'rgba(139, 92, 246, 0.15)' },
+    pink: { primary: '#ec4899', light: '#f472b6', bg: 'rgba(236, 72, 153, 0.15)' },
+    red: { primary: '#ef4444', light: '#f87171', bg: 'rgba(239, 68, 68, 0.15)' },
+    teal: { primary: '#14b8a6', light: '#2dd4bf', bg: 'rgba(20, 184, 166, 0.15)' },
+    amber: { primary: '#f59e0b', light: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)' },
+    cyan: { primary: '#06b6d4', light: '#22d3ee', bg: 'rgba(6, 182, 212, 0.15)' },
+    indigo: { primary: '#6366f1', light: '#818cf8', bg: 'rgba(99, 102, 241, 0.15)' },
+    lime: { primary: '#84cc16', light: '#a3e635', bg: 'rgba(132, 204, 22, 0.15)' },
+    rose: { primary: '#f43f5e', light: '#fb7185', bg: 'rgba(244, 63, 94, 0.15)' }
+};
+
+function setAccentColor(color) {
+    if (!ACCENT_COLORS[color]) return;
+
+    const colors = ACCENT_COLORS[color];
+
+    // Update CSS variables
+    document.documentElement.style.setProperty('--brand-primary', colors.primary);
+    document.documentElement.style.setProperty('--brand-primary-light', colors.light);
+    document.documentElement.style.setProperty('--color-primary', colors.primary);
+    document.documentElement.style.setProperty('--color-primary-light', colors.light);
+
+    // Update active state
+    document.querySelectorAll('.wise-color-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.color === color);
+    });
+
+    // Save to localStorage
+    localStorage.setItem('sarfx_accent_color', color);
+
+    // Save to server
+    fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accent_color: color })
+    }).then(res => res.json()).then(data => {
+        if (data.success) {
+            showToast('Couleur d\'accentuation mise à jour', 'success');
+        }
+    }).catch(err => console.error('Error saving accent color:', err));
+}
+
+function loadAccentColor() {
+    // Try localStorage first, then check for server-side value
+    const savedColor = localStorage.getItem('sarfx_accent_color') || '{{ user.accent_color|default("orange") }}';
+    if (savedColor && ACCENT_COLORS[savedColor]) {
+        const colors = ACCENT_COLORS[savedColor];
+        document.documentElement.style.setProperty('--brand-primary', colors.primary);
+        document.documentElement.style.setProperty('--brand-primary-light', colors.light);
+        document.documentElement.style.setProperty('--color-primary', colors.primary);
+        document.documentElement.style.setProperty('--color-primary-light', colors.light);
+
+        // Mark active button
+        document.querySelectorAll('.wise-color-option').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.color === savedColor);
+        });
+    }
+}
+
+// Load accent color on page load
+document.addEventListener('DOMContentLoaded', loadAccentColor);
+
 // Enhanced Theme Toggle
 function toggleThemeEnhanced() {
     const html = document.documentElement;

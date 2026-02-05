@@ -1,0 +1,596 @@
+{% extends "app_base.html" %}
+
+{% block title %}{{ bank.name }} - SarfX{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Bank Detail Page - 2026 Premium Design */
+    .bank-detail-header {
+        background: linear-gradient(135deg, {{ bank.color if bank.color else 'var(--brand-primary)' }} 0%, {{ bank.color if bank.color else '#ff8a3d' }}dd 100%);
+        padding: 40px 24px;
+        border-radius: var(--radius-2xl);
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .bank-detail-header::before {
+        content: '';
+        position: absolute;
+        top: -30%;
+        right: -10%;
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .bank-detail-header::after {
+        content: '';
+        position: absolute;
+        bottom: -50%;
+        left: -10%;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .bank-detail-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .bank-detail-logo {
+        width: 100px;
+        height: 100px;
+        border-radius: var(--radius-xl);
+        object-fit: contain;
+        background: white;
+        padding: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .bank-detail-logo-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: var(--radius-xl);
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 800;
+        color: white;
+    }
+
+    .bank-detail-info h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 4px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .bank-detail-info p {
+        font-size: 16px;
+        color: rgba(255,255,255,0.85);
+        margin-bottom: 16px;
+    }
+
+    .bank-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .bank-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        border-radius: var(--radius-full);
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .bank-badge i {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Back Button */
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .back-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .back-btn i {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Stats Cards */
+    .bank-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .bank-stat-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .bank-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .bank-stat-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 12px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bank-stat-icon.primary {
+        background: linear-gradient(135deg, rgba(224,90,3,0.15), rgba(255,138,61,0.1));
+    }
+
+    .bank-stat-icon.success {
+        background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(52,211,153,0.1));
+    }
+
+    .bank-stat-icon.info {
+        background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.1));
+    }
+
+    .bank-stat-icon i {
+        width: 24px;
+        height: 24px;
+    }
+
+    .bank-stat-card h3 {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .bank-stat-card p {
+        font-size: 13px;
+        color: var(--text-tertiary);
+    }
+
+    /* Section */
+    .detail-section {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .detail-section-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .detail-section-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .detail-section-header h2 i {
+        width: 20px;
+        height: 20px;
+        color: var(--brand-primary);
+    }
+
+    .detail-section-body {
+        padding: 24px;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .info-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* ATMs List */
+    .atms-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .atm-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        transition: all 0.2s;
+    }
+
+    .atm-item:hover {
+        background: var(--bg-primary);
+        transform: translateX(4px);
+    }
+
+    .atm-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, var(--success), #34d399);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .atm-icon i {
+        width: 22px;
+        height: 22px;
+        color: white;
+    }
+
+    .atm-info {
+        flex: 1;
+    }
+
+    .atm-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .atm-info p {
+        font-size: 13px;
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .atm-info p i {
+        width: 14px;
+        height: 14px;
+    }
+
+    .atm-status {
+        padding: 6px 12px;
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .atm-status.active {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .view-all-atms {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        color: var(--brand-primary);
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.2s;
+        margin-top: 12px;
+    }
+
+    .view-all-atms:hover {
+        background: var(--brand-primary);
+        color: white;
+    }
+
+    .view-all-atms i {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Contact Section */
+    .contact-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .contact-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .contact-link:hover {
+        background: var(--brand-primary);
+        color: white;
+    }
+
+    .contact-link i {
+        width: 18px;
+        height: 18px;
+    }
+
+    @media (max-width: 640px) {
+        .bank-detail-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .bank-badges {
+            justify-content: center;
+        }
+
+        .bank-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container" style="padding: 20px; max-width: 1000px; margin: 0 auto;">
+
+    <!-- Back Button -->
+    <a href="{{ url_for('app.banks_list') }}" class="back-btn">
+        <i data-lucide="arrow-left"></i>
+        Retour aux banques
+    </a>
+
+    <!-- Header -->
+    <div class="bank-detail-header">
+        <div class="bank-detail-content">
+            {% if bank.logo %}
+            <img src="{{ bank.logo }}" alt="{{ bank.name }}" class="bank-detail-logo">
+            {% else %}
+            <div class="bank-detail-logo-placeholder">{{ bank.name[:2] | upper }}</div>
+            {% endif %}
+
+            <div class="bank-detail-info">
+                <h1>{{ bank.name }}</h1>
+                <p>{{ bank.name_ar if bank.name_ar else 'Banque Partenaire SarfX' }}</p>
+
+                <div class="bank-badges">
+                    <span class="bank-badge">
+                        <i data-lucide="shield-check"></i>
+                        Partenaire Vérifié
+                    </span>
+                    <span class="bank-badge">
+                        <i data-lucide="credit-card"></i>
+                        Retrait ATM
+                    </span>
+                    {% if bank.swift_code %}
+                    <span class="bank-badge">
+                        <i data-lucide="globe"></i>
+                        SWIFT: {{ bank.swift_code }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="bank-stats-grid">
+        <div class="bank-stat-card">
+            <div class="bank-stat-icon primary">
+                <i data-lucide="map-pin" style="color: var(--brand-primary);"></i>
+            </div>
+            <h3>{{ stats.atm_count }}</h3>
+            <p>Distributeurs</p>
+        </div>
+        <div class="bank-stat-card">
+            <div class="bank-stat-icon success">
+                <i data-lucide="building-2" style="color: var(--success);"></i>
+            </div>
+            <h3>{{ stats.cities }}</h3>
+            <p>Villes couvertes</p>
+        </div>
+        <div class="bank-stat-card">
+            <div class="bank-stat-icon info">
+                <i data-lucide="clock" style="color: #3b82f6;"></i>
+            </div>
+            <h3>24/7</h3>
+            <p>Disponibilité</p>
+        </div>
+    </div>
+
+    <!-- Bank Info -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="info"></i>
+                Informations
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Code Banque</span>
+                    <span class="info-value">{{ bank.code | upper if bank.code else bank.bank_code | upper if bank.bank_code else 'N/A' }}</span>
+                </div>
+                {% if bank.swift_code %}
+                <div class="info-item">
+                    <span class="info-label">Code SWIFT</span>
+                    <span class="info-value">{{ bank.swift_code }}</span>
+                </div>
+                {% endif %}
+                {% if bank.website %}
+                <div class="info-item">
+                    <span class="info-label">Site Web</span>
+                    <span class="info-value">
+                        <a href="{{ bank.website }}" target="_blank" style="color: var(--brand-primary);">{{ bank.website | replace('https://', '') | replace('http://', '') }}</a>
+                    </span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <span class="info-label">Statut</span>
+                    <span class="info-value" style="color: var(--success);">✓ Actif</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ATMs List -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="map-pin"></i>
+                Distributeurs ({{ stats.atm_count }})
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            {% if atms and atms|length > 0 %}
+            <div class="atms-list">
+                {% for atm in atms[:10] %}
+                <div class="atm-item">
+                    <div class="atm-icon">
+                        <i data-lucide="landmark"></i>
+                    </div>
+                    <div class="atm-info">
+                        <h4>{{ atm.name if atm.name else 'ATM ' ~ bank.name }}</h4>
+                        <p>
+                            <i data-lucide="map-pin"></i>
+                            {{ atm.address if atm.address else atm.city if atm.city else 'Adresse non disponible' }}
+                        </p>
+                    </div>
+                    <span class="atm-status active">Disponible</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if stats.atm_count > 10 %}
+            <a href="{{ url_for('app.atms') }}?bank={{ bank.code if bank.code else bank.bank_code }}" class="view-all-atms">
+                <i data-lucide="map"></i>
+                Voir tous les {{ stats.atm_count }} distributeurs sur la carte
+            </a>
+            {% endif %}
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                <i data-lucide="map-pin-off" style="width: 48px; height: 48px; margin-bottom: 12px;"></i>
+                <p>Aucun distributeur enregistré pour cette banque</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Contact -->
+    {% if bank.website or bank.phone or bank.email %}
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="phone"></i>
+                Contact
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            <div class="contact-links">
+                {% if bank.website %}
+                <a href="{{ bank.website }}" target="_blank" class="contact-link">
+                    <i data-lucide="globe"></i>
+                    Site Web
+                </a>
+                {% endif %}
+                {% if bank.phone %}
+                <a href="tel:{{ bank.phone }}" class="contact-link">
+                    <i data-lucide="phone"></i>
+                    {{ bank.phone }}
+                </a>
+                {% endif %}
+                {% if bank.email %}
+                <a href="mailto:{{ bank.email }}" class="contact-link">
+                    <i data-lucide="mail"></i>
+                    {{ bank.email }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+</script>
+{% endblock %}

@@ -761,6 +761,89 @@ def set_theme():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@api_bp.route('/user/preferences', methods=['GET', 'POST'])
+@login_required_api
+def user_preferences():
+    """Gère les préférences utilisateur (thème, couleur d'accent, etc.)"""
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "error": "Database unavailable"}), 500
+
+    from app.services.db_service import safe_object_id
+    user_id = safe_object_id(session.get('user_id'))
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    if request.method == 'GET':
+        # Récupérer les préférences
+        user = db.users.find_one({"_id": user_id}, {
+            "theme": 1,
+            "accent_color": 1,
+            "notification_preferences": 1,
+            "language": 1
+        })
+        if not user:
+            return jsonify({"success": False, "error": "User not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "preferences": {
+                "theme": user.get("theme", "light"),
+                "accent_color": user.get("accent_color", "orange"),
+                "notifications": user.get("notification_preferences", {}),
+                "language": user.get("language", "fr")
+            }
+        })
+
+    # POST - Sauvegarder les préférences
+    try:
+        data = request.json or {}
+
+        update_fields = {}
+
+        # Couleur d'accent
+        if 'accent_color' in data:
+            valid_colors = ['orange', 'blue', 'green', 'purple', 'pink', 'red', 'teal', 'amber', 'cyan', 'indigo', 'lime', 'rose']
+            if data['accent_color'] in valid_colors:
+                update_fields['accent_color'] = data['accent_color']
+                session['accent_color'] = data['accent_color']
+
+        # Thème
+        if 'theme' in data:
+            if data['theme'] in ['light', 'dark', 'system']:
+                update_fields['theme'] = data['theme']
+                session['theme'] = data['theme']
+
+        # Préférences de notifications
+        if 'notifications' in data:
+            update_fields['notification_preferences'] = data['notifications']
+
+        # Langue
+        if 'language' in data:
+            valid_langs = ['fr', 'en', 'ar', 'es']
+            if data['language'] in valid_langs:
+                update_fields['language'] = data['language']
+                session['lang'] = data['language']
+
+        if update_fields:
+            update_fields['preferences_updated_at'] = datetime.utcnow()
+            db.users.update_one(
+                {"_id": user_id},
+                {"$set": update_fields}
+            )
+
+        return jsonify({
+            "success": True,
+            "message": "Préférences sauvegardées",
+            "updated": list(update_fields.keys())
+        })
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"User preferences error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ==================== SETTINGS ====================
 
 @api_bp.route('/settings', methods=['POST'])
@@ -2637,10 +2720,21 @@ def get_2fa_status():
     if not user_id:
         return jsonify({"success": False, "error": "Not authenticated"}), 401
 
-    service = get_two_factor_service()
-    status = service.get_2fa_status(user_id)
-
-    return jsonify({"success": True, "status": status})
+    try:
+        service = get_two_factor_service()
+        status = service.get_2fa_status(user_id)
+        return jsonify({"success": True, "status": status})
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"2FA status error: {e}")
+        return jsonify({
+            "success": True,
+            "status": {
+                "enabled": False,
+                "backup_codes_remaining": 0,
+                "trusted_devices_count": 0
+            }
+        })
 
 
 @api_bp.route('/2fa/setup', methods=['POST'])
@@ -2651,18 +2745,23 @@ def setup_2fa():
     if not user_id:
         return jsonify({"success": False, "error": "Not authenticated"}), 401
 
-    service = get_two_factor_service()
-    result = service.setup_2fa(user_id)
+    try:
+        service = get_two_factor_service()
+        result = service.setup_2fa(user_id)
 
-    if result.get('success'):
-        return jsonify({
-            "success": True,
-            "qr_code": result.get('qr_code'),
-            "secret": result.get('manual_entry_key'),
-            "uri": result.get('uri')
-        })
+        if result.get('success'):
+            return jsonify({
+                "success": True,
+                "qr_code": result.get('qr_code'),
+                "secret": result.get('manual_entry_key'),
+                "uri": result.get('uri')
+            })
 
-    return jsonify(result), 400
+        return jsonify(result), 400
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"2FA setup error: {e}")
+        return jsonify({"success": False, "error": "Erreur lors de la configuration 2FA. Veuillez réessayer."}), 500
 
 
 @api_bp.route('/2fa/enable', methods=['POST'])
@@ -3176,3 +3275,82 @@ def get_rate_alert_suggestions():
         "success": True,
         "suggestions": suggestions
     })
+
+
+# ==================== STATS API (PUBLIC) ====================
+
+# Cache pour les stats (5 minutes)
+_stats_cache = {}
+_stats_cache_ttl = 300  # 5 minutes
+
+@api_bp.route('/stats/counts')
+def get_stats_counts():
+    """
+    Récupère les compteurs dynamiques pour la landing page et dashboards
+    Retourne: bank_count, atm_count, user_count, transaction_count
+    Mis en cache pour 5 minutes
+    """
+    cache_key = "stats_counts"
+
+    # Vérifier le cache
+    if cache_key in _stats_cache:
+        cached = _stats_cache[cache_key]
+        if time.time() - cached['timestamp'] < _stats_cache_ttl:
+            return jsonify(cached['data'])
+
+    db = get_db()
+    if db is None:
+        return jsonify({
+            "success": False,
+            "error": "Database unavailable",
+            "bank_count": 6,
+            "atm_count": 250
+        }), 503
+
+    try:
+        # Compter les banques actives
+        bank_count = 6  # Valeur par défaut
+        if 'banks' in db.list_collection_names():
+            bank_count = db.banks.count_documents({"is_active": True})
+            if bank_count == 0:
+                bank_count = 6  # Fallback si pas de données
+
+        # Compter les ATMs
+        atm_count = 0
+        if 'atm_locations' in db.list_collection_names():
+            atm_count = db.atm_locations.count_documents({})
+
+        # Compter les utilisateurs actifs (optionnel)
+        user_count = 0
+        if 'users' in db.list_collection_names():
+            user_count = db.users.count_documents({"is_active": True})
+
+        # Compter les transactions (optionnel)
+        transaction_count = 0
+        if 'transactions' in db.list_collection_names():
+            transaction_count = db.transactions.count_documents({})
+
+        result = {
+            "success": True,
+            "bank_count": bank_count,
+            "atm_count": atm_count,
+            "user_count": user_count,
+            "transaction_count": transaction_count,
+            "cached_at": datetime.utcnow().isoformat()
+        }
+
+        # Mettre en cache
+        _stats_cache[cache_key] = {
+            'data': result,
+            'timestamp': time.time()
+        }
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "bank_count": 6,
+            "atm_count": 250
+        }), 500

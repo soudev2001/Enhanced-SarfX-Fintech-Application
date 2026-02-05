@@ -3,7 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SarfX - Le Futur du Change</title>
+    <title>SarfX - Le Futur du Change | Bureau de Change 100% Digital</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="SarfX - Premier bureau de change 100% digitalisé au Maroc. Meilleurs taux de change en temps réel, prédictions IA, {{ atm_count|default(250) }}+ distributeurs ATM partenaires. Transfert sécurisé et instantané.">
+    <meta name="keywords" content="bureau de change, taux de change, MAD, EUR, USD, transfert argent, Maroc, change devise, fintech, IA prédiction, ATM, distributeur">
+    <meta name="author" content="SarfX by StarkX">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://sarfx.io/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sarfx.io/">
+    <meta property="og:title" content="SarfX - Le Futur du Change | Bureau de Change 100% Digital">
+    <meta property="og:description" content="Premier bureau de change 100% digitalisé. Meilleurs taux en temps réel grâce à l'IA. {{ bank_count|default(6) }} banques partenaires, {{ atm_count|default(250) }}+ ATMs.">
+    <meta property="og:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:site_name" content="SarfX">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://sarfx.io/">
+    <meta name="twitter:title" content="SarfX - Le Futur du Change">
+    <meta name="twitter:description" content="Premier bureau de change 100% digitalisé. Meilleurs taux en temps réel grâce à l'IA.">
+    <meta name="twitter:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
+
+    <!-- Structured Data JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FinancialService",
+        "name": "SarfX",
+        "description": "Bureau de change digital au Maroc avec IA pour les meilleurs taux",
+        "url": "https://sarfx.io",
+        "logo": "{{ url_for('static', filename='images/logo-icon.svg', _external=True) }}",
+        "areaServed": ["MA", "FR", "EU"],
+        "currenciesAccepted": "MAD, EUR, USD, GBP, CHF, CAD, AED, SAR",
+        "priceRange": "$",
+        "sameAs": [
+            "https://twitter.com/sarfx",
+            "https://linkedin.com/company/sarfx",
+            "https://instagram.com/sarfx"
+        ]
+    }
+    </script>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
@@ -776,12 +819,12 @@
                             <span class="text-emerald-400" data-i18n="atm_title_2">Sans carte physique</span>
                         </h2>
                         <p class="text-slate-400 text-lg mb-8" data-i18n="atm_desc">
-                            Générez un code de retrait unique et récupérez vos fonds dans plus de 5087 ATM partenaires.
+                            Générez un code de retrait unique et récupérez vos fonds dans plus de {{ atm_count|default(250) }} ATM partenaires.
                         </p>
 
                         <div class="grid grid-cols-2 gap-4 mb-8">
                             <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                                <div class="text-3xl font-bold text-emerald-400 mb-1">5087+</div>
+                                <div class="text-3xl font-bold text-emerald-400 mb-1">{{ atm_count|default(250) }}+</div>
                                 <div class="text-sm text-slate-400" data-i18n="atm_stat_1">ATMs Partenaires</div>
                             </div>
                             <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">

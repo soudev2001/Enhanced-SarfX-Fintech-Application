@@ -2,21 +2,38 @@ from pymongo import MongoClient
 from flask import current_app, g, session
 from bson import ObjectId
 from bson.errors import InvalidId
-import certifi # Nécessaire pour SSL sur certains environnements
+import os
 
 def get_db():
     """
     Récupère ou crée une connexion MongoDB.
-    Gère les erreurs de connexion SSL courantes sur le cloud.
+    Supporte MongoDB Atlas (avec SSL) et MongoDB local (Docker).
+
+    Variables d'environnement:
+        MONGO_LOCAL: "true" pour connexion locale sans SSL
+        MONGO_URI: URI de connexion MongoDB
     """
     if 'db' not in g:
         try:
-            # Utilisation de certifi pour garantir les certificats SSL valides
-            client = MongoClient(
-                current_app.config['MONGO_URI'],
-                tlsCAFile=certifi.where(),
-                serverSelectionTimeoutMS=5000
-            )
+            mongo_uri = current_app.config['MONGO_URI']
+            is_local = os.environ.get('MONGO_LOCAL', 'false').lower() == 'true'
+
+            if is_local:
+                # Connexion locale (Docker) - pas de SSL
+                client = MongoClient(
+                    mongo_uri,
+                    serverSelectionTimeoutMS=5000,
+                    connectTimeoutMS=10000
+                )
+            else:
+                # Connexion Atlas - SSL avec certifi
+                import certifi
+                client = MongoClient(
+                    mongo_uri,
+                    tlsCAFile=certifi.where(),
+                    serverSelectionTimeoutMS=5000
+                )
+
             g.db = client[current_app.config['DB_NAME']]
         except Exception as e:
             print(f"❌ CRITICAL DB ERROR: {e}")
@@ -41,7 +58,7 @@ def get_current_user_from_session():
     db = get_db()
     if db is None:
         return None
-    
+
     user_id = safe_object_id(session['user_id'])
     if user_id:
         return db.users.find_one({"_id": user_id})

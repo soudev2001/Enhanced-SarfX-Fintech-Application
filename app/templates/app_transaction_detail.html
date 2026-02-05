@@ -1,0 +1,807 @@
+{% extends "app_base.html" %}
+
+{% block title %}Transaction #{{ transaction.reference if transaction.reference else transaction._id | string | truncate(8, True, '') }} - SarfX{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Transaction Detail Page - 2026 Premium Design */
+    .txn-detail-header {
+        padding: 20px 24px;
+        border-radius: var(--radius-2xl);
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .txn-detail-header.completed {
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    }
+
+    .txn-detail-header.pending {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    }
+
+    .txn-detail-header.failed, .txn-detail-header.cancelled {
+        background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    }
+
+    .txn-detail-header.processing {
+        background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    }
+
+    .txn-detail-header::before {
+        content: '';
+        position: absolute;
+        top: -40%;
+        right: -15%;
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .txn-header-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .txn-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .txn-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        border-radius: var(--radius-full);
+        font-size: 14px;
+        font-weight: 700;
+        color: white;
+        text-transform: uppercase;
+    }
+
+    .txn-status-badge i {
+        width: 18px;
+        height: 18px;
+    }
+
+    .txn-amount-display {
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .txn-amount-label {
+        font-size: 14px;
+        color: rgba(255,255,255,0.8);
+        margin-bottom: 8px;
+    }
+
+    .txn-amount-value {
+        font-size: 42px;
+        font-weight: 800;
+        color: white;
+        letter-spacing: -1px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .txn-currency {
+        font-size: 20px;
+        font-weight: 600;
+        opacity: 0.9;
+        margin-left: 8px;
+    }
+
+    .txn-flow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        padding: 16px 24px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: var(--radius-xl);
+    }
+
+    .txn-flow-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .txn-flow-currency {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .txn-flow-flag {
+        width: 28px;
+        height: 20px;
+        border-radius: 4px;
+        object-fit: cover;
+    }
+
+    .txn-flow-code {
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .txn-flow-amount {
+        font-size: 13px;
+        color: rgba(255,255,255,0.75);
+    }
+
+    .txn-flow-arrow {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .txn-flow-arrow i {
+        width: 20px;
+        height: 20px;
+        color: white;
+    }
+
+    /* Back Button */
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .back-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .back-btn i {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Section */
+    .detail-section {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .detail-section-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .detail-section-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .detail-section-header h2 i {
+        width: 20px;
+        height: 20px;
+        color: var(--brand-primary);
+    }
+
+    .detail-section-body {
+        padding: 24px;
+    }
+
+    /* Info Rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border-secondary);
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-row-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .info-row-label i {
+        width: 18px;
+        height: 18px;
+        color: var(--text-tertiary);
+    }
+
+    .info-row-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: right;
+    }
+
+    .info-row-value.success {
+        color: var(--success);
+    }
+
+    .info-row-value.warning {
+        color: var(--warning);
+    }
+
+    /* Timeline */
+    .timeline {
+        position: relative;
+        padding-left: 28px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 9px;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        background: var(--border-primary);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 24px;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -28px;
+        top: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        border: 3px solid var(--border-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timeline-dot.completed {
+        background: var(--success);
+        border-color: var(--success);
+    }
+
+    .timeline-dot.completed i {
+        width: 10px;
+        height: 10px;
+        color: white;
+    }
+
+    .timeline-dot.current {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(224,90,3,0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(224,90,3,0); }
+    }
+
+    .timeline-content h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .timeline-content p {
+        font-size: 13px;
+        color: var(--text-tertiary);
+    }
+
+    /* Beneficiary Card */
+    .beneficiary-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+    }
+
+    .beneficiary-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--brand-primary), #ff8a3d);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .beneficiary-info {
+        flex: 1;
+    }
+
+    .beneficiary-info h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .beneficiary-info p {
+        font-size: 13px;
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .beneficiary-info p i {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Actions */
+    .txn-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .txn-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: var(--radius-lg);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        text-decoration: none;
+    }
+
+    .txn-action-btn.primary {
+        background: var(--brand-primary);
+        color: white;
+    }
+
+    .txn-action-btn.primary:hover {
+        background: #c85203;
+        transform: translateY(-2px);
+    }
+
+    .txn-action-btn.secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-primary);
+    }
+
+    .txn-action-btn.secondary:hover {
+        background: var(--bg-primary);
+    }
+
+    .txn-action-btn i {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Reference Copy */
+    .reference-copy {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        margin-top: 16px;
+    }
+
+    .reference-copy code {
+        flex: 1;
+        font-size: 14px;
+        font-family: monospace;
+        color: var(--text-primary);
+        word-break: break-all;
+    }
+
+    .copy-btn {
+        padding: 8px 14px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        color: var(--text-secondary);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .copy-btn:hover {
+        background: var(--brand-primary);
+        color: white;
+        border-color: var(--brand-primary);
+    }
+
+    .copy-btn i {
+        width: 16px;
+        height: 16px;
+    }
+
+    @media (max-width: 640px) {
+        .txn-amount-value {
+            font-size: 32px;
+        }
+
+        .txn-flow {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .txn-flow-arrow {
+            transform: rotate(90deg);
+        }
+
+        .txn-actions {
+            flex-direction: column;
+        }
+
+        .txn-action-btn {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set status = transaction.status | default('pending') | lower %}
+{% set status_icon = 'check-circle' if status == 'completed' else 'clock' if status == 'pending' else 'loader' if status == 'processing' else 'x-circle' %}
+{% set status_label = 'Terminée' if status == 'completed' else 'En attente' if status == 'pending' else 'En cours' if status == 'processing' else 'Échouée' %}
+
+<div class="page-container" style="padding: 20px; max-width: 800px; margin: 0 auto;">
+
+    <!-- Back Button -->
+    <a href="{{ url_for('app.transactions') }}" class="back-btn">
+        <i data-lucide="arrow-left"></i>
+        Retour aux transactions
+    </a>
+
+    <!-- Header -->
+    <div class="txn-detail-header {{ status }}">
+        <div class="txn-header-content">
+            <div class="txn-header-top">
+                <span class="txn-status-badge">
+                    <i data-lucide="{{ status_icon }}"></i>
+                    {{ status_label }}
+                </span>
+            </div>
+
+            <div class="txn-amount-display">
+                <p class="txn-amount-label">Montant envoyé</p>
+                <span class="txn-amount-value">
+                    {{ '{:,.2f}'.format(transaction.send_amount | default(transaction.amount, 0)) }}
+                    <span class="txn-currency">{{ transaction.send_currency | default(transaction.from_currency, 'MAD') }}</span>
+                </span>
+            </div>
+
+            <div class="txn-flow">
+                <div class="txn-flow-item">
+                    <div class="txn-flow-currency">
+                        {{ (transaction.send_currency | default(transaction.from_currency, 'MAD')) | currency_flag | safe }}
+                        <span class="txn-flow-code">{{ transaction.send_currency | default(transaction.from_currency, 'MAD') }}</span>
+                    </div>
+                    <span class="txn-flow-amount">{{ '{:,.2f}'.format(transaction.send_amount | default(transaction.amount, 0)) }}</span>
+                </div>
+
+                <div class="txn-flow-arrow">
+                    <i data-lucide="arrow-right"></i>
+                </div>
+
+                <div class="txn-flow-item">
+                    <div class="txn-flow-currency">
+                        {{ (transaction.receive_currency | default(transaction.to_currency, 'EUR')) | currency_flag | safe }}
+                        <span class="txn-flow-code">{{ transaction.receive_currency | default(transaction.to_currency, 'EUR') }}</span>
+                    </div>
+                    <span class="txn-flow-amount">{{ '{:,.2f}'.format(transaction.receive_amount | default(transaction.converted_amount, 0)) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Details -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="receipt"></i>
+                Détails de la transaction
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            <div class="info-row">
+                <span class="info-row-label">
+                    <i data-lucide="hash"></i>
+                    Référence
+                </span>
+                <span class="info-row-value">{{ transaction.reference if transaction.reference else transaction._id | string }}</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-row-label">
+                    <i data-lucide="calendar"></i>
+                    Date
+                </span>
+                <span class="info-row-value">
+                    {% if transaction.created_at %}
+                        {{ transaction.created_at.strftime('%d/%m/%Y à %H:%M') }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-row-label">
+                    <i data-lucide="trending-up"></i>
+                    Taux de change
+                </span>
+                <span class="info-row-value success">
+                    1 {{ transaction.send_currency | default(transaction.from_currency, 'MAD') }} = {{ '{:,.4f}'.format(transaction.rate | default(transaction.exchange_rate, 1)) }} {{ transaction.receive_currency | default(transaction.to_currency, 'EUR') }}
+                </span>
+            </div>
+
+            {% if transaction.fees or transaction.fee %}
+            <div class="info-row">
+                <span class="info-row-label">
+                    <i data-lucide="percent"></i>
+                    Frais
+                </span>
+                <span class="info-row-value">{{ '{:,.2f}'.format(transaction.fees | default(transaction.fee, 0)) }} {{ transaction.send_currency | default(transaction.from_currency, 'MAD') }}</span>
+            </div>
+            {% endif %}
+
+            <div class="info-row">
+                <span class="info-row-label">
+                    <i data-lucide="tag"></i>
+                    Type
+                </span>
+                <span class="info-row-value">{{ transaction.type | default('Transfert') | capitalize }}</span>
+            </div>
+
+            <div class="reference-copy">
+                <code>{{ transaction.reference if transaction.reference else transaction._id | string }}</code>
+                <button class="copy-btn" onclick="copyReference(this)">
+                    <i data-lucide="copy"></i>
+                    Copier
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beneficiary -->
+    {% if beneficiary %}
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="user"></i>
+                Bénéficiaire
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            <div class="beneficiary-card">
+                <div class="beneficiary-avatar">
+                    {{ beneficiary.name[0] | upper if beneficiary.name else 'B' }}{{ beneficiary.name.split(' ')[1][0] | upper if beneficiary.name and beneficiary.name.split(' ')|length > 1 else '' }}
+                </div>
+                <div class="beneficiary-info">
+                    <h4>{{ beneficiary.name | default('Bénéficiaire') }}</h4>
+                    {% if beneficiary.bank_name %}
+                    <p>
+                        <i data-lucide="building-2"></i>
+                        {{ beneficiary.bank_name }}
+                    </p>
+                    {% endif %}
+                    {% if beneficiary.account_number %}
+                    <p>
+                        <i data-lucide="credit-card"></i>
+                        •••• {{ beneficiary.account_number[-4:] if beneficiary.account_number|length > 4 else beneficiary.account_number }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="git-branch"></i>
+                Historique
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">
+                        <i data-lucide="check"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h4>Transaction créée</h4>
+                        <p>{{ transaction.created_at.strftime('%d/%m/%Y à %H:%M') if transaction.created_at else 'Date inconnue' }}</p>
+                    </div>
+                </div>
+
+                {% if status in ['processing', 'completed'] %}
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">
+                        <i data-lucide="check"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h4>En cours de traitement</h4>
+                        <p>Vérification et conversion en cours</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if status == 'completed' %}
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">
+                        <i data-lucide="check"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h4>Transaction complétée</h4>
+                        <p>{{ transaction.updated_at.strftime('%d/%m/%Y à %H:%M') if transaction.updated_at else 'Fonds transférés avec succès' }}</p>
+                    </div>
+                </div>
+                {% elif status == 'pending' %}
+                <div class="timeline-item">
+                    <div class="timeline-dot current"></div>
+                    <div class="timeline-content">
+                        <h4>En attente de traitement</h4>
+                        <p>La transaction sera traitée sous peu</p>
+                    </div>
+                </div>
+                {% elif status == 'processing' %}
+                <div class="timeline-item">
+                    <div class="timeline-dot current"></div>
+                    <div class="timeline-content">
+                        <h4>Traitement en cours</h4>
+                        <p>La transaction est en cours de validation</p>
+                    </div>
+                </div>
+                {% elif status in ['failed', 'cancelled'] %}
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background: var(--error); border-color: var(--error);">
+                        <i data-lucide="x" style="width: 10px; height: 10px; color: white;"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h4>Transaction {{ 'annulée' if status == 'cancelled' else 'échouée' }}</h4>
+                        <p>{{ transaction.error_message if transaction.error_message else 'La transaction n\'a pas pu être complétée' }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>
+                <i data-lucide="settings"></i>
+                Actions
+            </h2>
+        </div>
+        <div class="detail-section-body">
+            <div class="txn-actions">
+                <button class="txn-action-btn primary" onclick="window.print()">
+                    <i data-lucide="download"></i>
+                    Télécharger le reçu
+                </button>
+                {% if beneficiary %}
+                <a href="{{ url_for('app.send_beneficiary', beneficiary_id=beneficiary._id) }}" class="txn-action-btn secondary">
+                    <i data-lucide="repeat"></i>
+                    Renvoyer au même bénéficiaire
+                </a>
+                {% endif %}
+                <a href="{{ url_for('app.support') if 'app.support' in url_for.__globals__['current_app'].url_map._rules_by_endpoint else '#' }}" class="txn-action-btn secondary">
+                    <i data-lucide="message-circle"></i>
+                    Signaler un problème
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+
+    function copyReference(btn) {
+        const code = btn.parentElement.querySelector('code');
+        navigator.clipboard.writeText(code.textContent).then(() => {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check"></i> Copié!';
+            btn.style.background = 'var(--success)';
+            btn.style.color = 'white';
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.style.color = '';
+                lucide.createIcons();
+            }, 2000);
+        });
+    }
+</script>
+
+<!-- Print Styles -->
+<style>
+@media print {
+    .back-btn, .txn-actions, nav, footer, .sidebar {
+        display: none !important;
+    }
+
+    .page-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .detail-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white !important;
+    }
+}
+</style>
+{% endblock %}

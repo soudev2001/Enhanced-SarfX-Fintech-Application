@@ -137,11 +137,32 @@ def create_app():
     # Custom Jinja2 filters
     @app.template_filter('get_flag')
     def get_flag(currency):
+        """Emoji flag filter (legacy)"""
         flags = {
             'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧', 'MAD': '🇲🇦',
             'CHF': '🇨🇭', 'CAD': '🇨🇦', 'AED': '🇦🇪', 'SAR': '🇸🇦'
         }
         return flags.get(currency, '💵')
+
+    @app.template_filter('currency_flag')
+    def currency_flag_filter(currency, size=24):
+        """CDN flag image filter with emoji fallback"""
+        from app.utils.flags import get_flag_url, get_flag_emoji
+        url = get_flag_url(currency, size)
+        emoji = get_flag_emoji(currency)
+        return f'<img src="{url}" alt="{emoji}" class="currency-flag" style="width:{size}px;height:auto;border-radius:2px;vertical-align:middle;" onerror="this.outerHTML=\'{emoji}\'">'
+
+    @app.template_filter('flag_url')
+    def flag_url_filter(currency, size=40):
+        """Get flag URL only"""
+        from app.utils.flags import get_flag_url
+        return get_flag_url(currency, size)
+
+    @app.template_filter('flag_emoji')
+    def flag_emoji_filter(currency):
+        """Get emoji flag"""
+        from app.utils.flags import get_flag_emoji
+        return get_flag_emoji(currency)
 
     @app.template_filter('get_transaction_icon')
     def get_transaction_icon(transaction_type):
@@ -167,7 +188,14 @@ def create_app():
         from flask import session
         from app.decorators import get_current_user
         user = get_current_user()
-        return dict(current_user=user)
+        # Add user preferences for templates
+        user_theme = session.get('theme', 'light')
+        user_accent_color = session.get('accent_color', 'orange')
+        return dict(
+            current_user=user,
+            user_theme=user_theme,
+            user_accent_color=user_accent_color
+        )
 
     # Context processor for i18n
     @app.context_processor

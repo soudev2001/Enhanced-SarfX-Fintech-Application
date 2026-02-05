@@ -603,14 +603,22 @@ class TwoFactorService:
 
             backup_codes = user.get('two_factor_backup_codes', [])
 
+            # Count trusted devices (handle if collection doesn't exist)
+            trusted_devices_count = 0
+            try:
+                if 'trusted_devices' in self.db.list_collection_names():
+                    trusted_devices_count = self.db.trusted_devices.count_documents({
+                        'user_id': user_oid,
+                        'expires_at': {'$gt': datetime.utcnow()}
+                    })
+            except Exception:
+                pass  # Collection may not exist yet
+
             return {
                 'enabled': user.get('two_factor_enabled', False),
                 'enabled_at': user.get('two_factor_enabled_at'),
                 'backup_codes_remaining': len(backup_codes),
-                'trusted_devices_count': self.db.trusted_devices.count_documents({
-                    'user_id': user_oid,
-                    'expires_at': {'$gt': datetime.utcnow()}
-                })
+                'trusted_devices_count': trusted_devices_count
             }
 
         except Exception as e:

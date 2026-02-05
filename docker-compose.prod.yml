@@ -1,0 +1,208 @@
+# ===========================================
+# SarfX Enhanced - Docker Compose Production
+# ===========================================
+# Override pour l'environnement de production
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # ============================================
+  # MongoDB - Mode production avec authentification
+  # ============================================
+  mongo:
+    environment:
+      MONGO_INITDB_DATABASE: SarfX_Enhanced
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-sarfx_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
+    # Ne pas exposer le port en production (accès interne uniquement)
+    ports: []
+    # Logging limité en production
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ============================================
+  # Redis - Mode production
+  # ============================================
+  redis:
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-changeme}
+    # Ne pas exposer le port en production
+    ports: []
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ============================================
+  # Flask App - Mode production avec Gunicorn
+  # ============================================
+  flask-app:
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      # MongoDB avec auth
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-sarfx_admin}:${MONGO_ROOT_PASSWORD}@mongo:27017/SarfX_Enhanced?authSource=admin
+      MONGO_LOCAL: "true"
+      # Redis avec auth
+      REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0
+      # SMTP
+      SMTP_EMAIL: ${SMTP_EMAIL:?SMTP_EMAIL is required}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD is required}
+      # OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-}
+    # Pas de volumes code source en prod
+    volumes:
+      - flask_uploads:/app/uploads
+      - flask_logs:/app/logs
+    # Gunicorn optimisé pour production
+    command: >
+      gunicorn
+      --bind 0.0.0.0:5050
+      --workers ${GUNICORN_WORKERS:-4}
+      --threads 2
+      --worker-class gthread
+      --timeout 120
+      --keep-alive 5
+      --max-requests 1000
+      --max-requests-jitter 50
+      --access-logfile -
+      --error-logfile -
+      --capture-output
+      --enable-stdio-inheritance
+      --preload
+      run:app
+    # Exposer uniquement sur localhost (Nginx/Traefik en front)
+    ports:
+      - "127.0.0.1:8002:5050"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  # ============================================
+  # AI Backend - Mode production
+  # ============================================
+  ai-backend:
+    environment:
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-sarfx_admin}:${MONGO_ROOT_PASSWORD}@mongo:27017/SarfX_Enhanced?authSource=admin
+      MONGO_LOCAL: "true"
+      AI_PORT: "8087"
+    # Gunicorn pour production
+    command: >
+      gunicorn
+      --bind 0.0.0.0:8087
+      --workers 2
+      --worker-class uvicorn.workers.UvicornWorker
+      --timeout 300
+      --keep-alive 5
+      main:app
+    # Exposer uniquement sur localhost
+    ports:
+      - "127.0.0.1:8087:8087"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # ============================================
+  # Nginx - Reverse Proxy (Production)
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: sarfx-nginx
+    restart: unless-stopped
+    depends_on:
+      flask-app:
+        condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./app/static:/var/www/static:ro
+      - nginx_logs:/var/log/nginx
+      # SSL Certificates (Let's Encrypt)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - sarfx-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  sarfx-network:
+    driver: bridge
+    name: sarfx-network
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  mongo_data:
+    name: sarfx-mongo-data
+  mongo_config:
+    name: sarfx-mongo-config
+  redis_data:
+    name: sarfx-redis-data
+  flask_uploads:
+    name: sarfx-flask-uploads
+  flask_logs:
+    name: sarfx-flask-logs
+  nginx_logs:
+    name: sarfx-nginx-logs

@@ -1,0 +1,145 @@
+# ===========================================
+# SarfX Enhanced - Docker Compose Development
+# ===========================================
+# Override pour l'environnement de développement (pre-prod)
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # ============================================
+  # MongoDB - Mode développement
+  # ============================================
+  mongo:
+    # Pas d'authentification en dev
+    environment:
+      MONGO_INITDB_DATABASE: SarfX_Enhanced
+    # Port exposé pour outils externes (Compass, etc.)
+    ports:
+      - "27017:27017"
+
+  # ============================================
+  # Redis - Mode développement
+  # ============================================
+  redis:
+    ports:
+      - "6379:6379"
+
+  # ============================================
+  # Flask App - Mode développement avec hot-reload
+  # ============================================
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production  # Utilise le même stage mais avec override
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      # Utiliser le même secret en dev
+      SECRET_KEY: dev-secret-key-not-for-production-32chars
+    # Monte le code source pour hot-reload
+    volumes:
+      - .:/app:cached
+      - /app/__pycache__
+      - /app/.git
+      - flask_uploads:/app/uploads
+      - flask_logs:/app/logs
+    # Commande de développement avec Flask debug server
+    command: >
+      python run.py --host 0.0.0.0 --port 5050 --debug
+    ports:
+      - "5050:5050"
+    # Pas besoin d'attendre le healthcheck complet en dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # AI Backend - Mode développement
+  # ============================================
+  ai-backend:
+    environment:
+      MONGO_URI: mongodb://mongo:27017/SarfX_Enhanced
+      MONGO_LOCAL: "true"
+      AI_PORT: "8087"
+    # Monte le code source pour hot-reload
+    volumes:
+      - ./SarfX Backend:/app:cached
+      - /app/__pycache__
+    # Uvicorn avec reload
+    command: >
+      uvicorn main:app --host 0.0.0.0 --port 8087 --reload
+    ports:
+      - "8087:8087"
+
+  # ============================================
+  # Mongo Express - Interface Web pour MongoDB (Dev only)
+  # ============================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: sarfx-mongo-express
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: "27017"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+    ports:
+      - "8081:8081"
+    networks:
+      - sarfx-network
+
+  # ============================================
+  # Redis Commander - Interface Web pour Redis (Dev only)
+  # ============================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: sarfx-redis-commander
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8082:8081"
+    networks:
+      - sarfx-network
+
+# ============================================
+# Networks (hérite du fichier base)
+# ============================================
+networks:
+  sarfx-network:
+    external: true
+    name: sarfx-network
+
+# ============================================
+# Volumes (hérite du fichier base)
+# ============================================
+volumes:
+  mongo_data:
+    external: true
+    name: sarfx-mongo-data
+  mongo_config:
+    external: true
+    name: sarfx-mongo-config
+  redis_data:
+    external: true
+    name: sarfx-redis-data
+  flask_uploads:
+    external: true
+    name: sarfx-flask-uploads
+  flask_logs:
+    external: true
+    name: sarfx-flask-logs

@@ -241,6 +241,12 @@
     <main id="main-content" class="wise-main-content">
         <!-- Top Actions Bar -->
         <div class="wise-top-actions" style="position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 100;">
+            <!-- Theme Toggle Button -->
+            <button class="theme-toggle-btn" id="top-theme-toggle" onclick="toggleTheme()" title="Changer de thème">
+                <i data-lucide="sun" class="theme-icon-sun" style="width: 20px; height: 20px;"></i>
+                <i data-lucide="moon" class="theme-icon-moon" style="width: 20px; height: 20px; display: none;"></i>
+            </button>
+
             <!-- Language Selector -->
             <div class="language-selector" id="language-selector">
                 <button class="language-btn" id="language-btn" onclick="toggleLanguageMenu()" title="{{ t('settings.language')|default('Langue') }}">
@@ -508,7 +514,32 @@
             info: (msg, duration) => showNotification(msg, 'info', duration)
         };
 
-        // Init Theme on Load
+        // Accent Color Configuration
+        const ACCENT_COLORS = {
+            orange: { primary: '#e05a03', light: '#ff7a2e' },
+            blue: { primary: '#3b82f6', light: '#60a5fa' },
+            green: { primary: '#22c55e', light: '#4ade80' },
+            purple: { primary: '#8b5cf6', light: '#a78bfa' },
+            pink: { primary: '#ec4899', light: '#f472b6' },
+            red: { primary: '#ef4444', light: '#f87171' },
+            teal: { primary: '#14b8a6', light: '#2dd4bf' },
+            amber: { primary: '#f59e0b', light: '#fbbf24' },
+            cyan: { primary: '#06b6d4', light: '#22d3ee' },
+            indigo: { primary: '#6366f1', light: '#818cf8' },
+            lime: { primary: '#84cc16', light: '#a3e635' },
+            rose: { primary: '#f43f5e', light: '#fb7185' }
+        };
+
+        function applyAccentColor(color) {
+            if (!ACCENT_COLORS[color]) return;
+            const colors = ACCENT_COLORS[color];
+            document.documentElement.style.setProperty('--brand-primary', colors.primary);
+            document.documentElement.style.setProperty('--brand-primary-light', colors.light);
+            document.documentElement.style.setProperty('--color-primary', colors.primary);
+            document.documentElement.style.setProperty('--color-primary-light', colors.light);
+        }
+
+        // Init Theme and Accent Color on Load
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('sarfx_theme') || '{{ user_theme | default("light") }}';
             const html = document.documentElement;
@@ -519,6 +550,10 @@
 
             updateThemeToggleUI(savedTheme === 'dark');
             updateThemeColor(savedTheme);
+
+            // Load accent color
+            const savedAccent = localStorage.getItem('sarfx_accent_color') || '{{ user_accent_color | default("orange") }}';
+            applyAccentColor(savedAccent);
 
             // Re-init icons after DOM ready
             setTimeout(() => lucide.createIcons(), 100);
@@ -899,7 +934,7 @@
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/js/sw.js', { scope: '/' })
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
                     .then((registration) => {
                         console.log('ServiceWorker registered:', registration.scope);
 
@@ -1069,6 +1104,50 @@
                 left: auto;
                 right: 24px;
             }
+        }
+
+        /* Theme Toggle Button Styles */
+        .theme-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        .theme-toggle-btn .theme-icon-sun,
+        .theme-toggle-btn .theme-icon-moon {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        [data-theme="dark"] .theme-toggle-btn .theme-icon-sun {
+            display: none !important;
+        }
+
+        [data-theme="dark"] .theme-toggle-btn .theme-icon-moon {
+            display: block !important;
+        }
+
+        [data-theme="light"] .theme-toggle-btn .theme-icon-sun,
+        :root:not([data-theme="dark"]) .theme-toggle-btn .theme-icon-sun {
+            display: block !important;
+        }
+
+        [data-theme="light"] .theme-toggle-btn .theme-icon-moon,
+        :root:not([data-theme="dark"]) .theme-toggle-btn .theme-icon-moon {
+            display: none !important;
         }
 
         /* Language Selector Styles */

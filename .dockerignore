@@ -1,0 +1,109 @@
+# ===========================================
+# SarfX - Docker Ignore File
+# ===========================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+*.egg
+.eggs
+dist
+build
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv
+.venv
+env
+ENV
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+
+# Documentation
+docs/_build
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*
+.docker
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Logs & Temp
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# Uploads & Data (will be mounted as volumes)
+uploads/
+data/
+*.db
+*.sqlite3
+
+# Node (si présent)
+node_modules
+npm-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+
+# Secrets (NE JAMAIS INCLURE)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Tests
+tests/
+scripts/tests/
+
+# Backups
+*.backup
+*.bak
+backups/
+
+# Large files
+*.zip
+*.tar.gz
+*.rar

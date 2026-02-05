@@ -4,24 +4,816 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>{{ 'Inscription' if request.args.get('mode') == 'register' else 'Connexion' }} - SarfX</title>
+    <meta name="description" content="Connectez-vous à SarfX pour accéder aux meilleurs taux de change et envoyer de l'argent dans le monde entier.">
 
-    <!-- Design System CSS (Local) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
 
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- PWA Meta -->
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-</head>
-<body class="min-h-screen flex flex-col relative" id="app-body" style="background: var(--bg-primary); color: var(--text-primary);">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Background Blobs -->
-    <div class="blob rounded-full" style="background: linear-gradient(135deg, rgb(224, 90, 3), #ff8c42); width: 320px; height: 320px; top: 0; left: 0; transform: translate(-50%, -50%); opacity: 0.6;"></div>
-    <div class="blob rounded-full" style="background: linear-gradient(135deg, rgb(255 214 187), #7fcf50); width: 256px; height: 256px; bottom: 0; right: 0; transform: translate(50%, 50%); opacity: 0.5;"></div>
+    <!-- PWA Meta -->
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        /* ============ CSS VARIABLES ============ */
+        :root {
+            --brand-orange: #e05a03;
+            --brand-orange-light: #ff8c42;
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --slate: #334155;
+            --text-white: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --text-dim: rgba(255, 255, 255, 0.5);
+            --success: #10b981;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-medium: rgba(255, 255, 255, 0.2);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-tertiary: rgba(255, 255, 255, 0.5);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ============ NAVBAR ============ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 24px;
+            background: transparent;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="light"] .navbar {
+            background: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] .navbar {
+            background: rgba(15, 23, 42, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .navbar.scrolled {
+            box-shadow: 0 4px 30px var(--shadow-color);
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-size: 28px;
+            font-weight: 800;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-logo span { color: var(--brand-orange); }
+
+        .nav-links {
+            display: none;
+            align-items: center;
+            gap: 28px;
+        }
+
+        @media (min-width: 768px) {
+            .nav-links { display: flex; }
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+            padding: 8px 0;
+        }
+
+        .nav-link:hover { color: var(--brand-orange); }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--brand-orange);
+            color: white;
+            border-color: var(--brand-orange);
+        }
+
+        .theme-toggle .sun-icon { display: none; }
+        .theme-toggle .moon-icon { display: block; }
+
+        [data-theme="dark"] .theme-toggle .sun-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .moon-icon { display: none; }
+
+        .btn-nav {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-secondary);
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(224, 90, 3, 0.4);
+        }
+
+        /* ============ MAIN CONTENT ============ */
+        .main-content {
+            min-height: 100vh;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background Decorations */
+        .bg-decoration {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-decoration-1 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
+            opacity: 0.15;
+            top: -100px;
+            left: -100px;
+        }
+
+        .bg-decoration-2 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            opacity: 0.1;
+            bottom: -50px;
+            right: -50px;
+        }
+
+        [data-theme="dark"] .bg-decoration-1 { opacity: 0.2; }
+        [data-theme="dark"] .bg-decoration-2 { opacity: 0.15; }
+
+        /* Left Panel - Branding */
+        .branding-panel {
+            display: none;
+            width: 50%;
+            background: linear-gradient(135deg, var(--navy-dark), var(--navy-light));
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 1024px) {
+            .branding-panel { display: flex; flex-direction: column; justify-content: center; }
+        }
+
+        .branding-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(224, 90, 3, 0.2) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .branding-content {
+            position: relative;
+            z-index: 10;
+            max-width: 480px;
+        }
+
+        .branding-logo {
+            font-size: 48px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 24px;
+        }
+
+        .branding-logo span { color: var(--brand-orange); }
+
+        .branding-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .branding-title .highlight {
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .branding-subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        .branding-features {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .branding-feature {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .branding-feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .branding-feature-icon.orange {
+            background: rgba(224, 90, 3, 0.2);
+            color: var(--brand-orange-light);
+        }
+
+        .branding-feature-icon.blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--blue);
+        }
+
+        .branding-feature-icon.green {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .branding-feature-text h4 {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .branding-feature-text p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Right Panel - Login Form */
+        .login-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 24px 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        @media (min-width: 1024px) {
+            .login-panel { width: 50%; }
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-header .mobile-logo {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .login-header .mobile-logo span { color: var(--brand-orange); }
+
+        @media (min-width: 1024px) {
+            .login-header .mobile-logo { display: none; }
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* Login Card */
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 4px 24px var(--shadow-color);
+        }
+
+        [data-theme="dark"] .login-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(224, 90, 3, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: var(--brand-orange);
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .remember-me input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--brand-orange);
+        }
+
+        .remember-me span {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .forgot-link {
+            font-size: 14px;
+            color: var(--brand-orange);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            border: none;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-light));
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(224, 90, 3, 0.35);
+        }
+
+        .btn-google {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-google:hover {
+            background: var(--bg-primary);
+            border-color: var(--brand-orange);
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            gap: 16px;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider-text {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+        }
+
+        /* Demo Buttons */
+        .demo-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .demo-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+        }
+
+        .demo-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-demo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-demo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-demo.admin { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-demo.bank { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .btn-demo.user { background: linear-gradient(135deg, #10b981, #059669); }
+
+        /* Toggle Link */
+        .toggle-link {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .toggle-link a {
+            color: var(--brand-orange);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .toggle-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Features Grid */
+        .features-mini {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .feature-mini {
+            text-align: center;
+        }
+
+        .feature-mini-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+        }
+
+        .feature-mini-icon.orange {
+            background: rgba(224, 90, 3, 0.1);
+            color: var(--brand-orange);
+        }
+
+        .feature-mini-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .feature-mini-icon.purple {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple);
+        }
+
+        .feature-mini span {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast-success {
+            background: rgba(16, 185, 129, 0.95);
+            color: white;
+        }
+
+        .toast-error {
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+        }
+
+        .toast-warning {
+            background: rgba(245, 158, 11, 0.95);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: flex;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        @media (min-width: 768px) {
+            .mobile-menu-btn { display: none; }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('landing.home') }}" class="nav-logo">
+                Sarf<span>X</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="{{ url_for('landing.home') }}#rates" class="nav-link">Taux</a>
+                <a href="{{ url_for('landing.home') }}#features" class="nav-link">Fonctionnalités</a>
+                <a href="{{ url_for('landing.home') }}#atms" class="nav-link">ATMs</a>
+                <a href="{{ url_for('landing.home') }}#faq" class="nav-link">FAQ</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer le thème">
+                    <i data-lucide="sun" class="sun-icon" style="width: 20px; height: 20px;"></i>
+                    <i data-lucide="moon" class="moon-icon" style="width: 20px; height: 20px;"></i>
+                </button>
+
+                {% if request.args.get('mode') == 'register' %}
+                <a href="{{ url_for('auth.login') }}" class="btn-nav btn-ghost">Se connecter</a>
+                {% else %}
+                <a href="{{ url_for('auth.login', mode='register') }}" class="btn-nav btn-primary">S'inscrire</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -38,183 +830,235 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative" style="z-index: 10;">
-        <div class="w-full max-w-sm flex flex-col gap-8 animate-fade-in">
-            <!-- Logo -->
-            <div class="text-center">
-                <a href="{{ url_for('landing.home') }}" style="text-decoration: none;">
-                    <h1 class="logo justify-center text-4xl mb-2" style="display: inline-flex;">
-                        <span class="logo-text" style="font-size: 2.5rem; font-weight: 800;">Sarf</span><span class="logo-accent" style="font-size: 2.5rem; font-weight: 800;">X</span>
-                    </h1>
-                </a>
-                <p class="text-sm" style="color: var(--text-secondary);">Le futur du change</p>
-            </div>
+    <div class="main-content">
+        <!-- Background Decorations -->
+        <div class="bg-decoration bg-decoration-1"></div>
+        <div class="bg-decoration bg-decoration-2"></div>
 
-            <!-- Login Card -->
-            <div class="card card-lg">
-                <div class="text-center mb-6">
-                    <h2 class="text-xl font-bold" style="color: var(--text-primary);">
-                        {{ 'Créer un compte' if request.args.get('mode') == 'register' else 'Bienvenue' }}
-                    </h2>
-                    <p class="text-sm mt-1" style="color: var(--text-secondary);">
-                        {{ 'Rejoignez SarfX aujourd\'hui' if request.args.get('mode') == 'register' else 'Connectez-vous à votre compte' }}
-                    </p>
+        <!-- Left Panel - Branding (Desktop only) -->
+        <div class="branding-panel">
+            <div class="branding-content">
+                <div class="branding-logo">Sarf<span>X</span></div>
+                <h2 class="branding-title">
+                    Le futur du <span class="highlight">change</span> est arrivé
+                </h2>
+                <p class="branding-subtitle">
+                    Comparez les taux en temps réel, envoyez de l'argent instantanément et retirez sans carte dans +1000 DAB.
+                </p>
+
+                <div class="branding-features">
+                    <div class="branding-feature">
+                        <div class="branding-feature-icon orange">
+                            <i data-lucide="trending-up" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="branding-feature-text">
+                            <h4>Meilleurs Taux</h4>
+                            <p>Comparaison IA de 6+ sources en temps réel</p>
+                        </div>
+                    </div>
+
+                    <div class="branding-feature">
+                        <div class="branding-feature-icon blue">
+                            <i data-lucide="zap" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="branding-feature-text">
+                            <h4>Transferts Instantanés</h4>
+                            <p>Envoyez de l'argent en quelques secondes</p>
+                        </div>
+                    </div>
+
+                    <div class="branding-feature">
+                        <div class="branding-feature-icon green">
+                            <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="branding-feature-text">
+                            <h4>100% Sécurisé</h4>
+                            <p>Cryptage de bout en bout & 2FA</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
+        <div class="login-panel">
+            <div class="login-container animate-fade-in">
+                <div class="login-header">
+                    <div class="mobile-logo">Sarf<span>X</span></div>
+                    <h1>{{ 'Créer un compte' if request.args.get('mode') == 'register' else 'Bon retour !' }}</h1>
+                    <p>{{ 'Rejoignez la révolution du change' if request.args.get('mode') == 'register' else 'Connectez-vous à votre compte' }}</p>
                 </div>
 
-                <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}" class="flex flex-col gap-4">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="flex flex-col gap-3">
-                        <div class="input-group">
-                            <div class="relative">
-                                <i data-lucide="mail" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
-                                <input type="email" name="email"
-                                       class="input"
-                                       style="padding-left: 48px;"
-                                       placeholder="Adresse email"
-                                       value=""
+                <div class="login-card">
+                    <form method="POST" action="{{ url_for('auth.register') if request.args.get('mode') == 'register' else url_for('auth.login') }}" id="login-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if next_url %}
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        {% endif %}
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="mail" class="input-icon"></i>
+                                <input type="email"
+                                       name="email"
+                                       class="form-input"
+                                       placeholder="votre@email.com"
                                        required
                                        autocomplete="email">
                             </div>
                         </div>
-                        <div class="input-group">
-                            <div class="relative">
-                                <i data-lucide="lock" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-tertiary);"></i>
-                                <input type="password" name="password" id="password"
-                                       class="input"
-                                       style="padding-left: 48px; padding-right: 48px;"
-                                       placeholder="Mot de passe"
-                                       value=""
+
+                        <div class="form-group">
+                            <label class="form-label">Mot de passe</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="lock" class="input-icon"></i>
+                                <input type="password"
+                                       name="password"
+                                       id="password"
+                                       class="form-input"
+                                       style="padding-right: 48px;"
+                                       placeholder="••••••••"
                                        required
-                                       autocomplete="current-password">
-                                <button type="button" onclick="togglePassword()" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-tertiary);" aria-label="Afficher/masquer le mot de passe">
+                                       autocomplete="{{ 'new-password' if request.args.get('mode') == 'register' else 'current-password' }}">
+                                <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Afficher le mot de passe">
                                     <i data-lucide="eye" id="eye-icon" style="width: 20px; height: 20px;"></i>
                                 </button>
                             </div>
                         </div>
+
+                        {% if request.args.get('mode') != 'register' %}
+                        <div class="form-footer">
+                            <label class="remember-me">
+                                <input type="checkbox" name="remember">
+                                <span>Se souvenir de moi</span>
+                            </label>
+                            <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Mot de passe oublié ?</a>
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-gradient btn-block">
+                            {{ 'Créer mon compte' if request.args.get('mode') == 'register' else 'Se connecter' }}
+                            <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </form>
+
+                    <!-- Divider -->
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">ou continuer avec</span>
+                        <div class="divider-line"></div>
                     </div>
+
+                    <!-- Google OAuth -->
+                    <a href="{{ url_for('auth.google_login') }}" class="btn btn-google btn-block">
+                        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        Continuer avec Google
+                    </a>
 
                     {% if request.args.get('mode') != 'register' %}
-                    <div class="text-right">
-                        <a href="{{ url_for('auth.forgot_password') }}" class="text-sm" style="color: var(--brand-secondary); text-decoration: none;">
-                            Mot de passe oublié ?
-                        </a>
+                    <!-- Demo Buttons -->
+                    <div class="demo-section">
+                        <div class="demo-title">
+                            <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+                            <span>Connexion Démo Rapide</span>
+                        </div>
+                        <div class="demo-buttons">
+                            <button type="button" onclick="demoLogin('admin@sarfx.io', 'admin123')" class="btn-demo admin">
+                                <i data-lucide="shield" style="width: 18px; height: 18px;"></i>
+                                Admin Demo
+                            </button>
+                            <button type="button" onclick="demoLogin('bank@attijariwafa.ma', 'bank123')" class="btn-demo bank">
+                                <i data-lucide="landmark" style="width: 18px; height: 18px;"></i>
+                                Bank Respo Demo
+                            </button>
+                            <button type="button" onclick="demoLogin('user@sarfx.io', 'user123')" class="btn-demo user">
+                                <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+                                User Demo
+                            </button>
+                        </div>
                     </div>
                     {% endif %}
-
-                    <button type="submit" class="btn btn-gradient btn-lg btn-block">
-                        {{ 'Créer mon compte' if request.args.get('mode') == 'register' else 'Se connecter' }}
-                        <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
-                    </button>
-                </form>
-
-                <!-- Google OAuth Divider -->
-                <div class="oauth-divider" style="display: flex; align-items: center; margin: 20px 0; gap: 16px;">
-                    <div style="flex: 1; height: 1px; background: var(--border-light);"></div>
-                    <span class="text-xs" style="color: var(--text-tertiary);">ou continuer avec</span>
-                    <div style="flex: 1; height: 1px; background: var(--border-light);"></div>
                 </div>
 
-                <!-- Google OAuth Button -->
-                <a href="{{ url_for('auth.google_login') }}" class="btn btn-google btn-lg btn-block" style="background: white; border: 1px solid var(--border-medium); color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 12px; text-decoration: none; transition: all 0.2s ease;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    <span style="font-weight: 500;">Continuer avec Google</span>
-                </a>
+                <!-- Toggle Link -->
+                <div class="toggle-link">
+                    {% if request.args.get('mode') == 'register' %}
+                    Déjà inscrit ? <a href="{{ url_for('auth.login') }}">Se connecter</a>
+                    {% else %}
+                    Pas encore de compte ? <a href="{{ url_for('auth.login', mode='register') }}">S'inscrire</a>
+                    {% endif %}
+                </div>
 
-                {% if request.args.get('mode') != 'register' %}
-                <!-- Demo Quick Login Buttons -->
-                <div class="demo-login-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light);">
-                    <p class="text-xs text-center" style="color: var(--text-tertiary); margin-bottom: 12px;">
-                        <i data-lucide="sparkles" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i>
-                        Connexion Démo Rapide
-                    </p>
-                    <div class="demo-buttons" style="display: flex; flex-direction: column; gap: 8px;">
-                        <button type="button" onclick="demoLogin('admin@sarfx.io', 'admin123')"
-                                class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
-                            Admin Demo
-                        </button>
-                        <button type="button" onclick="demoLogin('bank@attijariwafa.ma', 'bank123')"
-                                class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
-                            Bank Respo Demo
-                        </button>
-                        <button type="button" onclick="demoLogin('user@demo.com', 'demo123')"
-                                class="btn btn-sm" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-                            User Demo
-                        </button>
+                <!-- Features Mini -->
+                <div class="features-mini">
+                    <div class="feature-mini">
+                        <div class="feature-mini-icon orange">
+                            <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <span>Rapide</span>
+                    </div>
+                    <div class="feature-mini">
+                        <div class="feature-mini-icon green">
+                            <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <span>Sécurisé</span>
+                    </div>
+                    <div class="feature-mini">
+                        <div class="feature-mini-icon purple">
+                            <i data-lucide="brain-circuit" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <span>IA</span>
                     </div>
                 </div>
-                {% endif %}
-            </div>
 
-            <!-- Toggle Register/Login -->
-            <div class="text-center">
-                {% if request.args.get('mode') == 'register' %}
-                <p class="text-sm" style="color: var(--text-secondary);">
-                    Déjà inscrit ?
-                    <a href="{{ url_for('auth.login') }}" class="font-bold" style="color: var(--brand-secondary);">Se connecter</a>
-                </p>
-                {% else %}
-                <p class="text-sm" style="color: var(--text-secondary);">
-                    Pas encore de compte ?
-                    <a href="{{ url_for('auth.login', mode='register') }}" class="font-bold" style="color: var(--brand-secondary);">S'inscrire</a>
-                </p>
-                {% endif %}
-            </div>
-
-            <!-- Features Preview -->
-            <div class="grid grid-cols-3 gap-3 pt-4">
-                <div class="text-center">
-                    <div class="feature-icon feature-icon-secondary mx-auto mb-2" style="width: 40px; height: 40px;">
-                        <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
-                    </div>
-                    <p class="text-xs" style="color: var(--text-tertiary);">Rapide</p>
-                </div>
-                <div class="text-center">
-                    <div class="feature-icon mx-auto mb-2" style="width: 40px; height: 40px; background: var(--success-bg); color: var(--success);">
-                        <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
-                    </div>
-                    <p class="text-xs" style="color: var(--text-tertiary);">Sécurisé</p>
-                </div>
-                <div class="text-center">
-                    <div class="feature-icon mx-auto mb-2" style="width: 40px; height: 40px; background: rgba(168, 85, 247, 0.1); color: #a855f7;">
-                        <i data-lucide="brain-circuit" style="width: 20px; height: 20px;"></i>
-                    </div>
-                    <p class="text-xs" style="color: var(--text-tertiary);">IA</p>
+                <!-- Footer -->
+                <div class="login-footer">
+                    © 2026 SarfX. Tous droits réservés.
                 </div>
             </div>
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="text-center py-4 text-xs relative" style="z-index: 10; color: var(--text-tertiary);">
-        © 2026 SarfX. Tous droits réservés.
-    </footer>
+    </div>
 
     <script>
+        // Initialize Lucide icons
         lucide.createIcons();
 
-        // Demo login function
-        function demoLogin(email, password) {
-            document.querySelector('input[name="email"]').value = email;
-            document.querySelector('input[name="password"]').value = password;
-
-            // Submit form after short delay for visual feedback
-            const btn = event.target.closest('button');
-            btn.innerHTML = '<i data-lucide="loader-2" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Connexion...';
-            lucide.createIcons();
-
-            setTimeout(() => {
-                document.querySelector('form').submit();
-            }, 500);
+        // Theme Management
+        function getStoredTheme() {
+            return localStorage.getItem('theme') || 'light';
         }
 
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Apply stored theme on load
+        setTheme(getStoredTheme());
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 10) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Password Toggle
         function togglePassword() {
             const input = document.getElementById('password');
             const icon = document.getElementById('eye-icon');
@@ -229,33 +1073,32 @@
             lucide.createIcons();
         }
 
+        // Demo Login
+        function demoLogin(email, password) {
+            document.querySelector('input[name="email"]').value = email;
+            document.querySelector('input[name="password"]').value = password;
+
+            const btn = event.target.closest('button');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width: 18px; height: 18px;"></i> Connexion...';
+            btn.disabled = true;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                document.getElementById('login-form').submit();
+            }, 500);
+        }
+
         // Auto-hide notifications
         setTimeout(() => {
             const notifications = document.getElementById('notification-container');
             if (notifications) {
                 notifications.style.opacity = '0';
-                notifications.style.transform = 'translateY(-20px)';
+                notifications.style.transform = 'translateX(100px)';
+                notifications.style.transition = 'all 0.3s ease';
                 setTimeout(() => notifications.remove(), 300);
             }
         }, 4000);
     </script>
-
-    <style>
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .btn-google:hover {
-            background: var(--bg-secondary) !important;
-            border-color: var(--border-dark) !important;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .btn-google:active {
-            transform: translateY(0);
-        }
-    </style>
 </body>
 </html>

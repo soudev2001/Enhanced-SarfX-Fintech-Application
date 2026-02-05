@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import session, redirect, url_for, flash, jsonify
+from flask import session, redirect, url_for, flash, jsonify, request
 from app.services.db_service import get_db, safe_object_id
 
 
@@ -8,7 +8,9 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return redirect(url_for('auth.login'))
+            # Save the requested URL to redirect back after login
+            next_url = request.url
+            return redirect(url_for('auth.login', next=next_url))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -18,7 +20,8 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return redirect(url_for('auth.login'))
+            next_url = request.url
+            return redirect(url_for('auth.login', next=next_url))
         db = get_db()
         user_id = safe_object_id(session['user_id'])
         user = db.users.find_one({"_id": user_id}) if user_id else db.users.find_one({"email": session.get('email')})
@@ -35,7 +38,8 @@ def role_required(*allowed_roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if 'user_id' not in session:
-                return redirect(url_for('auth.login'))
+                next_url = request.url
+                return redirect(url_for('auth.login', next=next_url))
 
             user = get_current_user()
             if not user:

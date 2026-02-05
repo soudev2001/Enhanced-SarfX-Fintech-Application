@@ -62,8 +62,16 @@ def home():
 
     # Récupérer les banques partenaires actives
     banks = []
-    if db is not None and 'banks' in db.list_collection_names():
-        banks = list(db.banks.find({"is_active": True}).limit(10))
+    bank_count = 6
+    atm_count = 250
+    if db is not None:
+        if 'banks' in db.list_collection_names():
+            banks = list(db.banks.find({"is_active": True}).limit(10))
+            count = db.banks.count_documents({"is_active": True})
+            if count > 0:
+                bank_count = count
+        if 'atm_locations' in db.list_collection_names():
+            atm_count = db.atm_locations.count_documents({})
 
     return render_template('app_home.html',
         active_tab='home',
@@ -72,7 +80,9 @@ def home():
         total_balance=total_balance,
         transactions=transactions,
         suppliers_count=suppliers_count,
-        banks=banks
+        banks=banks,
+        bank_count=bank_count,
+        atm_count=atm_count
     )
 
 
@@ -214,6 +224,22 @@ def settings():
     """Page des réglages"""
     user = get_current_user()
     app_settings = get_settings()
+
+    # Récupérer les préférences utilisateur depuis la DB
+    db = get_db()
+    if db is not None and user:
+        from bson import ObjectId
+        try:
+            user_prefs = db.users.find_one(
+                {"_id": ObjectId(session['user_id'])},
+                {"accent_color": 1, "theme": 1, "notification_preferences": 1}
+            )
+            if user_prefs:
+                user['accent_color'] = user_prefs.get('accent_color', 'orange')
+                user['theme'] = user_prefs.get('theme', 'light')
+                user['notification_preferences'] = user_prefs.get('notification_preferences', {})
+        except Exception:
+            pass
 
     return render_template('app_settings.html',
         active_tab='settings',
@@ -887,3 +913,152 @@ def associate_bank():
         else:
             flash("Veuillez sélectionner une banque.", "error")
     return render_template('app_associate_bank.html', user=user, banks=banks)
+
+
+# ==================== PAGES DE DÉTAILS ====================
+
+@app_bp.route('/banks')
+@login_required
+def banks_list():
+    """Page listant toutes les banques partenaires (accessible à tous)"""
+    user = get_current_user()
+    db = get_db()
+
+    banks = []
+    bank_stats = {}
+
+    if db is not None:
+        # Récupérer toutes les banques actives
+        banks = list(db.banks.find({"is_active": True}).sort("name", 1))
+
+        # Pour chaque banque, récupérer le nombre d'ATMs
+        for bank in banks:
+            bank['_id'] = str(bank['_id'])
+            bank_code = bank.get('code', bank.get('bank_code', ''))
+            if bank_code and 'atm_locations' in db.list_collection_names():
+                atm_count = db.atm_locations.count_documents({"bank_code": bank_code})
+                bank['atm_count'] = atm_count
+            else:
+                bank['atm_count'] = 0
+
+    return render_template('app_banks.html',
+        active_tab='banks',
+        user=user,
+        banks=banks
+    )
+
+
+@app_bp.route('/banks/<bank_id>')
+@login_required
+def bank_detail(bank_id):
+    """Page de détails d'une banque"""
+    import logging
+    from bson import ObjectId
+    from bson.errors import InvalidId
+    logger = logging.getLogger(__name__)
+
+    user = get_current_user()
+    db = get_db()
+
+    if db is None:
+        logger.error("DB is None in bank_detail")
+        flash("Erreur de connexion à la base de données", "error")
+        return redirect(url_for('app.banks_list'))
+
+    # Récupérer la banque - essayer par ID, puis par code
+    bank = None
+    try:
+        bank = db.banks.find_one({"_id": ObjectId(bank_id)})
+        logger.info(f"Bank search by ID {bank_id}: {'found' if bank else 'not found'}")
+    except Exception as e:
+        logger.warning(f"Bank search by ID failed: {e}")
+
+    # Si pas trouvé par ID, chercher par code ou bank_code
+    if not bank:
+        bank = db.banks.find_one({"code": bank_id})
+        logger.info(f"Bank search by code {bank_id}: {'found' if bank else 'not found'}")
+    if not bank:
+        bank = db.banks.find_one({"bank_code": bank_id})
+        logger.info(f"Bank search by bank_code {bank_id}: {'found' if bank else 'not found'}")
+
+    if not bank:
+        logger.error(f"Bank not found for ID: {bank_id}")
+        flash("Banque non trouvée", "error")
+        return redirect(url_for('app.banks_list'))
+
+    logger.info(f"Bank found: {bank.get('name')}")
+    bank['_id'] = str(bank['_id'])
+    bank_code = bank.get('code', bank.get('bank_code', ''))
+
+    # Récupérer les ATMs de cette banque
+    atms = []
+    atm_count = 0
+    if bank_code and 'atm_locations' in db.list_collection_names():
+        atms = list(db.atm_locations.find({"bank_code": bank_code}).limit(20))
+        atm_count = db.atm_locations.count_documents({"bank_code": bank_code})
+        for atm in atms:
+            atm['_id'] = str(atm['_id'])
+
+    # Statistiques
+    stats = {
+        'atm_count': atm_count,
+        'cities': len(set(atm.get('city', '') for atm in atms if atm.get('city'))),
+    }
+
+    return render_template('app_bank_detail.html',
+        active_tab='banks',
+        user=user,
+        bank=bank,
+        atms=atms,
+        stats=stats
+    )
+
+
+@app_bp.route('/transactions/<transaction_id>')
+@login_required
+def transaction_detail(transaction_id):
+    """Page de détails d'une transaction"""
+    from bson import ObjectId
+    from bson.errors import InvalidId
+    user = get_current_user()
+    db = get_db()
+
+    if db is None:
+        flash("Erreur de connexion à la base de données", "error")
+        return redirect(url_for('app.transactions'))
+
+    # Récupérer la transaction
+    try:
+        transaction = db.transactions.find_one({
+            "_id": ObjectId(transaction_id),
+            "user_id": str(session['user_id'])
+        })
+    except:
+        transaction = None
+
+    if not transaction:
+        flash("Transaction non trouvée", "error")
+        return redirect(url_for('app.transactions'))
+
+    transaction['_id'] = str(transaction['_id'])
+
+    # Récupérer les infos du bénéficiaire si présent
+    beneficiary = None
+    if transaction.get('beneficiary_id'):
+        try:
+            beneficiary = db.beneficiaries.find_one({"_id": ObjectId(transaction['beneficiary_id'])})
+            if beneficiary:
+                beneficiary['_id'] = str(beneficiary['_id'])
+        except:
+            pass
+
+    # Récupérer l'historique des statuts si disponible
+    status_history = transaction.get('status_history', [])
+
+    return render_template('app_transaction_detail.html',
+        active_tab='transactions',
+        user=user,
+        transaction=transaction,
+        beneficiary=beneficiary,
+        status_history=status_history
+    )

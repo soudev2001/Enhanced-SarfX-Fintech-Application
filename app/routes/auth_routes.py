@@ -94,6 +94,9 @@ def google_callback():
             session['email'] = user['email']
             session['role'] = user.get('role', 'user')
             session['auth_method'] = 'google'
+            # Load user preferences
+            session['theme'] = user.get('theme', 'light')
+            session['accent_color'] = user.get('accent_color', 'orange')
 
             log_history("LOGIN_GOOGLE", f"Connexion Google réussie: {google_email}", user=google_email)
             flash(f"Bienvenue {google_name} !", "success")
@@ -142,6 +145,13 @@ def google_callback():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # Get the 'next' URL to redirect after login
+    next_url = request.args.get('next') or request.form.get('next') or url_for('app.home')
+
+    # Security: only allow relative URLs or same-origin
+    if next_url and (not next_url.startswith('/') or next_url.startswith('//')):
+        next_url = url_for('app.home')
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -149,7 +159,7 @@ def login():
         db = get_db()
         if db is None:
             flash("Erreur de connexion à la base de données", "error")
-            return render_template('auth/login.html')
+            return render_template('auth/login.html', next_url=next_url)
 
         user = db.users.find_one({"email": email})
 
@@ -157,7 +167,7 @@ def login():
             # Check if this is a Google-only account
             if user.get('auth_provider') == 'google' and not user.get('password'):
                 flash("Ce compte utilise Google. Cliquez sur 'Se connecter avec Google'.", "info")
-                return render_template('auth/login.html')
+                return render_template('auth/login.html', next_url=next_url)
 
             if user.get('password') and check_password_hash(user['password'], password):
                 # Check if 2FA is enabled
@@ -177,7 +187,7 @@ def login():
                             session['role'] = user.get('role', 'user')
                             session['auth_method'] = 'email'
                             log_history("LOGIN", f"Connexion réussie (appareil de confiance): {email}", user=email)
-                            return redirect(url_for('app.home'))
+                            return redirect(next_url)
                     except ImportError:
                         pass
 
@@ -185,6 +195,7 @@ def login():
                     session['pending_2fa_user_id'] = str(user['_id'])
                     session['pending_2fa_email'] = user['email']
                     session['pending_2fa_role'] = user.get('role', 'user')
+                    session['pending_2fa_next_url'] = next_url  # Store next URL for after 2FA
                     log_history("LOGIN_2FA_PENDING", f"2FA requis: {email}", user=email)
                     return redirect(url_for('auth.verify_2fa'))
 
@@ -194,12 +205,15 @@ def login():
                 session['email'] = user['email']
                 session['role'] = user.get('role', 'user')
                 session['auth_method'] = 'email'
+                # Load user preferences
+                session['theme'] = user.get('theme', 'light')
+                session['accent_color'] = user.get('accent_color', 'orange')
                 log_history("LOGIN", f"Connexion réussie: {email}", user=email)
-                return redirect(url_for('app.home'))
+                return redirect(next_url)
 
         flash("Identifiants incorrects", "error")
 
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', next_url=next_url)
 
 
 @auth_bp.route('/verify-2fa', methods=['GET', 'POST'])
@@ -244,6 +258,9 @@ def verify_2fa():
                 session['role'] = session.get('pending_2fa_role', 'user')
                 session['auth_method'] = 'email'
 
+                # Get and clear next_url from session
+                next_url = session.pop('pending_2fa_next_url', None) or url_for('app.home')
+
                 # Clear pending 2FA session data
                 session.pop('pending_2fa_user_id', None)
                 session.pop('pending_2fa_email', None)
@@ -251,7 +268,7 @@ def verify_2fa():
 
                 log_history("LOGIN_2FA_SUCCESS", f"Connexion 2FA réussie: {pending_email}", user=pending_email)
 
-                response = redirect(url_for('app.home'))
+                response = redirect(next_url)
 
                 # Set device token cookie if provided
                 if result.get('device_token'):

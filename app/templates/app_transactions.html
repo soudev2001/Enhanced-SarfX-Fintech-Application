@@ -214,6 +214,12 @@
                         </span>
                     </div>
 
+                    <!-- View Full Details Button -->
+                    <a href="{{ url_for('app.transaction_detail', transaction_id=tx._id) }}" class="wise-tx-view-full-btn" onclick="event.stopPropagation();">
+                        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                        Voir détails complets
+                    </a>
+
                     {% if tx.note %}
                     <div class="wise-tx-note">
                         <i data-lucide="message-square" style="width: 14px; height: 14px;"></i>
@@ -503,6 +509,29 @@
 .tx-pagination-btn:hover { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
 .tx-pagination-btn.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
 .tx-pagination-ellipsis { padding: 0 8px; color: var(--text-tertiary); }
+
+/* View Full Details Button */
+.wise-tx-view-full-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    margin-top: 16px;
+    background: var(--brand-primary);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.wise-tx-view-full-btn:hover {
+    background: #c85203;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(224, 90, 3, 0.3);
+}
 </style>
 {% endblock %}
 
