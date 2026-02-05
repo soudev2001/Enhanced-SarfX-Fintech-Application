@@ -34,8 +34,9 @@ def create_app():
     from flask_compress import Compress
     Compress(app)
 
-    # Security Headers (Talisman) - Only in production
-    if os.environ.get("FLASK_ENV") == "production":
+    # Security Headers (Talisman) - Only in production with SSL
+    # Set FORCE_HTTPS=true in .env when SSL is configured
+    if os.environ.get("FLASK_ENV") == "production" and os.environ.get("FORCE_HTTPS", "").lower() == "true":
         from flask_talisman import Talisman
         Talisman(app,
             content_security_policy=app.config.get('CSP_POLICY'),
