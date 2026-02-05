@@ -5,8 +5,8 @@
 
 .PHONY: help dev prod preprod build up down logs shell clean seed test
 
-# Variables
-COMPOSE_BASE = docker-compose -f docker-compose.yml
+# Variables - Utilise "docker compose" (nouvelle syntaxe Docker)
+COMPOSE_BASE = docker compose -f docker-compose.yml
 COMPOSE_DEV = $(COMPOSE_BASE) -f docker-compose.dev.yml
 COMPOSE_PREPROD = $(COMPOSE_BASE) -f docker-compose.preprod.yml
 COMPOSE_PROD = $(COMPOSE_BASE) -f docker-compose.prod.yml
