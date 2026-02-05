@@ -988,7 +988,7 @@ def bank_detail(bank_id):
 
     logger.info(f"Bank found: {bank.get('name')}")
     bank['_id'] = str(bank['_id'])
-    
+
     # Mapping entre codes banques et bank_codes ATM
     BANK_CODE_MAPPING = {
         'AWB': 'attijariwafa',
@@ -1000,7 +1000,7 @@ def bank_detail(bank_id):
         'BMCI': 'bmci',
         'SG': 'sg',
     }
-    
+
     bank_code = bank.get('code', bank.get('bank_code', ''))
     # Convertir le code banque en bank_code ATM
     atm_bank_code = BANK_CODE_MAPPING.get(bank_code.upper(), bank_code.lower()) if bank_code else ''
