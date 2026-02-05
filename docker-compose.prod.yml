@@ -62,7 +62,7 @@ services:
       FLASK_ENV: production
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       # MongoDB avec auth
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-sarfx_admin}:${MONGO_ROOT_PASSWORD}@mongo:27017/SarfX_Enhanced?authSource=admin
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD}@mongo:27017/SarfX_Enhanced?authSource=admin
       MONGO_LOCAL: "true"
       # Redis avec auth
       REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0
@@ -119,7 +119,7 @@ services:
   # ============================================
   ai-backend:
     environment:
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-sarfx_admin}:${MONGO_ROOT_PASSWORD}@mongo:27017/SarfX_Enhanced?authSource=admin
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD}@mongo:27017/SarfX_Enhanced?authSource=admin
       MONGO_LOCAL: "true"
       AI_PORT: "8087"
     # Gunicorn pour production
