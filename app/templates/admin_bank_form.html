@@ -118,7 +118,9 @@
                                 </p>
                                 <p class="text-xs text-muted">PNG, JPG, SVG (MAX. 2MB)</p>
                             </div>
-                            <input id="logo" name="logo" type="file" accept="image/png, image/jpeg, image/svg+xml" class="hidden" onchange="previewLogo(this)">
+                            <input id="logo" name="logo" type="file" accept="image/png, image/jpeg, image/svg+xml" 
+                                   style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;"
+                                   onchange="previewLogo(this)">
                         </label>
                     </div>
 
