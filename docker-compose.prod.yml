@@ -131,9 +131,8 @@ services:
       --timeout 300
       --keep-alive 5
       main:app
-    # Exposer uniquement sur localhost
-    ports:
-      - "127.0.0.1:8087:8087"
+    # Ne pas exposer le port en production (accès interne via réseau Docker uniquement)
+    ports: []
     logging:
       driver: "json-file"
       options:
