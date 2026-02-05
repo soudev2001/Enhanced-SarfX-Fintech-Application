@@ -13,7 +13,7 @@ services:
   mongo:
     environment:
       MONGO_INITDB_DATABASE: SarfX_Enhanced
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-sarfx_admin}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
     # Ne pas exposer le port en production (accès interne uniquement)
     ports: []
