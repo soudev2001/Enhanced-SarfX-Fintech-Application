@@ -114,6 +114,7 @@ def edit_bank(bank_id):
         website = request.form.get('website')
         description = request.form.get('description', '')
         is_active = request.form.get('is_active') == 'on'
+        delete_logo = request.form.get('delete_logo') == '1'
 
         update_data = {
             "name": name,
@@ -123,6 +124,10 @@ def edit_bank(bank_id):
             "is_active": is_active,
             "updated_at": datetime.utcnow()
         }
+
+        # Supprimer le logo si demandé
+        if delete_logo:
+            update_data["logo"] = None
 
         # Upload nouveau logo si fourni
         if 'logo' in request.files:

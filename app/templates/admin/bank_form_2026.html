@@ -204,17 +204,20 @@
                     <div class="admin-card-body">
                         <div class="admin-form-group">
                             <label class="admin-form-label">Logo de la banque</label>
-                            <div class="logo-upload-zone" id="logo-dropzone">
-                                <input type="file" name="logo" id="logo-input" accept="image/*"
-                                       style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">
+                            
+                            <!-- Hidden file input -->
+                            <input type="file" name="logo" id="logo-input" accept="image/*" class="sr-only">
+                            <input type="hidden" name="delete_logo" id="delete-logo-input" value="">
+                            
+                            <div class="logo-upload-zone" id="logo-dropzone" onclick="document.getElementById('logo-input').click()">
                                 <div id="logo-preview-wrapper">
                                     {% if bank and bank.logo %}
-                                    <div class="logo-preview-container">
+                                    <div class="logo-preview-container" id="current-logo-container">
                                         <img src="{{ bank.logo }}" alt="{{ bank.name }}" id="logo-preview">
                                     </div>
                                     <p class="text-sm text-muted mt-3">Cliquez pour changer le logo</p>
                                     {% else %}
-                                    <div class="text-center">
+                                    <div class="text-center" id="upload-placeholder">
                                         <i data-lucide="upload-cloud" class="w-12 h-12 text-muted mx-auto mb-3"></i>
                                         <p class="text-sm text-muted">Glissez-déposez ou cliquez pour télécharger</p>
                                         <p class="text-xs text-muted mt-1">PNG, JPG, SVG (max 2MB)</p>
@@ -222,6 +225,15 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            
+                            {% if bank and bank.logo %}
+                            <!-- Delete logo button -->
+                            <button type="button" id="delete-logo-btn" onclick="deleteLogo(event)" 
+                                    class="mt-3 text-sm text-red-500 hover:text-red-600 flex items-center gap-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                Supprimer le logo actuel
+                            </button>
+                            {% endif %}
                         </div>
 
                         <div class="admin-form-group">
@@ -350,19 +362,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoInput = document.getElementById('logo-input');
     const previewWrapper = document.getElementById('logo-preview-wrapper');
 
-    dropzone.addEventListener('click', () => logoInput.click());
-
+    // Drag and drop
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         dropzone.classList.add('dragover');
     });
 
-    dropzone.addEventListener('dragleave', () => {
+    dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         dropzone.classList.remove('dragover');
     });
 
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         dropzone.classList.remove('dragover');
         const files = e.dataTransfer.files;
         if (files.length) {
@@ -385,12 +400,54 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="logo-preview-container">
                         <img src="${e.target.result}" alt="Preview" id="logo-preview">
                     </div>
-                    <p class="text-sm text-muted mt-3">Cliquez pour changer le logo</p>
+                    <p class="text-sm text-green-500 mt-3 font-medium">✓ Nouveau logo sélectionné</p>
                 `;
+                // Clear delete flag if new logo selected
+                const deleteInput = document.getElementById('delete-logo-input');
+                if (deleteInput) deleteInput.value = '';
+                
+                // Hide delete button
+                const deleteBtn = document.getElementById('delete-logo-btn');
+                if (deleteBtn) deleteBtn.style.display = 'none';
             };
             reader.readAsDataURL(file);
         }
     }
+});
+
+// Delete logo function (outside DOMContentLoaded)
+function deleteLogo(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const previewWrapper = document.getElementById('logo-preview-wrapper');
+    const deleteInput = document.getElementById('delete-logo-input');
+    const deleteBtn = document.getElementById('delete-logo-btn');
+    const logoInput = document.getElementById('logo-input');
+    
+    // Mark for deletion
+    if (deleteInput) deleteInput.value = '1';
+    
+    // Clear file input
+    if (logoInput) logoInput.value = '';
+    
+    // Show upload placeholder
+    previewWrapper.innerHTML = `
+        <div class="text-center" id="upload-placeholder">
+            <i data-lucide="upload-cloud" class="w-12 h-12 text-muted mx-auto mb-3"></i>
+            <p class="text-sm text-red-500">Logo marqué pour suppression</p>
+            <p class="text-xs text-muted mt-1">Cliquez pour télécharger un nouveau logo</p>
+        </div>
+    `;
+    
+    // Refresh Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    
+    // Hide delete button
+    if (deleteBtn) deleteBtn.style.display = 'none';
+}
 });
 </script>
 {% endblock %}
